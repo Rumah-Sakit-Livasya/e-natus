@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SdmResource\Pages;
 use App\Filament\Resources\SdmResource\RelationManagers;
-use App\Models\Sdm;
+use App\Models\SDM;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SdmResource extends Resource
 {
-    protected static ?string $model = Sdm::class;
+    protected static ?string $model = SDM::class;
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationLabel = 'SDM';
