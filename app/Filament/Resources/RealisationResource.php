@@ -19,6 +19,9 @@ class RealisationResource extends Resource
     protected static ?string $model = Realisation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Realisasi';
+    protected static ?string $navigationLabel = 'List Realisasi';
+    protected static ?string $pluralModelLabel = 'List Realisasi';
 
     public static ?int $filterProcurementId = null;
 

@@ -85,8 +85,6 @@ class ClientResource extends Resource
             return true; // bypass semua permission cek
         }
 
-        dd($user->isSuperAdmin());
-
         return auth()->user()->can('view clients');
     }
 }
