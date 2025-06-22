@@ -77,4 +77,13 @@ class SupplierReceiptResource extends Resource
             'edit' => Pages\EditSupplierReceipt::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return true; // bypass semua permission cek
+        }
+        return auth()->user()->can('view supplier');
+    }
 }

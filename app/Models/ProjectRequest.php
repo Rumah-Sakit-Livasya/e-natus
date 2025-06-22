@@ -17,6 +17,7 @@ class ProjectRequest extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
+        'sdm_ids' => 'array',
         'asset_ids' => 'array',
         'start_period' => 'date',
         'end_period' => 'date',
@@ -83,14 +84,18 @@ class ProjectRequest extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function sdm()
-    {
-        return $this->belongsTo(SDM::class);
-    }
-
-
     public function getAssetsAttribute()
     {
         return \App\Models\Aset::whereIn('id', $this->asset_ids ?? [])->get();
+    }
+
+    public function getSdmAttribute()
+    {
+        return \App\Models\SDM::whereIn('id', $this->sdm_ids ?? [])->get();
+    }
+
+    public function rencanaAnggaranBiaya()
+    {
+        return $this->hasMany(RencanaAnggaranBiaya::class);
     }
 }

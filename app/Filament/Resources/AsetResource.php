@@ -154,8 +154,21 @@ class AsetResource extends Resource
         $fields = [
             Select::make('template_id')
                 ->label('Template')
-                ->options(\App\Models\Template::pluck('name', 'id'))
-                ->searchable(),
+                ->options(\App\Models\Template::pluck('name', 'id')->toArray())
+                ->searchable()
+                ->required()
+                ->createOptionForm([
+                    TextInput::make('name')->label('Nama Template')->required()->maxLength(50),
+                    TextInput::make('code')->label('Kode')->required()->maxLength(50),
+                    Select::make('category_id')
+                        ->label('Kategori')
+                        ->options(\App\Models\Category::pluck('name', 'id')->toArray())
+                        ->searchable()
+                        ->required(),
+                ])
+                ->createOptionUsing(function (array $data) {
+                    return \App\Models\Template::create($data)->id;
+                }),
 
             Select::make('lander_id')
                 ->label('Lander')
@@ -174,6 +187,8 @@ class AsetResource extends Resource
         if (! $isEdit) {
             $fields[] = TextInput::make('code')
                 ->label('Kode Aset')
+                ->disabled() // jika tidak boleh diubah
+                ->dehydrated() // pastikan tetap disimpan meskipun disabled
                 ->maxLength(50);
         }
 
@@ -214,6 +229,9 @@ class AsetResource extends Resource
                     'unavailable' => 'Tidak Tersedia',
                 ])
                 ->required()
+                ->default('available')
+                ->disabled() // jika tidak boleh diubah
+                ->dehydrated() // pastikan tetap disimpan meskipun disabled
                 ->label('Status'),
         ]);
 

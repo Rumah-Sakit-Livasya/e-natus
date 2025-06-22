@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('client_id')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->unsignedBigInteger('sdm_id')->nullable();
+            $table->json('sdm_ids')->nullable();
             $table->json('asset_ids')->nullable(); // Store multiple asset IDs as JSON array
 
             $table->string('name');
@@ -32,7 +32,6 @@ return new class extends Migration
 
             $table->foreign('client_id')->references('id')->on('clients')->onDelete('set null');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('sdm_id')->references('id')->on('sdm')->onDelete('set null');
         });
     }
 

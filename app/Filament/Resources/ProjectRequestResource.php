@@ -7,7 +7,7 @@ use App\Models\Aset;
 use App\Models\Client;
 use App\Models\ProjectRequest;
 use Carbon\Carbon;
-use Filament\Forms\Components\{DatePicker, Select, Textarea, TextInput};
+use Filament\Forms\Components\{DatePicker, Repeater, Select, Textarea, TextInput};
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -67,15 +67,15 @@ class ProjectRequestResource extends Resource
 
                 TextInput::make('name')->label('Nama Proyek')->required(),
                 TextInput::make('pic')->label('PIC')->required(),
-                Select::make('sdm_id')
+                Select::make('sdm_ids')
                     ->label('SDM')
-                    ->options(\App\Models\SDM::pluck('name', 'id')->toArray())
+                    ->multiple()
                     ->searchable()
+                    ->preload()
+                    ->options(\App\Models\SDM::pluck('name', 'id')->toArray())
                     ->required()
                     ->createOptionForm([
-                        TextInput::make('name')
-                            ->label('Nama SDM')
-                            ->required(),
+                        TextInput::make('name')->label('Nama SDM')->required(),
                     ])
                     ->createOptionUsing(function (array $data) {
                         return \App\Models\SDM::create([
@@ -142,9 +142,65 @@ class ProjectRequestResource extends Resource
                     ->required(),
 
                 Textarea::make('keterangan')->label('Keterangan')->nullable(),
+
+                Repeater::make('rencanaAnggaranBiaya')
+                    ->label('Rencana Anggaran Biaya')
+                    ->relationship() // otomatis isi project_request_id
+                    ->schema([
+                        TextInput::make('description')
+                            ->label('Deskripsi')
+                            ->required()
+                            ->placeholder('Misalnya: Sewa AC Standing'),
+
+                        TextInput::make('qty_aset')
+                            ->label('Jumlah')
+                            ->numeric()
+                            ->required()
+                            ->reactive()
+                            ->debounce(1000)
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                                $qty = (int) $state ?? 0;
+                                $harga = (int) $get('harga_sewa') ?? 0;
+
+                                $livewire = $component->getLivewire();
+                                $start = data_get($livewire->data, 'start_period');
+                                $end = data_get($livewire->data, 'end_period');
+
+                                $days = ProjectRequestResource::getDaysBetween($start, $end);
+                                $set('total', $qty * $harga * $days);
+                            }),
+
+                        TextInput::make('harga_sewa')
+                            ->label('Price')
+                            ->numeric()
+                            ->required()
+                            ->reactive()
+                            ->debounce(1000)
+                            ->afterStateUpdated(function ($state, callable $set, callable $get, $component) {
+                                $qty = (int) $get('qty_aset') ?? 0;
+                                $harga = (int) $state ?? 0;
+
+                                $livewire = $component->getLivewire();
+                                $start = data_get($livewire->data, 'start_period');
+                                $end = data_get($livewire->data, 'end_period');
+
+                                $days = ProjectRequestResource::getDaysBetween($start, $end);
+                                $set('total', $qty * $harga * $days);
+                            }),
+
+                        TextInput::make('total')
+                            ->label('Total')
+                            ->numeric()
+                            ->disabled()
+                            ->dehydrated()
+                            ->required(),
+                    ])
+                    ->columns(4)
+                    ->columnSpanFull()
+                    ->createItemButtonLabel('Tambah Item RAB'),
+
             ]);
     }
-
 
     public static function table(Table $table): Table
     {
@@ -152,7 +208,21 @@ class ProjectRequestResource extends Resource
             TextColumn::make('name')->label('Nama Proyek')->searchable()->sortable(),
             TextColumn::make('client.name')->label('Klien')->sortable(),
             TextColumn::make('pic')->label('PIC'),
-            TextColumn::make('sdm.name')->label('SDM')->sortable(),
+            TextColumn::make('sdm_ids')
+                ->label('SDM')
+                ->formatStateUsing(function ($state) {
+                    if (!$state) return '-';
+
+                    // Jika string seperti "1, 2", ubah ke array
+                    if (is_string($state)) {
+                        $state = array_map('intval', explode(',', $state));
+                    }
+
+                    $names = \App\Models\SDM::whereIn('id', $state)->pluck('name')->toArray();
+                    return implode(', ', $names);
+                })
+                ->sortable(),
+
             TextColumn::make('jumlah')->label('Jumlah Peserta')->numeric(),
             TextColumn::make('lokasi')->label('Lokasi'),
             TextColumn::make('user.name')->label('Dibuat oleh')->sortable(), // ← Tambahkan ini
@@ -170,6 +240,7 @@ class ProjectRequestResource extends Resource
                 Action::make('viewAssets')
                     ->icon('heroicon-o-eye')
                     ->tooltip('Lihat Aset')
+                    ->label('Aset')
                     ->modalHeading('Daftar Aset')
                     ->modalSubheading('Berikut adalah aset yang terkait dengan project ini.')
                     ->modalButton('Tutup')
@@ -179,6 +250,31 @@ class ProjectRequestResource extends Resource
                             'assetIds' => $record->asset_ids ?? [],
                         ])
                     )),
+
+                Action::make('viewRAB')
+                    ->icon('heroicon-o-document-text')
+                    ->tooltip('Lihat Rencana Anggaran Biaya')
+                    ->label('RAB')
+                    ->modalHeading('Rencana Anggaran Biaya')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->visible(fn($record) => $record->rencanaAnggaranBiaya()->exists())
+                    ->modalContent(function ($record) {
+                        $rows = $record->rencanaAnggaranBiaya;
+                        $total = $rows->sum('total');
+                        $nilaiInvoice = $total * 1.51;
+                        $margin = $nilaiInvoice - $total;
+
+                        return new \Illuminate\Support\HtmlString(
+                            view('components.project-request.view-rab-table', [
+                                'project' => $record,
+                                'rows' => $rows,
+                                'total' => $total,
+                                'nilaiInvoice' => $nilaiInvoice,
+                                'margin' => $margin,
+                            ])->render()
+                        );
+                    }),
 
                 Action::make('approve')
                     ->icon('heroicon-o-check')
@@ -208,6 +304,18 @@ class ProjectRequestResource extends Resource
         return [
             //
         ];
+    }
+
+    protected static function getDaysBetween($start, $end): int
+    {
+        if (!$start || !$end) return 1;
+        try {
+            $startDate = \Carbon\Carbon::parse($start);
+            $endDate = \Carbon\Carbon::parse($end);
+            return max($startDate->diffInDays($endDate) + 1, 1);
+        } catch (\Exception $e) {
+            return 1;
+        }
     }
 
     public static function getPages(): array

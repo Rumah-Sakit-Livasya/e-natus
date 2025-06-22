@@ -81,8 +81,9 @@ class Aset extends Model
 
     public function template()
     {
-        return $this->belongsTo(Template::class);
+        return $this->belongsTo(\App\Models\Template::class);
     }
+
 
     public function lander()
     {

@@ -164,4 +164,13 @@ class ProcurementResource extends Resource
             'view' => Pages\ViewProcurement::route('/{record}'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return true; // bypass semua permission cek
+        }
+        return auth()->user()->can('view procurement');
+    }
 }
