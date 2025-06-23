@@ -24,4 +24,14 @@ class PrintController extends Controller
 
         return view('print.assets', compact('assets'));
     }
+
+    public function printRealisasiRab(ProjectRequest $project)
+    {
+        $realisasi = $project->realisationRabItems()->with('rabItem')->get();
+
+        return view('print.project-realisasi-rab', [
+            'project' => $project,
+            'realisasi' => $realisasi,
+        ]);
+    }
 }

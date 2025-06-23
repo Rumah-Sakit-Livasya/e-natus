@@ -25,4 +25,9 @@ class RencanaAnggaranBiaya extends Model
     {
         return $this->belongsTo(Template::class);
     }
+
+    public function realisations()
+    {
+        return $this->hasMany(RealisationRabItem::class, 'rencana_anggaran_biaya_id');
+    }
 }
