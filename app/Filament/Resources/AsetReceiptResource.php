@@ -126,8 +126,7 @@ class AsetReceiptResource extends Resource
                         ->createOptionForm([
                             Select::make('category_id')
                                 ->relationship('category', 'name')
-                                ->required()
-                                ->searchable(),
+                                ->required(),
                             TextInput::make('name')
                                 ->label('Nama Template')
                                 ->required()
@@ -141,7 +140,6 @@ class AsetReceiptResource extends Resource
                     Select::make('lander_id')
                         ->label('Lander')
                         ->relationship('lander', 'name')
-                        ->searchable()
                         ->required(),
 
                     TextInput::make('custom_name')
@@ -152,9 +150,13 @@ class AsetReceiptResource extends Resource
                         ->label('Merk')
                         ->nullable(),
 
-                    DatePicker::make('purchase_year')
-                        ->label('Tahun')
-                        ->required(),
+                    TextInput::make('purchase_year')
+                        ->label('Tahun Pembelian')
+                        ->required()
+                        ->numeric()
+                        ->minValue(1900)
+                        ->maxValue(date('Y'))
+                        ->maxLength(4),
 
                     TextInput::make('tarif')
                         ->label('Harga')

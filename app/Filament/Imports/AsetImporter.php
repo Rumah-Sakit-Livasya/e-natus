@@ -31,6 +31,8 @@ class AsetImporter extends Importer
 
     public function resolveRecord(): ?Aset
     {
+        info('Importing: ', $this->data);
+
         $template = Template::with('category')->where('name', $this->data['template_name'])->first();
         $lander = Lander::where('name', $this->data['lander_name'])->first();
 
@@ -90,8 +92,33 @@ class AsetImporter extends Importer
         return $record;
     }
 
+    public static function shouldTransformRecordBeforeFill(): bool
+    {
+        return false;
+    }
+
     public static function shouldPersistRecord(): bool
     {
-        return true;
+        return false;
+    }
+
+    public function transformData(array $data): array
+    {
+        // Hapus kolom yang bukan milik model Aset
+        return collect($data)->only([
+            'custom_name',
+            'condition',
+            'brand',
+            'purchase_year',
+            'tarif',
+            'satuan',
+            'status',
+            'index'
+        ])->toArray();
+    }
+
+    public function fillRecord(): void
+    {
+        // Kosongkan agar Filament tidak mengisi kolom seperti 'template_name'
     }
 }

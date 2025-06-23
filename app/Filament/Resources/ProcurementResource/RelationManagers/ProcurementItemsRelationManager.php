@@ -25,7 +25,6 @@ class ProcurementItemsRelationManager extends RelationManager
                 ->numeric()
                 ->required(),
             Forms\Components\TextInput::make('qty_pengajuan')
-                ->numeric()
                 ->required(),
             Forms\Components\TextInput::make('satuan')
                 ->required()

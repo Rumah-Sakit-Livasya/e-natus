@@ -33,9 +33,21 @@ class TemplateResource extends Resource
     {
         return $form->schema([
             Select::make('category_id')
+                ->label('Kategori')
                 ->relationship('category', 'name')
+                ->searchable()
+                ->preload()
                 ->required()
-                ->searchable(),
+                ->createOptionForm([
+                    TextInput::make('name')
+                        ->label('Nama Kategori')
+                        ->required(),
+
+                    TextInput::make('code')
+                        ->label('Kode Kategori')
+                        ->required(),
+                ]),
+
             TextInput::make('name')->required()->maxLength(50),
             TextInput::make('code')->required()->maxLength(50),
         ]);
