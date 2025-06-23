@@ -25,3 +25,12 @@ Route::middleware(['auth'])->group(function () {
     // routes/web.php
     Route::patch('/procurement-items/{id}/update-status', [ProcurementItemController::class, 'updateStatus'])->name('procurement-items.updateStatus');
 });
+
+Route::get('/debug-protocol', function () {
+    return [
+        'url' => url('/'),
+        'is_secure' => request()->isSecure(),
+        'https_server_var' => $_SERVER['HTTPS'] ?? 'null',
+        'x_forwarded_proto' => request()->header('X-Forwarded-Proto'),
+    ];
+});
