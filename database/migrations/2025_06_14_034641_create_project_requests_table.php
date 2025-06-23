@@ -27,6 +27,9 @@ return new class extends Migration
             $table->date('start_period');
             $table->date('end_period');
             $table->text('keterangan')->nullable();
+            $table->bigInteger('nilai_invoice');
+            $table->date('due_date');
+            $table->string('status_pembayaran')->default('unpaid');
             $table->timestamps();
             $table->softDeletes();
 

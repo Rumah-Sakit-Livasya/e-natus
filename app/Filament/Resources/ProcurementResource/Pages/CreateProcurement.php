@@ -8,6 +8,11 @@ class CreateProcurement extends CreateRecord
 {
     protected static string $resource = \App\Filament\Resources\ProcurementResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl(); // Ini akan redirect ke halaman list
+    }
+
     protected function afterCreate(): void
     {
         $state = $this->form->getState();

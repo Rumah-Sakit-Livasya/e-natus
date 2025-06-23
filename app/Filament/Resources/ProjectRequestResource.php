@@ -141,8 +141,6 @@ class ProjectRequestResource extends Resource
                     ->dehydrated() // pastikan tetap disimpan meskipun disabled
                     ->required(),
 
-                Textarea::make('keterangan')->label('Keterangan')->nullable(),
-
                 Repeater::make('rencanaAnggaranBiaya')
                     ->label('Rencana Anggaran Biaya')
                     ->relationship() // otomatis isi project_request_id
@@ -173,6 +171,7 @@ class ProjectRequestResource extends Resource
                         TextInput::make('harga_sewa')
                             ->label('Price')
                             ->numeric()
+                            ->prefix('Rp')
                             ->required()
                             ->reactive()
                             ->debounce(1000)
@@ -198,6 +197,30 @@ class ProjectRequestResource extends Resource
                     ->columns(4)
                     ->columnSpanFull()
                     ->createItemButtonLabel('Tambah Item RAB'),
+
+                TextInput::make('nilai_invoice')
+                    ->label('Nilai Invoice')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->required(),
+
+                DatePicker::make('due_date')
+                    ->label('Jatuh Tempo')
+                    ->required(),
+
+                Select::make('status_pembayaran')
+                    ->label('Status Pembayaran')
+                    ->options([
+                        'unpaid' => 'Unpaid',
+                        'partial paid' => 'Partial Paid',
+                        'paid' => 'Paid',
+                    ])
+                    ->disabled()
+                    ->dehydrated()
+                    ->required()
+                    ->default('unpaid'),
+
+                Textarea::make('keterangan')->label('Keterangan')->nullable(),
 
             ]);
     }
@@ -262,17 +285,23 @@ class ProjectRequestResource extends Resource
                     ->modalContent(function ($record) {
                         $rows = $record->rencanaAnggaranBiaya;
                         $total = $rows->sum('total');
-                        $nilaiInvoice = $total * 1.51;
+                        $nilaiInvoice = $record->nilai_invoice;
                         $margin = $nilaiInvoice - $total;
 
                         return new \Illuminate\Support\HtmlString(
-                            view('components.project-request.view-rab-table', [
-                                'project' => $record,
-                                'rows' => $rows,
-                                'total' => $total,
-                                'nilaiInvoice' => $nilaiInvoice,
-                                'margin' => $margin,
-                            ])->render()
+                            '<div class="flex justify-end mb-4">
+                                <a href="' . route('print-rab', $record) . '" target="_blank"
+                                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    🖨️ Cetak Halaman
+                                </a>
+                            </div>' .
+                                view('components.project-request.view-rab-table', [
+                                    'project' => $record,
+                                    'rows' => $rows,
+                                    'total' => $total,
+                                    'nilaiInvoice' => $nilaiInvoice,
+                                    'margin' => $margin,
+                                ])->render()
                         );
                     }),
 

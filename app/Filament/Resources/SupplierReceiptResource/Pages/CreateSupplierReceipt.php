@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateSupplierReceipt extends CreateRecord
 {
     protected static string $resource = SupplierReceiptResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl(); // Ini akan redirect ke halaman list
+    }
 }

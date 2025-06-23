@@ -10,6 +10,11 @@ class CreateAsetReceipt extends CreateRecord
 {
     protected static string $resource = AsetReceiptResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl(); // Ini akan redirect ke halaman list
+    }
+
     protected function afterCreate(): void
     {
         \Log::info('afterCreate dipanggil untuk AssetReceipt ID: ' . $this->record->id);

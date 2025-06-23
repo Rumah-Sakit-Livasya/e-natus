@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('code', 50);
             $table->string('condition', 50)->default('baik');
             $table->string('brand', 50)->nullable();
-            $table->date('purchase_year');
+            $table->string('purchase_year', 4);
             $table->integer('tarif')->nullable();
             $table->string('satuan')->nullable();
             $table->integer('quantity')->default(1);

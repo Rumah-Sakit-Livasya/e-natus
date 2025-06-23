@@ -110,6 +110,13 @@ class AsetResource extends Resource
                 ->sortable(),
 
         ])
+            ->headerActions([
+                Tables\Actions\Action::make('print_all')
+                    ->label('Cetak Aset')
+                    ->icon('heroicon-o-printer')
+                    ->url(route('print-assets'))
+                    ->openUrlInNewTab(),
+            ])
             ->defaultSort('id', 'desc')
             ->actions([
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil')->tooltip('Edit'),
@@ -158,22 +165,41 @@ class AsetResource extends Resource
                 ->searchable()
                 ->required()
                 ->createOptionForm([
-                    TextInput::make('name')->label('Nama Template')->required()->maxLength(50),
-                    TextInput::make('code')->label('Kode')->required()->maxLength(50),
+                    TextInput::make('name')
+                        ->label('Nama Template')
+                        ->required()
+                        ->maxLength(50),
+
+                    TextInput::make('code')
+                        ->label('Kode')
+                        ->required()
+                        ->maxLength(50),
+
                     Select::make('category_id')
                         ->label('Kategori')
-                        ->options(\App\Models\Category::pluck('name', 'id')->toArray())
-                        ->searchable()
-                        ->required(),
+                        ->options(fn() => \App\Models\Category::pluck('name', 'id')->toArray())
+                        ->preload()
+                        ->required()
+                        ->createOptionForm([
+                            TextInput::make('name')
+                                ->label('Nama Kategori')
+                                ->required()
+                                ->maxLength(50),
+
+                            TextInput::make('code')
+                                ->label('Kode Kategori')
+                                ->required()
+                                ->maxLength(50),
+                        ])
                 ])
+
                 ->createOptionUsing(function (array $data) {
                     return \App\Models\Template::create($data)->id;
                 }),
 
             Select::make('lander_id')
                 ->label('Lander')
-                ->options(\App\Models\Lander::pluck('name', 'id'))
-                ->searchable(),
+                ->options(\App\Models\Lander::pluck('name', 'id')),
 
             TextInput::make('custom_name')
                 ->label('Nama Aset')
@@ -200,12 +226,16 @@ class AsetResource extends Resource
 
             TextInput::make('brand')
                 ->label('Merk')
-                ->required()
+                ->nullable()
                 ->maxLength(50),
 
-            DatePicker::make('purchase_year')
+            TextInput::make('purchase_year')
                 ->label('Tahun Pembelian')
-                ->required(),
+                ->required()
+                ->numeric()
+                ->minValue(1900)
+                ->maxValue(date('Y'))
+                ->maxLength(4),
 
             TextInput::make('tarif')
                 ->label('Tarif')

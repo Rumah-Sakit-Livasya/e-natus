@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('code', 50); // disarankan auto-generate + unique
             $table->string('condition', 50)->default('baik');
             $table->string('brand', 50)->nullable();
-            $table->date('purchase_year')->nullable();
+            $table->string('purchase_year', 4)->nullable();
             $table->integer('tarif')->nullable();
             $table->string('satuan')->nullable();
             $table->integer('index')->nullable(); // dipertahankan
