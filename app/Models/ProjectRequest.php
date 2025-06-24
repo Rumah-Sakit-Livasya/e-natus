@@ -98,4 +98,9 @@ class ProjectRequest extends Model
     {
         return $this->hasMany(RencanaAnggaranBiaya::class);
     }
+
+    public function realisationRabItems()
+    {
+        return $this->hasMany(\App\Models\RealisationRabItem::class);
+    }
 }

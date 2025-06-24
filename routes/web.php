@@ -5,6 +5,7 @@ use App\Http\Controllers\ProcurementItemController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProjectRequestActionController;
 use App\Http\Controllers\PrintController;
+use App\Http\Controllers\ProjectRealisationController;
 use App\Models\Aset;
 
 
@@ -29,6 +30,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/print-rab/{project}', [PrintController::class, 'printRAB'])->name('print-rab');
     Route::get('/print-assets', [PrintController::class, 'printAssets'])->name('print-assets');
+    Route::get('/print-realisasi-rab/{project}', [PrintController::class, 'printRealisasiRab'])->name('print-realisasi-rab');
+    Route::get('/project-requests/{project}/realisasi-rab/create', [ProjectRealisationController::class, 'create'])
+        ->name('project.realisasi-rab.create');
+
+    Route::post('/realisation-rab-items', [ProjectRealisationController::class, 'store'])
+        ->name('realisation-rab-items.store');
 });
 
 Route::get('/debug-protocol', function () {

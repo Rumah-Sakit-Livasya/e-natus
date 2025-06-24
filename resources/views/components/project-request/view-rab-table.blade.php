@@ -23,6 +23,7 @@
                 <tr>
                     <th class="px-4 py-2 w-8">No</th>
                     <th class="px-4 py-2">Description</th>
+                    <th class="px-4 py-2">Qty</th>
                     <th class="px-4 py-2 text-right">Price</th>
                 </tr>
             </thead>
@@ -31,22 +32,23 @@
                     <tr>
                         <td class="px-4 py-2">{{ $index + 1 }}</td>
                         <td class="px-4 py-2">{{ $item->description }}</td>
+                        <td class="px-4 py-2">{{ $item->qty_aset }}</td>
                         <td class="px-4 py-2 text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot class="bg-gray-50 dark:bg-gray-800 font-semibold">
                 <tr>
-                    <td colspan="2" class="px-4 py-2 text-right">Total</td>
+                    <td colspan="3" class="px-4 py-2 text-right">Total</td>
                     <td class="px-4 py-2 text-right">Rp {{ number_format($total, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td colspan="2" class="px-4 py-2 text-right">Nilai Invoice</td>
+                    <td colspan="3" class="px-4 py-2 text-right">Nilai Invoice</td>
                     <td class="px-4 py-2 text-right text-green-600 dark:text-green-400">Rp
                         {{ number_format($nilaiInvoice, 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td colspan="2" class="px-4 py-2 text-right">Margin</td>
+                    <td colspan="3" class="px-4 py-2 text-right">Margin</td>
                     <td class="px-4 py-2 text-right text-blue-600 dark:text-blue-400">Rp
                         {{ number_format($margin, 0, ',', '.') }}</td>
                 </tr>

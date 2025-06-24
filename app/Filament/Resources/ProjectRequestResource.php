@@ -289,11 +289,22 @@ class ProjectRequestResource extends Resource
                         $margin = $nilaiInvoice - $total;
 
                         return new \Illuminate\Support\HtmlString(
-                            '<div class="flex justify-end mb-4">
+                            '<div class="flex justify-between items-center mb-4">
+                                <a href="' . route('print-realisasi-rab', $record) . '" target="_blank"
+                                    class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                                    🖨️ Cetak Realisasi
+                                </a>
+
                                 <a href="' . route('print-rab', $record) . '" target="_blank"
-                                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
                                     🖨️ Cetak Halaman
                                 </a>
+
+                                <a href="' . route('project.realisasi-rab.create', $record) . '" target="_blank"
+                                    class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+                                    ➕ Tambah Realisasi
+                                </a>
+
                             </div>' .
                                 view('components.project-request.view-rab-table', [
                                     'project' => $record,
@@ -303,6 +314,72 @@ class ProjectRequestResource extends Resource
                                     'margin' => $margin,
                                 ])->render()
                         );
+                    }),
+
+                Action::make('createRealisasiRab')
+                    ->label('Tambah Realisasi RAB')
+                    ->icon('heroicon-o-plus-circle')
+                    ->tooltip('Tambah Realisasi RAB')
+                    ->modalHeading('Tambah Realisasi RAB')
+                    ->form(function ($record) {
+                        return [
+                            Select::make('rencana_anggaran_biaya_id')
+                                ->label('Item RAB')
+                                ->options(
+                                    $record->rencanaAnggaranBiaya()
+                                        ->pluck('description', 'id')
+                                        ->toArray()
+                                )
+                                ->searchable()
+                                ->required(),
+                            TextInput::make('description')
+                                ->label('Deskripsi')
+                                ->required(),
+
+                            TextInput::make('qty')
+                                ->label('Jumlah')
+                                ->numeric(),
+
+                            TextInput::make('harga')
+                                ->label('Harga')
+                                ->numeric(),
+
+                            DatePicker::make('tanggal_realisasi')
+                                ->label('Tanggal Realisasi'),
+
+                            Select::make('status')
+                                ->label('Status')
+                                ->options([
+                                    'draft' => 'Draft',
+                                    'approved' => 'Approved',
+                                    'rejected' => 'Rejected',
+                                    'done' => 'Done'
+                                ])
+                                ->default('draft')
+                                ->required(),
+
+                            Textarea::make('keterangan')
+                                ->label('Keterangan')
+                                ->rows(2)
+                                ->nullable(),
+                        ];
+                    })
+                    ->action(function (array $data, $record) {
+                        \App\Models\RealisationRabItem::create([
+                            'project_request_id' => $record->id,
+                            'rencana_anggaran_biaya_id' => $data['rencana_anggaran_biaya_id'],
+                            'description' => $data['description'],
+                            'qty' => $data['qty'],
+                            'harga' => $data['harga'],
+                            'total' => $data['qty'] * $data['harga'],
+                            'tanggal_realisasi' => $data['tanggal_realisasi'],
+                            'keterangan' => $data['keterangan'] ?? null,
+                        ]);
+
+                        Notification::make()
+                            ->title('Realisasi berhasil ditambahkan')
+                            ->success()
+                            ->send();
                     }),
 
                 Action::make('approve')
