@@ -1,5 +1,6 @@
 <?php
 
+use App\Filament\Pages\ProjectFinanceComparison;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProcurementItemController;
 use Illuminate\Support\Facades\Route;
@@ -8,6 +9,8 @@ use App\Http\Controllers\PrintController;
 use App\Http\Controllers\ProjectRealisationController;
 use App\Models\Aset;
 use Illuminate\Support\Facades\DB;
+use App\Filament\Resources\ProjectRequestResource\Pages\CompareRab;
+
 
 // Redirect root to dashboard login
 Route::get('/', function () {
@@ -37,3 +40,17 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/realisation-rab-items', [ProjectRealisationController::class, 'store'])
         ->name('realisation-rab-items.store');
 });
+
+
+// Gunakan grup middleware yang SAMA dengan panel Filament Anda
+// Ini memastikan halaman Anda memiliki layout, otentikasi, dan tema yang sama.
+// Ganti 'dashboard' dengan ID panel Anda jika berbeda (misalnya: 'dashboard')
+Route::domain(config('filament.panels.dashboard.domain'))
+    ->middleware(config('filament.panels.dashboard.middleware'))
+    ->prefix(config('filament.panels.dashboard.path')) // Otomatis mengambil path seperti '/dashboard' atau '/dashboard'
+    ->group(function () {
+        // Daftarkan rute kustom Anda di sini
+        // URL-nya akan menjadi: /dashboard/project-comparison/{record}
+        Route::get('/project-comparison/{record}', ProjectFinanceComparison::class)
+            ->name('filament.admin.pages.project-finance-comparison'); // Beri nama yang unik
+    });

@@ -15,6 +15,7 @@ class RabClosing extends Model
         'project_request_id',
         'closing_date',
         'total_anggaran',
+        'total_anggaran_closing',
         'total_realisasi',
         'selisih',
         'keterangan',

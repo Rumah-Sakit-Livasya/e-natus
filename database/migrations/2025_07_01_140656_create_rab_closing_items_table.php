@@ -16,8 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(RabClosing::class)->constrained()->cascadeOnDelete();
             $table->string('description');
-            $table->decimal('qty', 10, 2);
-            $table->string('satuan', 50);
+            $table->integer('qty');
             $table->bigInteger('harga_satuan');
             $table->bigInteger('total_anggaran');
             $table->timestamps();

@@ -2,115 +2,160 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\ProjectRequest;
 use App\Models\RealisationRabItem;
-use Filament\Forms\Contracts\HasForms;
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Support\RawJs;
 use Illuminate\Contracts\View\View;
+use Livewire\Component;
 
-class ViewRabManager extends Component implements HasForms
+// Implementasikan HasForms dan HasActions
+class ViewRabManager extends Component implements HasForms, HasActions
 {
+    // Gunakan trait untuk keduanya
     use InteractsWithForms;
+    use InteractsWithActions;
 
     public ProjectRequest $project;
-    public bool $showCreateForm = false;
 
-    // Properti untuk menampung data form
-    public $rencana_anggaran_biaya_id;
-    public $description;
-    public $qty;
-    public $harga;
-    public $tanggal_realisasi;
-    public $keterangan;
+    // Properti `$showCreateForm` dan properti form lainnya tidak diperlukan lagi
 
-    public function mount(ProjectRequest $project)
+    public function mount(ProjectRequest $project): void
     {
         $this->project = $project;
-        // Inisialisasi data form di sini jika diperlukan
-        $this->form->fill();
     }
 
-    // Definisikan skema form di sini
-    protected function getFormSchema(): array
+    /**
+     * Ini adalah method utama untuk mendefinisikan semua tombol ("Actions")
+     * yang akan ditampilkan di view.
+     */
+    public function getActions(): array
     {
         return [
-            \Filament\Forms\Components\Select::make('rencana_anggaran_biaya_id')
-                ->label('Item RAB')
-                ->options(
-                    $this->project->rencanaAnggaranBiaya()
-                        ->pluck('description', 'id')
-                        ->toArray()
-                )
-                ->searchable()
-                ->required(),
-            \Filament\Forms\Components\TextInput::make('description')->label('Deskripsi')->required(),
-            \Filament\Forms\Components\TextInput::make('qty')->label('Jumlah')->numeric()->required(),
-            \Filament\Forms\Components\TextInput::make('harga')->label('Harga')->mask(RawJs::make('$money($input)'))
-                ->dehydrateStateUsing(function (?string $state): ?string {
-                    if ($state === null) {
-                        return null;
-                    }
+            // Aksi untuk membuka modal tambah realisasi
+            $this->createRealisasiAction(),
 
-                    $cleanedState = preg_replace('/[^\d]/', '', $state);
-
-                    return $cleanedState;
-                })->required(),
-            \Filament\Forms\Components\DatePicker::make('tanggal_realisasi')->label('Tanggal Realisasi')->default(now())->required(),
-            \Filament\Forms\Components\Textarea::make('keterangan')->label('Keterangan')->rows(2)->nullable(),
+            // Aksi untuk mencetak
+            $this->printRealisasiAction(),
+            $this->printRabAction(),
         ];
     }
 
-    // Aksi untuk menyimpan data
-    public function saveRealisasi()
+    // Saya memecah setiap aksi menjadi method sendiri agar lebih rapi
+
+    protected function createRealisasiAction(): Action
     {
-        $data = $this->form->getState();
+        return Action::make('createRealisasi')
+            ->label('Tambah Realisasi')
+            ->color('success')
+            ->icon('heroicon-o-plus-circle')
+            ->size('sm')
+            // Definisikan form yang akan muncul di dalam modal
+            ->form([
+                Select::make('rencana_anggaran_biaya_id')
+                    ->label('Item RAB Awal')
+                    ->options($this->project->rencanaAnggaranBiaya()->pluck('description', 'id')->toArray())
+                    ->searchable()
+                    ->required(),
+                TextInput::make('description')
+                    ->label('Deskripsi Realisasi')
+                    ->helperText('Isi deskripsi spesifik untuk realisasi ini, misal: "Sewa AC hari pertama".')
+                    ->required(),
+                TextInput::make('qty')->label('Jumlah')->numeric()->required(),
+                TextInput::make('harga')
+                    ->label('Harga')
+                    ->required()
+                    ->prefix('Rp')
+                    ->mask(RawJs::make('$money($input)'))
+                    ->stripCharacters(','),
+                DatePicker::make('tanggal_realisasi')->label('Tanggal Realisasi')->default(now())->required(),
+                Textarea::make('keterangan')->label('Keterangan')->rows(2)->nullable(),
+            ])
+            // Logika yang dijalankan saat tombol "Simpan" di modal diklik
+            ->action(function (array $data) {
+                // Ambil deskripsi dari item RAB awal sebagai fallback jika field 'description' tidak ada
+                $itemRAB = $this->project->rencanaAnggaranBiaya()->find($data['rencana_anggaran_biaya_id']);
 
-        RealisationRabItem::create([
-            'project_request_id' => $this->project->id,
-            'rencana_anggaran_biaya_id' => $data['rencana_anggaran_biaya_id'],
-            'description' => $data['description'],
-            'qty' => $data['qty'],
-            'harga' => $data['harga'],
-            'total' => $data['qty'] * $data['harga'],
-            'tanggal_realisasi' => $data['tanggal_realisasi'],
-            'keterangan' => $data['keterangan'] ?? null,
-            // Status bisa di-handle di sini juga
-            'status' => 'draft',
-        ]);
+                RealisationRabItem::create([
+                    'project_request_id' => $this->project->id,
+                    'rencana_anggaran_biaya_id' => $data['rencana_anggaran_biaya_id'],
+                    'description' => $data['description'] ?? $itemRAB->description, // Gunakan deskripsi dari form
+                    'qty' => $data['qty'],
+                    'harga' => $data['harga'],
+                    'total' => (float) $data['qty'] * (float) $data['harga'],
+                    'tanggal_realisasi' => $data['tanggal_realisasi'],
+                    'keterangan' => $data['keterangan'] ?? null,
+                    'status' => 'draft',
+                ]);
 
-        Notification::make()
-            ->title('Realisasi berhasil ditambahkan')
-            ->success()
-            ->send();
-
-        // Reset form dan sembunyikan
-        $this->form->fill();
-        $this->showCreateForm = false;
-
-        // Emit event untuk menutup modal jika diinginkan
-        // $this->dispatchBrowserEvent('close-modal', ['id' => 'view-rab-modal']);
+                Notification::make()
+                    ->title('Realisasi berhasil ditambahkan')
+                    ->success()
+                    ->send();
+            });
     }
 
-    // Toggle untuk menampilkan/menyembunyikan form
-    public function toggleCreateForm()
+    protected function printRealisasiAction(): Action
     {
-        $this->showCreateForm = !$this->showCreateForm;
+        return Action::make('printRealisasi')
+            ->label('Cetak Realisasi')
+            ->icon('heroicon-o-printer')
+            ->color('gray')
+            ->size('sm')
+            ->url(route('print-realisasi-rab', $this->project))
+            ->openUrlInNewTab();
     }
 
+    protected function printRabAction(): Action
+    {
+        return Action::make('printRab')
+            ->label('Cetak RAB')
+            ->icon('heroicon-o-printer')
+            ->color('gray')
+            ->size('sm')
+            ->url(route('print-rab', $this->project))
+            ->openUrlInNewTab();
+    }
+
+    // --- PERUBAHAN UTAMA ADA DI SINI ---
     public function render(): View
     {
-        $rows = $this->project->rencanaAnggaranBiaya;
-        $total = $rows->sum('total');
-        $nilaiInvoice = $this->project->nilai_invoice;
-        $margin = $nilaiInvoice - $total;
+        // 1. Ambil data untuk Tabel Anggaran (RAB Awal)
+        $rabItems = $this->project->rencanaAnggaranBiaya;
+        $totalAnggaran = $rabItems->sum('total');
 
+        // 2. Ambil data untuk Tabel Realisasi
+        // Pastikan relasi 'realisationRabItems' ada di model ProjectRequest Anda
+        $realisasiItems = $this->project->realisationRabItems()->with('rabItem')->get();
+        $totalRealisasi = $realisasiItems->sum('total');
+
+        // 3. Hitung data summary lainnya
+        $nilaiInvoice = $this->project->nilai_invoice;
+        $selisih = $totalAnggaran - $totalRealisasi;
+        $margin = $nilaiInvoice - $totalAnggaran;
+
+        // 4. Kirim SEMUA data ke view
         return view('livewire.view-rab-manager', [
-            'rows' => $rows,
-            'total' => $total,
+            // Data untuk Tabel 1: Anggaran
+            'rabItems' => $rabItems,
+            'totalAnggaran' => $totalAnggaran,
+
+            // Data untuk Tabel 2: Realisasi
+            'realisasiItems' => $realisasiItems,
+            'totalRealisasi' => $totalRealisasi,
+
+            // Data Summary
             'nilaiInvoice' => $nilaiInvoice,
+            'selisih' => $selisih,
             'margin' => $margin,
         ]);
     }

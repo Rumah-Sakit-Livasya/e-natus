@@ -20,7 +20,6 @@ return new class extends Migration
             $table->json('asset_ids')->nullable(); // Store multiple asset IDs as JSON array
 
             $table->string('name');
-            $table->string('pic');
             $table->integer('jumlah');
             $table->string('lokasi');
             $table->string('status')->default('pending');

@@ -33,7 +33,8 @@
                         <td class="px-4 py-2">{{ $index + 1 }}</td>
                         <td class="px-4 py-2">{{ $item->description }}</td>
                         <td class="px-4 py-2">{{ $item->qty_aset }}</td>
-                        <td class="px-4 py-2 text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                        {{-- <td class="px-4 py-2 text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td> --}}
+                        <td class="px-4 py-2 text-right">Rp {{ number_format($item->harga_sewa, 0, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>

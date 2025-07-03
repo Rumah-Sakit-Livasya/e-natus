@@ -17,16 +17,16 @@ class EditRabClosing extends EditRecord
         ];
     }
 
-    protected function mutateFormDataBeforeFill(array $data): array
-    {
-        // Ambil ulang record untuk memastikan data paling update
-        $record = $this->getRecord();
+    // protected function mutateFormDataBeforeFill(array $data): array
+    // {
+    //     // Ambil ulang record untuk memastikan data paling update
+    //     $record = $this->getRecord();
 
-        // Isi data secara manual ke array form
-        $data['total_anggaran'] = 'Rp ' . number_format($record->total_anggaran, 0, ',', '.');
-        $data['total_realisasi'] = 'Rp ' . number_format($record->total_realisasi, 0, ',', '.');
-        $data['selisih'] = 'Rp ' . number_format($record->selisih, 0, ',', '.');
+    //     // Isi data secara manual ke array form
+    //     $data['total_anggaran'] = 'Rp ' . number_format($record->total_anggaran, 0, ',', '.');
+    //     $data['total_realisasi'] = 'Rp ' . number_format($record->total_realisasi, 0, ',', '.');
+    //     $data['selisih'] = 'Rp ' . number_format($record->selisih, 0, ',', '.');
 
-        return $data;
-    }
+    //     return $data;
+    // }
 }
