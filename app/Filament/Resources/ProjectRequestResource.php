@@ -88,7 +88,7 @@ class ProjectRequestResource extends Resource
                     ->columnSpanFull()
                     ->createItemButtonLabel('Tambah Item RAB'),
 
-                TextInput::make('nilai_invoice')->label('Nilai Invoice')->numeric()->required()->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
+                TextInput::make('nilai_invoice')->label('Nilai Invoice')->required()->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
                 DatePicker::make('due_date')->label('Jatuh Tempo')->required(),
                 Select::make('status_pembayaran')->label('Status Pembayaran')->options(['unpaid' => 'Unpaid', 'partial paid' => 'Partial Paid', 'paid' => 'Paid',])->disabled()->dehydrated()->required()->default('unpaid'),
                 Textarea::make('keterangan')->label('Keterangan')->nullable(),
