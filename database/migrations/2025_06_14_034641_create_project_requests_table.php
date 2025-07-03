@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('client_id')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->json('sdm_ids')->nullable();
+            $table->json('employee_ids')->nullable();
             $table->json('asset_ids')->nullable(); // Store multiple asset IDs as JSON array
 
             $table->string('name');

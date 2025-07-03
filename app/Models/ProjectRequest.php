@@ -7,6 +7,8 @@ use App\Notifications\ProjectRequestCreated;
 use App\Traits\HasNotifications;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,6 +19,7 @@ class ProjectRequest extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
+        'employee_ids' => 'array',
         'sdm_ids' => 'array',
         'asset_ids' => 'array',
         'start_period' => 'date',
@@ -30,9 +33,8 @@ class ProjectRequest extends Model
                 $projectRequest->user_id = Auth::id();
             }
 
-            $superadmins = User::role('super-admin')->get(); // pakai spatie/laravel-permission
+            $superadmins = User::role('super-admin')->get();
 
-            // Kirim notifikasi
             foreach ($superadmins as $user) {
                 $user->notify(new ProjectRequestCreated($projectRequest));
             }
@@ -45,32 +47,14 @@ class ProjectRequest extends Model
 
     public static function generateCode($projectName): string
     {
-        $prefix = "MCU"; // contoh: "mcu" jadi "MCU"
+        $prefix = "MCU";
         $now = now();
-        $bulanRomawi = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-            11 => 'XI',
-            12 => 'XII'
-        ];
-
+        $bulanRomawi = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'];
         $bulan = $now->month;
         $tahun = $now->year;
         $romawi = $bulanRomawi[$bulan];
-
-        $count = self::whereMonth('created_at', $bulan)
-            ->whereYear('created_at', $tahun)
-            ->count() + 1;
-
-        $urutan = str_pad($count, 3, '0', STR_PAD_LEFT); // 001, 002, ...
+        $count = self::whereMonth('created_at', $bulan)->whereYear('created_at', $tahun)->count() + 1;
+        $urutan = str_pad($count, 3, '0', STR_PAD_LEFT);
         return "{$prefix}{$urutan}/{$romawi}/{$tahun}";
     }
 
@@ -89,18 +73,46 @@ class ProjectRequest extends Model
         return \App\Models\Aset::whereIn('id', $this->asset_ids ?? [])->get();
     }
 
-    public function getSdmAttribute()
+    // ===================================================================
+    // HANYA ADA SATU DEFINISI sdm() SEKARANG
+    // Definisi yang menggunakan `belongsToMany` telah dihapus.
+    // ===================================================================
+    public function assignedEmployees()
     {
-        return \App\Models\SDM::whereIn('id', $this->sdm_ids ?? [])->get();
+        // Ambil array ID dari kolom sdm_ids
+        $employeeIds = $this->sdm_ids ?? [];
+
+        // Lakukan query ke model Employee (atau SDM) yang ID-nya ada di array tersebut.
+        // Ganti \App\Models\Employee::class jika nama model Anda berbeda (misal: SDM::class)
+        return \App\Models\Employee::whereIn('id', $employeeIds);
     }
 
-    public function rencanaAnggaranBiaya()
+    public function rencanaAnggaranBiaya(): HasMany
     {
         return $this->hasMany(RencanaAnggaranBiaya::class);
     }
 
-    public function realisationRabItems()
+    public function realisationRabItems(): HasMany
     {
         return $this->hasMany(\App\Models\RealisationRabItem::class);
+    }
+
+    public function rabClosing(): HasOne
+    {
+        return $this->hasOne(RabClosing::class);
+    }
+
+    /**
+     * Mendefinisikan relasi ke data Absensi yang sudah terjadi.
+     * Ini adalah relasi one-to-many ke tabel project_attendances.
+     */
+    public function projectAttendances(): HasMany
+    {
+        return $this->hasMany(ProjectAttendance::class, 'project_request_id');
+    }
+
+    public function pengajuanDanas(): HasMany
+    {
+        return $this->hasMany(PengajuanDana::class);
     }
 }
