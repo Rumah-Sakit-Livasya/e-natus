@@ -7,7 +7,7 @@ use App\Http\Controllers\ProjectRequestActionController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\ProjectRealisationController;
 use App\Models\Aset;
-
+use Illuminate\Support\Facades\DB;
 
 // Redirect root to dashboard login
 Route::get('/', function () {
@@ -36,13 +36,4 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/realisation-rab-items', [ProjectRealisationController::class, 'store'])
         ->name('realisation-rab-items.store');
-});
-
-Route::get('/debug-protocol', function () {
-    return [
-        'url' => url('/'),
-        'is_secure' => request()->isSecure(),
-        'https_server_var' => $_SERVER['HTTPS'] ?? 'null',
-        'x_forwarded_proto' => request()->header('X-Forwarded-Proto'),
-    ];
 });

@@ -4,8 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\Widgets\AssetOverviewWidget;
 use App\Filament\Widgets\ClientRegionChart;
+use App\Filament\Widgets\ProjectCalendarWidget; // <-- TAMBAHKAN INI
 use App\Filament\Widgets\ProjectStatsWidget;
-use App\Livewire\LatestProjectsTable;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -40,10 +40,6 @@ class DashboardPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -58,8 +54,19 @@ class DashboardPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            // PANGGILAN WIDGETS DIGABUNGKAN MENJADI SATU DI SINI
             ->widgets([
+                // Widget kustom Anda
                 AssetOverviewWidget::class,
+
+                // Widget kalender
+                ProjectCalendarWidget::class,
+
+                // Widget bawaan
+                Widgets\AccountWidget::class,
+                Widgets\FilamentInfoWidget::class,
+
+                // Other custom widgets
                 ProjectStatsWidget::class,
                 ClientRegionChart::class,
             ]);
