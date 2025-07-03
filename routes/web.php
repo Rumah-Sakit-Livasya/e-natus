@@ -37,27 +37,3 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/realisation-rab-items', [ProjectRealisationController::class, 'store'])
         ->name('realisation-rab-items.store');
 });
-
-
-Route::get('/test-db-insert', function () {
-    try {
-        $valueToInsert = 1000000; // Nilai numerik murni
-
-        DB::table('pengajuan_danas')->insert([
-            'project_request_id' => 1, // Ganti dengan ID proyek yang ada
-            'user_id' => 1, // Ganti dengan ID user yang ada
-            'tujuan' => 'Test Insert Manual',
-            'jumlah_diajukan' => $valueToInsert,
-            'tanggal_pengajuan' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Ambil data yang baru saja dimasukkan
-        $result = DB::table('pengajuan_danas')->latest()->first();
-
-        dd($result);
-    } catch (\Exception $e) {
-        dd($e->getMessage());
-    }
-});
