@@ -16,7 +16,7 @@ class ProjectStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->chart([7, 3, 4, 5, 6, 3, 5]),
 
-            Stat::make('Project Aktif', ProjectRequest::where('status', 'active')->count())
+            Stat::make('Project Aktif', ProjectRequest::where('status', 'approved')->count())
                 ->description('Project yang sedang berjalan')
                 ->descriptionIcon('heroicon-m-play')
                 ->color('success'),

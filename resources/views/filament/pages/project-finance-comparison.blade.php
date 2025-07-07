@@ -9,11 +9,11 @@
             <x-filament::card>
                 <h2 class="text-lg font-semibold flex items-center space-x-2">
                     <x-heroicon-o-document-text class="w-6 h-6 text-gray-500" />
-                    <span>{{ __('project.initial_plan') }}</span>
+                    <span>{{ __('Rencana Anggaran Awal') }}</span>
                 </h2>
                 <div class="space-y-2 mt-2">
                     <p class="text-sm text-gray-500">
-                        {{ __('project.initial_plan_desc') }}
+                        {{ __('Detail') }}
                     </p>
                     <div class="text-2xl font-bold tracking-tight">
                         Rp {{ number_format($this->totalAwal(), 0, ',', '.') }}
@@ -25,11 +25,11 @@
             <x-filament::card>
                 <h2 class="text-lg font-semibold flex items-center space-x-2">
                     <x-heroicon-o-currency-dollar class="w-6 h-6 text-gray-500" />
-                    <span>{{ __('project.realization') }}</span>
+                    <span>{{ __('Realisasi Anggaran') }}</span>
                 </h2>
                 <div class="space-y-2 mt-2">
                     <p class="text-sm text-gray-500">
-                        {{ __('project.realization_desc') }}
+                        {{ __('Detail') }}
                     </p>
                     <div class="text-2xl font-bold tracking-tight text-primary-600">
                         Rp {{ number_format($this->totalRealisasi(), 0, ',', '.') }}
@@ -54,11 +54,11 @@
             <x-filament::card>
                 <h2 class="text-lg font-semibold flex items-center space-x-2">
                     <x-heroicon-o-check-circle class="w-6 h-6 text-gray-500" />
-                    <span>{{ __('project.closing') }}</span>
+                    <span>{{ __('Closing Project') }}</span>
                 </h2>
                 <div class="space-y-2 mt-2">
                     <p class="text-sm text-gray-500">
-                        {{ __('project.closing_desc') }}
+                        {{ __('Detail') }}
                     </p>
                     <div class="text-2xl font-bold tracking-tight">
                         Rp {{ number_format($this->totalClosing(), 0, ',', '.') }}
@@ -72,16 +72,16 @@
 
         {{-- BAGIAN DETAIL: TABEL PERBANDINGAN LENGKAP --}}
         {{-- Di v2, section biasanya menggunakan card dengan heading --}}
-        <x-filament::card :heading="__('project.comparison_details')" class="mt-6">
+        <x-filament::card :heading="__('Comparison Details')" class="mt-6">
             <x-filament-tables::table>
                 <x-slot:header>
-                    <x-filament-tables::header-cell>{{ __('project.item_description') }}</x-filament-tables::header-cell>
+                    <x-filament-tables::header-cell>{{ __('DESKRIPSI') }}</x-filament-tables::header-cell>
                     <x-filament-tables::header-cell
-                        class="text-right">{{ __('project.initial_budget') }}</x-filament-tables::header-cell>
+                        class="text-right">{{ __('Rencana Anggaran Awal') }}</x-filament-tables::header-cell>
                     <x-filament-tables::header-cell
-                        class="text-right">{{ __('project.final_budget') }}</x-filament-tables::header-cell>
+                        class="text-right">{{ __('Realisasi Anggaran') }}</x-filament-tables::header-cell>
                     <x-filament-tables::header-cell
-                        class="text-right">{{ __('project.realization_cost') }}</x-filament-tables::header-cell>
+                        class="text-right">{{ __('Closing Anggaran') }}</x-filament-tables::header-cell>
                     <x-filament-tables::header-cell class="text-right">{{ __('project.difference') }} (Final vs
                         Realisasi)</x-filament-tables::header-cell>
                 </x-slot:header>
@@ -95,11 +95,11 @@
                         <x-filament-tables::cell class="text-right">
                             {{ 'Rp ' . number_format($item['awal_total'], 0, ',', '.') }}
                         </x-filament-tables::cell>
-                        <x-filament-tables::cell class="text-right">
-                            {{ 'Rp ' . number_format($item['closing_total'], 0, ',', '.') }}
-                        </x-filament-tables::cell>
                         <x-filament-tables::cell class="text-right text-primary-600 font-medium">
                             {{ 'Rp ' . number_format($item['realisasi_total'], 0, ',', '.') }}
+                        </x-filament-tables::cell>
+                        <x-filament-tables::cell class="text-right">
+                            {{ 'Rp ' . number_format($item['closing_total'], 0, ',', '.') }}
                         </x-filament-tables::cell>
                         <x-filament-tables::cell @class([
                             'text-right font-semibold',
