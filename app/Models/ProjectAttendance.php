@@ -12,6 +12,7 @@ class ProjectAttendance extends Model
         'tanggal',
         'lokasi_maps',
         'foto',
+        'notes',
     ];
 
     public function project()

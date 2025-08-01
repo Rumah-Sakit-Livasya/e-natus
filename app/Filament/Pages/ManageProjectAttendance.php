@@ -53,6 +53,7 @@ class ManageProjectAttendance extends Page
             'jam_absen' => Carbon::parse($attendance->created_at)->format('H:i:s'),
             'lokasi_maps' => $attendance->lokasi_maps,
             'foto' => $attendance->foto,
+            'notes' => $attendance->notes,
         ];
     }
 
@@ -62,10 +63,13 @@ class ManageProjectAttendance extends Page
     public function detailAction(): Action
     {
         return Action::make('detail')
-            ->modalContent(fn(array $arguments): Htmlable => view(
-                'filament.infolists.attendance-detail',
-                ['data' => $this->getMountedActionData($arguments['employeeId'], $arguments['date'])]
-            ))
+            ->modalContent(function (array $arguments) {
+                $data = $this->getMountedActionData($arguments['employeeId'], $arguments['date']);
+                if (empty($data)) {
+                    return view('filament.infolists.attendance-detail-empty');
+                }
+                return view('filament.infolists.attendance-detail', ['data' => $data]);
+            })
             ->modalHeading('Detail Absensi')
             ->modalSubmitAction(false) // Sembunyikan tombol "Submit"
             ->modalCancelActionLabel('Tutup');

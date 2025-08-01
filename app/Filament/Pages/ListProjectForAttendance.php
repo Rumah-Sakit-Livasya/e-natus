@@ -2,9 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\EmployeeResource; // <-- PASTIKAN ANDA MENAMBAHKAN INI
 use App\Models\ProjectRequest;
+use Filament\Actions\Action;                   // <-- DAN INI JUGA PENTING
 use Filament\Pages\Page;
-use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -20,14 +22,10 @@ class ListProjectForAttendance extends Page implements HasTable
     protected static string $view = 'filament.pages.list-project-for-attendance';
     protected static ?string $title = 'Pilih Proyek untuk Mengelola Absensi';
 
-    /**
-     * Method ini mendefinisikan tabel untuk halaman daftar proyek.
-     * Ini TIDAK memerlukan getProjectRequest() karena ia mengambil semua data.
-     */
+    // Method table() Anda tidak perlu diubah, sudah benar.
     public function table(Table $table): Table
     {
         return $table
-            // Query langsung ke model ProjectRequest untuk mendapatkan semua data.
             ->query(ProjectRequest::query())
             ->columns([
                 TextColumn::make('name')->label('Nama Proyek')->searchable()->sortable(),
@@ -42,16 +40,31 @@ class ListProjectForAttendance extends Page implements HasTable
                 })->sortable(),
             ])
             ->actions([
-                Action::make('manage_attendance')
+                // Saya ganti nama aliasnya menjadi TableAction agar tidak bentrok
+                TableAction::make('manage_attendance')
                     ->label('Kelola Absensi')
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('primary')
-                    // Membuat URL yang benar dengan query string
+                    ->hidden(fn(ProjectRequest $record): bool => $record->status === 'pending')
                     ->url(function (ProjectRequest $record): string {
                         $baseUrl = ManageProjectAttendance::getUrl();
                         return "{$baseUrl}?record={$record->id}";
                     }),
             ])
             ->defaultSort('id', 'desc');
+    }
+
+    // ==========================================================
+    // ===== TAMBAHKAN METHOD INI =============================
+    // ==========================================================
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('report')
+                ->label('Laporan Absensi')
+                ->icon('heroicon-o-chart-bar-square')
+                ->color('info')
+                ->url(EmployeeResource::getUrl('report')),
+        ];
     }
 }

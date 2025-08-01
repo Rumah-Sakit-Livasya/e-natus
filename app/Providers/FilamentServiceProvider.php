@@ -21,10 +21,13 @@ class FilamentServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // HAPUS ATAU KOMENTARI BLOK INI
+        /*
         Filament::registerRenderHook(
             'panels::topbar.end',
             fn(): string => view('vendor.filament.components.topbar.notifications')->render(),
         );
+        */
     }
 
     protected function getResources(): array

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
+use App\Filament\Resources\EmployeeResource\Pages\EmployeeAttendanceReport;
 use App\Filament\Resources\EmployeeResource\RelationManagers;
 use App\Models\Employee;
 use Filament\Forms;
@@ -86,6 +87,10 @@ class EmployeeResource extends Resource
         return [
             'index' => Pages\ListEmployees::route('/'),
             'create' => Pages\CreateEmployee::route('/create'),
+
+            // SEKARANG INI AKAN BEKERJA KARENA BASE CLASS-NYA SUDAH BENAR
+            'report' => Pages\EmployeeAttendanceReport::route('/report'),
+
             'edit' => Pages\EditEmployee::route('/{record}/edit'),
         ];
     }

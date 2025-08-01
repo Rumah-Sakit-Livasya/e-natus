@@ -6,6 +6,7 @@ use App\Models\ProjectRequest;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -55,6 +56,13 @@ class CreateProjectAttendance extends Page implements HasForms
                 ViewField::make('location_and_photo')
                     ->label('Lokasi & Foto Bukti') // Label utama untuk komponen gabungan
                     ->view('forms.components.location-picker-with-camera'),
+
+                // TAMBAHKAN KOMPONEN TEXTAREA DI SINI
+                Textarea::make('notes')
+                    ->label('Catatan (Opsional)')
+                    ->placeholder('Contoh: Sinyal GPS lemah, posisi kurang akurat.')
+                    ->rows(3),
+
                 Hidden::make('lokasi_maps')->required(),
                 Hidden::make('foto')->required(),
             ])
@@ -66,6 +74,7 @@ class CreateProjectAttendance extends Page implements HasForms
         return [
             Action::make('create')
                 ->label('Kirim Absen')
+                ->extraAttributes(['class' => 'mt-3'])
                 ->submit('create'),
         ];
     }
@@ -95,6 +104,7 @@ class CreateProjectAttendance extends Page implements HasForms
                 'tanggal' => $today,
                 'lokasi_maps' => $data['lokasi_maps'],
                 'foto' => $imageName,
+                'notes' => $data['notes'],
             ]);
             DB::commit();
             Notification::make()->title('Berhasil')->body('Absensi berhasil direkam.')->success()->send();
