@@ -115,4 +115,12 @@ class ProjectRequest extends Model
     {
         return $this->hasMany(PengajuanDana::class);
     }
+
+    /**
+     * Sebuah Project Request memiliki banyak Participant.
+     */
+    public function participants(): HasMany
+    {
+        return $this->hasMany(Participant::class);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 // ... (semua use statement tetap sama)
 use App\Filament\Resources\ProjectRequestResource\Pages;
+use  App\Filament\Resources\ProjectRequestResource\RelationManagers;
 use App\Filament\Resources\ProjectRequestResource\Pages\CompareRab;
 use App\Filament\Pages\ProjectFinanceComparison;
 use App\Models\Aset;
@@ -507,8 +508,12 @@ class ProjectRequestResource extends Resource
     // ... sisa fungsi (getRelations, getDaysBetween, getPages, canViewAny) tidak berubah
     public static function getRelations(): array
     {
-        return [];
+        return [
+            // Daftarkan Relation Manager Anda di sini
+            RelationManagers\ParticipantsRelationManager::class,
+        ];
     }
+
     protected static function getDaysBetween($start, $end): int
     {
         if (!$start || !$end) return 1;
