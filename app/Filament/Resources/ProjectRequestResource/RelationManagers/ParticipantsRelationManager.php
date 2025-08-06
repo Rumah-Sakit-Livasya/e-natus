@@ -11,7 +11,6 @@ use Filament\Tables\Table;
 class ParticipantsRelationManager extends RelationManager
 {
     protected static string $relationship = 'participants';
-
     protected static ?string $recordTitleAttribute = 'name';
 
     public function form(Form $form): Form
@@ -20,6 +19,15 @@ class ParticipantsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\Section::make('Data Peserta')
                     ->schema([
+                        // TAMBAHKAN KOMPONEN UPLOAD FOTO DI SINI
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto Peserta')
+                            ->image()
+                            ->imageEditor()
+                            ->disk('public')
+                            ->directory('participant-photos')
+                            ->columnSpanFull(),
+
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('name')
@@ -40,17 +48,33 @@ class ParticipantsRelationManager extends RelationManager
                                     ->maxLength(255),
 
                                 Forms\Components\Select::make('gender')
-                                    ->options(['Laki-laki' => 'Laki-laki', 'Perempuan' => 'Perempuan'])
+                                    ->label('Jenis Kelamin')
+                                    ->options([
+                                        'Laki-laki' => 'Laki-laki',
+                                        'Perempuan' => 'Perempuan',
+                                    ])
                                     ->required(),
 
                                 Forms\Components\Select::make('marital_status')
-                                    ->options(['Belum Menikah' => 'Belum Menikah', 'Menikah' => 'Menikah', 'Cerai' => 'Cerai'])
+                                    ->label('Status Pernikahan')
+                                    // Menggunakan opsi yang sama dengan Resource utama
+                                    ->options([
+                                        'Belum Menikah' => 'Belum Menikah',
+                                        'Menikah' => 'Menikah',
+                                        'Cerai Hidup' => 'Cerai Hidup',
+                                        'Cerai Mati' => 'Cerai Mati',
+                                    ])
                                     ->required(),
                             ]),
 
                         Forms\Components\Textarea::make('address')
                             ->label('Alamat Lengkap')
                             ->required()
+                            ->columnSpanFull(),
+
+                        // Menambahkan field catatan agar konsisten
+                        Forms\Components\Textarea::make('note')
+                            ->label('Catatan Tambahan')
                             ->columnSpanFull(),
                     ])
             ]);
@@ -60,22 +84,41 @@ class ParticipantsRelationManager extends RelationManager
     {
         return $table
             ->columns([
+                // TAMBAHKAN KOLOM GAMBAR DI SINI
+                Tables\Columns\ImageColumn::make('photo')
+                    ->label('Foto')
+                    ->circular(),
+
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Peserta')
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('employee_code')
-                    ->label('No. Pegawai'),
-                Tables\Columns\TextColumn::make('department'),
-                Tables\Columns\TextColumn::make('gender'),
+                    ->label('No. Pegawai')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('department')
+                    ->label('Departemen')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('gender')
+                    ->label('Jenis Kelamin'),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(), // Tombol "New Participant"
+                Tables\Actions\CreateAction::make(),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(), // Menambahkan tombol View
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 }

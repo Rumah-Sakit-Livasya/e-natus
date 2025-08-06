@@ -14,10 +14,9 @@ class ParticipantResource extends Resource
 {
     protected static ?string $model = Participant::class;
 
-    // Mengatur ikon dan grup di menu sidebar
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationGroup = 'Manajemen Proyek & Peserta';
-    protected static ?int $navigationSort = 2; // Urutan di menu
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -25,7 +24,15 @@ class ParticipantResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Pribadi Peserta')
                     ->schema([
-                        // Menggunakan grid untuk layout 2 kolom
+                        // TAMBAHKAN KOMPONEN UPLOAD FOTO DI SINI
+                        Forms\Components\FileUpload::make('photo')
+                            ->label('Foto Peserta')
+                            ->image() // Memastikan hanya file gambar yang bisa diunggah
+                            ->imageEditor() // Memberikan editor gambar sederhana (crop, rotate)
+                            ->disk('public') // Menyimpan file di disk 'public'
+                            ->directory('participant-photos') // Di dalam folder storage/app/public/participant-photos
+                            ->columnSpanFull(), // Foto memakan lebar penuh
+
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('name')
@@ -64,7 +71,6 @@ class ParticipantResource extends Resource
                                     ->required(),
                             ]),
 
-                        // Kolom ini akan memakan lebar penuh
                         Forms\Components\Textarea::make('address')
                             ->label('Alamat Lengkap')
                             ->required()
@@ -81,32 +87,41 @@ class ParticipantResource extends Resource
     {
         return $table
             ->columns([
+                // TAMBAHKAN KOLOM GAMBAR DI SINI
+                Tables\Columns\ImageColumn::make('photo')
+                    ->label('Foto')
+                    ->circular(), // Membuat gambar menjadi lingkaran
+
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Peserta')
                     ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('employee_code')
                     ->label('No. Pegawai')
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('department')
                     ->label('Departemen')
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('date_of_birth')
                     ->label('Tanggal Lahir')
                     ->date()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Didaftarkan pada')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true), // Sembunyikan default
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Anda bisa menambahkan filter di sini jika perlu
+                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(), // Tambahkan action untuk melihat detail
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -118,18 +133,16 @@ class ParticipantResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // Jika Anda ingin menampilkan daftar MCU yang diikuti peserta ini di halaman detail,
-            // Anda bisa membuat RelationManager di sini.
+            //
         ];
     }
 
     public static function getPages(): array
     {
-        // Halaman-halaman ini sudah dibuat otomatis oleh opsi --generate
         return [
             'index' => Pages\ListParticipants::route('/'),
             'create' => Pages\CreateParticipant::route('/create'),
-            'view' => Pages\ViewParticipant::route('/{record}'), // Menambahkan route untuk View
+            'view' => Pages\ViewParticipant::route('/{record}'),
             'edit' => Pages\EditParticipant::route('/{record}/edit'),
         ];
     }

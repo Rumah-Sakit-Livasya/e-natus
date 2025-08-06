@@ -525,13 +525,6 @@ class ProjectRequestResource extends Resource
             return 1;
         }
     }
-    // Di dalam ProjectRequestResource.php
-
-    // Di dalam ProjectRequestResource.php
-
-    // Di dalam ProjectRequestResource.php
-
-    // Di dalam ProjectRequestResource.php
 
     public static function getPages(): array
     {
