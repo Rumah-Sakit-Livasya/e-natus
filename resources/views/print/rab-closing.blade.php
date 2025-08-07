@@ -35,7 +35,6 @@
                 padding: 0 !important;
             }
 
-            /* PERUBAHAN DI SINI: CSS untuk page break dan menghindari break di dalam item lampiran */
             .page-break-before {
                 page-break-before: always;
             }
@@ -58,10 +57,9 @@
 
     <div class="print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
         <!-- =================================================================== -->
-        <!-- BAGIAN 1: LAPORAN UTAMA (TIDAK ADA PERUBAHAN DI SINI) -->
+        <!-- BAGIAN 1: LAPORAN UTAMA (TIDAK ADA PERUBAHAN) -->
         <!-- =================================================================== -->
 
-        <!-- HEADER -->
         <header class="flex justify-between items-center pb-4 border-b-4 border-orange-500">
             <div>
                 <h1 class="text-4xl font-bold text-gray-800">NVM</h1>
@@ -71,13 +69,9 @@
                 <h2 class="text-2xl font-bold text-gray-700">Terpercaya & Utama</h2>
             </div>
         </header>
-
-        <!-- JUDUL DOKUMEN -->
         <div class="text-center my-6">
             <h3 class="text-xl font-bold underline">RENCANA ANGGARAN BIAYA (CLOSING)</h3>
         </div>
-
-        <!-- INFORMASI UMUM -->
         <div class="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-6">
             <div class="font-semibold">Lokasi</div>
             <div class="col-span-2">: {{ $record->projectRequest->lokasi }}</div>
@@ -87,8 +81,6 @@
             <div class="col-span-2">: {{ $record->projectRequest->start_period->format('d') }} s/d
                 {{ $record->projectRequest->end_period->format('d M Y') }}</div>
         </div>
-
-        <!-- TABEL OPERASIONAL MCU -->
         <div class="mb-6">
             <h4 class="font-bold bg-yellow-400 text-gray-800 px-3 py-1 mb-2">Operasional MCU :</h4>
             <table class="w-full text-sm table-print">
@@ -110,8 +102,6 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- TABEL FEE PETUGAS MCU -->
         <div class="mb-8">
             <h4 class="font-bold bg-yellow-400 text-gray-800 px-3 py-1 mb-2">FEE PETUGAS MCU :</h4>
             <table class="w-full text-sm table-print">
@@ -133,8 +123,6 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- TOTAL -->
         <div class="flex justify-end">
             <div class="w-1/2">
                 <table class="w-full text-sm">
@@ -159,39 +147,35 @@
             </div>
         </div>
 
-
         <!-- =================================================================== -->
-        <!-- BAGIAN 2: HALAMAN LAMPIRAN (KODE BARU DI SINI) -->
+        <!-- BAGIAN 2: HALAMAN LAMPIRAN (PERUBAHAN UTAMA DI SINI) -->
         <!-- =================================================================== -->
 
-        {{-- Menggabungkan semua item yang memiliki attachment --}}
         @php
             $allItemsWithAttachments = $record->operasionalItems
                 ->merge($record->feePetugasItems)
-                ->filter(function ($item) {
-                    return !empty($item->attachment);
-                });
+                ->filter(fn($item) => !empty($item->attachment));
         @endphp
 
-        {{-- Hanya tampilkan bagian lampiran jika ada setidaknya satu attachment --}}
         @if ($allItemsWithAttachments->isNotEmpty())
-
-            <!-- Elemen ini akan memaksa browser untuk memulai halaman baru saat mencetak -->
             <div class="page-break-before"></div>
 
             <div class="mt-12">
                 <h3 class="text-xl font-bold underline text-center mb-8">LAMPIRAN BUKTI TRANSAKSI</h3>
 
-                @foreach ($allItemsWithAttachments as $item)
-                    <!-- Container untuk setiap item lampiran -->
-                    <div class="attachment-item mb-8">
-                        <h4 class="font-semibold text-lg mb-2">Bukti untuk: {{ $item->description }}</h4>
-                        <div class="border p-2">
-                            <img src="{{ asset('storage/' . $item->attachment) }}"
-                                alt="Bukti untuk {{ $item->description }}" class="w-full h-auto">
+                <!-- Menggunakan grid untuk menampilkan bukti secara berdampingan -->
+                <div class="grid grid-cols-3 gap-6">
+                    @foreach ($allItemsWithAttachments as $item)
+                        <!-- Container untuk setiap item lampiran -->
+                        <div class="attachment-item border rounded-lg p-3">
+                            <h4 class="font-semibold text-sm mb-2">Bukti untuk: {{ $item->description }}</h4>
+                            <div class="bg-gray-100 p-2 rounded">
+                                <img src="{{ asset('storage/' . $item->attachment) }}"
+                                    alt="Bukti untuk {{ $item->description }}" class="w-auto h-auto max-h-96 mx-auto">
+                            </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
         @endif
 
