@@ -354,8 +354,7 @@ class ProjectRequestResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalWidth('4xl')
-                    ->visible(fn($record) => $record->rencanaAnggaranBiaya()
-                        ->exists())
+                    ->visible(fn($record) => $record->rencanaAnggaranBiaya()->exists() && $record->status === 'approved')
                     ->modalContent(function ($record) {
                         return view('filament.tables.actions.view-rab-modal-content', ['record' => $record]);
                     }),
@@ -379,8 +378,8 @@ class ProjectRequestResource extends Resource
                     ->label('RAB Closing')
                     ->icon('heroicon-o-document-check')
                     ->color('warning')
-                    ->action(function (ProjectRequest $record, $livewire) {
-                        // Cek jika draft sudah ada
+                    ->action(function (ProjectRequest $record) {
+                        // Cek jika draft sudah ada (logika ini tetap sama)
                         if ($record->rabClosing()->exists()) {
                             Notification::make()
                                 ->title('Informasi')
@@ -394,58 +393,119 @@ class ProjectRequestResource extends Resource
                         try {
                             DB::beginTransaction();
 
-                            // --- PERUBAHAN DIMULAI DI SINI ---
-
-                            // 1. Hitung total anggaran dari RAB awal (sudah benar)
+                            // 1. Ambil data dari RAB awal
                             $totalAnggaranAwal = $record->rencanaAnggaranBiaya()->sum('total');
+                            $jumlahPesertaAwal = $record->jumlah;
 
-                            // 2. Hitung total realisasi dari semua item realisasi yang terkait
-                            $totalRealisasiAwal = $record->realisationRabItems()->sum('total');
-
-                            // 3. Hitung selisih awal
-                            $selisihAwal = $totalAnggaranAwal - $totalRealisasiAwal;
-                            // dd($totalAnggaranAwal . " " . $totalRealisasiAwal . " " . $selisihAwal);
-
-                            // 4. Buat record RabClosing dengan data yang sudah dihitung
+                            // 2. Buat record RabClosing utama
                             $rabClosing = $record->rabClosing()->create([
-                                'closing_date'    => now(),
-                                'status'          => 'draft',
-                                'total_anggaran'  => $totalAnggaranAwal,
-                                'total_realisasi' => $totalRealisasiAwal, // Menggunakan total realisasi yang dihitung
-                                'selisih'         => $selisihAwal,         // Menggunakan selisih yang dihitung
+                                'closing_date'        => now(),
+                                'status'              => 'draft',
+                                'total_anggaran'      => $totalAnggaranAwal, // Ini adalah total dari RAB Awal
+                                'jumlah_peserta_awal' => $jumlahPesertaAwal,
+                                // Kolom lain akan diisi di form edit
                             ]);
 
-                            // --- AKHIR PERUBAHAN ---
-
-                            // Salin item dari RAB awal ke item RAB Closing (logika ini tetap sama)
+                            // --- PERBAIKAN UTAMA DI SINI ---
+                            // 3. Salin item dari RAB awal ke item Operasional di RAB Closing sebagai draf.
                             foreach ($record->rencanaAnggaranBiaya as $itemAwal) {
-                                // Untuk bagian ini, kita hanya menyalin data ANGGARAN.
-                                // Data REALISASI akan diisi/diedit di form RAB Closing nanti.
-                                $rabClosing->items()->create([
+
+                                // Gunakan relasi baru ->operasionalItems()
+                                $rabClosing->operasionalItems()->create([
                                     'description'    => $itemAwal->description,
-                                    'qty'            => $itemAwal->qty_aset,
-                                    'harga_satuan'   => $itemAwal->harga_sewa,
-                                    'total_anggaran' => $itemAwal->total,
-                                    // Anda bisa menambahkan kolom realisasi di sini jika perlu,
-                                    // atau membiarkannya kosong untuk diisi nanti.
-                                    // 'harga_realisasi' => 0,
-                                    // 'total_realisasi' => 0,
+                                    // Karena tabel item closing hanya punya 'price', kita salin nilai 'total' dari item awal
+                                    'price'          => $itemAwal->total,
                                 ]);
                             }
 
                             DB::commit();
                             Notification::make()
                                 ->title('Berhasil')
-                                ->body('Draft RAB Closing berhasil dibuat dengan data realisasi terkini.')
+                                ->body('Draft RAB Closing berhasil dibuat. Silakan lengkapi detailnya.')
                                 ->success()
                                 ->send();
+
+                            // Arahkan ke halaman edit untuk melengkapi data
                             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
                         } catch (\Exception $e) {
                             DB::rollBack();
                             Notification::make()->title('Terjadi Kesalahan')->body($e->getMessage())->danger()->send();
                         }
                     })
+                    // Pastikan logic visibility ini sesuai dengan tombol print Anda
                     ->visible(fn(ProjectRequest $record): bool => !$record->rabClosing()->exists() && $record->status === 'approved'),
+
+                // Action::make('createClosingRab')
+                //     ->label('RAB Closing')
+                //     ->icon('heroicon-o-document-check')
+                //     ->color('warning')
+                //     ->action(function (ProjectRequest $record, $livewire) {
+                //         // Cek jika draft sudah ada
+                //         if ($record->rabClosing()->exists()) {
+                //             Notification::make()
+                //                 ->title('Informasi')
+                //                 ->body('Draft RAB Closing sudah ada. Silakan edit dari sana.')
+                //                 ->info()
+                //                 ->send();
+                //             return redirect()
+                //                 ->to(RabClosingResource::getUrl('edit', ['record' => $record->rabClosing->id]));
+                //         }
+
+                //         try {
+                //             DB::beginTransaction();
+
+                //             // --- PERUBAHAN DIMULAI DI SINI ---
+
+                //             // 1. Hitung total anggaran dari RAB awal (sudah benar)
+                //             $totalAnggaranAwal = $record->rencanaAnggaranBiaya()->sum('total');
+
+                //             // 2. Hitung total realisasi dari semua item realisasi yang terkait
+                //             $totalRealisasiAwal = $record->realisationRabItems()->sum('total');
+
+                //             // 3. Hitung selisih awal
+                //             $selisihAwal = $totalAnggaranAwal - $totalRealisasiAwal;
+                //             // dd($totalAnggaranAwal . " " . $totalRealisasiAwal . " " . $selisihAwal);
+
+                //             // 4. Buat record RabClosing dengan data yang sudah dihitung
+                //             $rabClosing = $record->rabClosing()->create([
+                //                 'closing_date'    => now(),
+                //                 'status'          => 'draft',
+                //                 'total_anggaran'  => $totalAnggaranAwal,
+                //                 'total_realisasi' => $totalRealisasiAwal, // Menggunakan total realisasi yang dihitung
+                //                 'selisih'         => $selisihAwal,         // Menggunakan selisih yang dihitung
+                //             ]);
+
+                //             // --- AKHIR PERUBAHAN ---
+
+                //             // Salin item dari RAB awal ke item RAB Closing (logika ini tetap sama)
+                //             foreach ($record->rencanaAnggaranBiaya as $itemAwal) {
+                //                 // Untuk bagian ini, kita hanya menyalin data ANGGARAN.
+                //                 // Data REALISASI akan diisi/diedit di form RAB Closing nanti.
+                //                 $rabClosing->items()->create([
+                //                     'description'    => $itemAwal->description,
+                //                     'qty'            => $itemAwal->qty_aset,
+                //                     'harga_satuan'   => $itemAwal->harga_sewa,
+                //                     'total_anggaran' => $itemAwal->total,
+                //                     // Anda bisa menambahkan kolom realisasi di sini jika perlu,
+                //                     // atau membiarkannya kosong untuk diisi nanti.
+                //                     // 'harga_realisasi' => 0,
+                //                     // 'total_realisasi' => 0,
+                //                 ]);
+                //             }
+
+                //             DB::commit();
+                //             Notification::make()
+                //                 ->title('Berhasil')
+                //                 ->body('Draft RAB Closing berhasil dibuat dengan data realisasi terkini.')
+                //                 ->success()
+                //                 ->send();
+                //             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
+                //         } catch (\Exception $e) {
+                //             DB::rollBack();
+                //             Notification::make()->title('Terjadi Kesalahan')->body($e->getMessage())->danger()->send();
+                //         }
+                //     })
+                //     ->visible(fn(ProjectRequest $record): bool => !$record->rabClosing()->exists() && $record->status === 'approved'),
 
                 Action::make('printClosingRab')
                     ->label('Print RAB Closing')
@@ -460,6 +520,7 @@ class ProjectRequestResource extends Resource
                     ->label('Bandingkan RAB')
                     ->icon('heroicon-o-scale')
                     ->color('info')
+                    ->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists() && $record->status === 'approved')
                     // Arahkan ke URL halaman kustom kita dengan query parameter
                     ->url(fn(ProjectRequest $record): string => ProjectFinanceComparison::getUrl(['project' => $record->id])),
 

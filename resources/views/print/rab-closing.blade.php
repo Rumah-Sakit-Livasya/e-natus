@@ -34,6 +34,15 @@
                 margin: 0 !important;
                 padding: 0 !important;
             }
+
+            /* PERUBAHAN DI SINI: CSS untuk page break dan menghindari break di dalam item lampiran */
+            .page-break-before {
+                page-break-before: always;
+            }
+
+            .attachment-item {
+                break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -48,10 +57,13 @@
     </div>
 
     <div class="print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
+        <!-- =================================================================== -->
+        <!-- BAGIAN 1: LAPORAN UTAMA (TIDAK ADA PERUBAHAN DI SINI) -->
+        <!-- =================================================================== -->
+
         <!-- HEADER -->
         <header class="flex justify-between items-center pb-4 border-b-4 border-orange-500">
             <div>
-                {{-- Ganti dengan logo Anda jika ada --}}
                 <h1 class="text-4xl font-bold text-gray-800">NVM</h1>
                 <p class="text-sm text-gray-500">NATUS VINCERE MEDIKA</p>
             </div>
@@ -147,8 +159,43 @@
             </div>
         </div>
 
-    </div>
 
+        <!-- =================================================================== -->
+        <!-- BAGIAN 2: HALAMAN LAMPIRAN (KODE BARU DI SINI) -->
+        <!-- =================================================================== -->
+
+        {{-- Menggabungkan semua item yang memiliki attachment --}}
+        @php
+            $allItemsWithAttachments = $record->operasionalItems
+                ->merge($record->feePetugasItems)
+                ->filter(function ($item) {
+                    return !empty($item->attachment);
+                });
+        @endphp
+
+        {{-- Hanya tampilkan bagian lampiran jika ada setidaknya satu attachment --}}
+        @if ($allItemsWithAttachments->isNotEmpty())
+
+            <!-- Elemen ini akan memaksa browser untuk memulai halaman baru saat mencetak -->
+            <div class="page-break-before"></div>
+
+            <div class="mt-12">
+                <h3 class="text-xl font-bold underline text-center mb-8">LAMPIRAN BUKTI TRANSAKSI</h3>
+
+                @foreach ($allItemsWithAttachments as $item)
+                    <!-- Container untuk setiap item lampiran -->
+                    <div class="attachment-item mb-8">
+                        <h4 class="font-semibold text-lg mb-2">Bukti untuk: {{ $item->description }}</h4>
+                        <div class="border p-2">
+                            <img src="{{ asset('storage/' . $item->attachment) }}"
+                                alt="Bukti untuk {{ $item->description }}" class="w-full h-auto">
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+    </div>
 </body>
 
 </html>
