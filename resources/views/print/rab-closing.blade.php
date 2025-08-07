@@ -35,8 +35,8 @@
                 padding: 0 !important;
             }
 
-            .page-break-before {
-                page-break-before: always;
+            .page {
+                page-break-after: always;
             }
 
             .attachment-item {
@@ -47,7 +47,6 @@
 </head>
 
 <body class="bg-gray-100">
-
     <div class="fixed top-4 right-4 no-print">
         <button onclick="window.print()"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg transition duration-200">
@@ -55,23 +54,16 @@
         </button>
     </div>
 
-    <div class="print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
-        <!-- =================================================================== -->
-        <!-- BAGIAN 1: LAPORAN UTAMA (TIDAK ADA PERUBAHAN) -->
-        <!-- =================================================================== -->
-
-        <header class="flex justify-between items-center pb-4 border-b-4 border-orange-500">
-            <div>
-                <h1 class="text-4xl font-bold text-gray-800">NVM</h1>
-                <p class="text-sm text-gray-500">NATUS VINCERE MEDIKA</p>
-            </div>
-            <div class="text-right">
-                <h2 class="text-2xl font-bold text-gray-700">Terpercaya & Utama</h2>
-            </div>
+    <!-- Page 1: Main Report -->
+    <div class="page print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
+        <header class="pb-4">
+            <img src="{{ asset('img/kop.png') }}" alt="Kop Surat" class="w-full">
         </header>
+
         <div class="text-center my-6">
             <h3 class="text-xl font-bold underline">RENCANA ANGGARAN BIAYA (CLOSING)</h3>
         </div>
+
         <div class="grid grid-cols-3 gap-x-4 gap-y-2 text-sm mb-6">
             <div class="font-semibold">Lokasi</div>
             <div class="col-span-2">: {{ $record->projectRequest->lokasi }}</div>
@@ -81,6 +73,7 @@
             <div class="col-span-2">: {{ $record->projectRequest->start_period->format('d') }} s/d
                 {{ $record->projectRequest->end_period->format('d M Y') }}</div>
         </div>
+
         <div class="mb-6">
             <h4 class="font-bold bg-yellow-400 text-gray-800 px-3 py-1 mb-2">Operasional MCU :</h4>
             <table class="w-full text-sm table-print">
@@ -102,6 +95,7 @@
                 </tbody>
             </table>
         </div>
+
         <div class="mb-8">
             <h4 class="font-bold bg-yellow-400 text-gray-800 px-3 py-1 mb-2">FEE PETUGAS MCU :</h4>
             <table class="w-full text-sm table-print">
@@ -123,6 +117,7 @@
                 </tbody>
             </table>
         </div>
+
         <div class="flex justify-end">
             <div class="w-1/2">
                 <table class="w-full text-sm">
@@ -146,27 +141,95 @@
                 </table>
             </div>
         </div>
+    </div>
 
-        <!-- =================================================================== -->
-        <!-- BAGIAN 2: HALAMAN LAMPIRAN (PERUBAHAN UTAMA DI SINI) -->
-        <!-- =================================================================== -->
+    <!-- Page 2: Justification -->
+    <div class="page print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
+        <header class="pb-4">
+            <img src="{{ asset('img/kop.png') }}" alt="Kop Surat" class="w-full">
+        </header>
 
-        @php
-            $allItemsWithAttachments = $record->operasionalItems
-                ->merge($record->feePetugasItems)
-                ->filter(fn($item) => !empty($item->attachment));
-        @endphp
+        <div class="mt-8">
+            <!-- DATA PESERTA -->
+            <div class="mb-6">
+                <h4 class="font-bold">Report Data Peserta MCU :</h4>
+                <p>ESTIMASI PESERTA AWAL : {{ $record->jumlah_peserta_awal }} PESERTA</p>
+                <p>PESERTA SETELAH CLOSED : {{ $record->jumlah_peserta_akhir }} PESERTA</p>
+            </div>
 
-        @if ($allItemsWithAttachments->isNotEmpty())
-            <div class="page-break-before"></div>
+            <!-- RAB AWAL -->
+            <div class="mb-6">
+                <h4 class="font-bold">RAB AWAL :</h4>
+                <p>Total RAB, Rp. {{ number_format($record->total_anggaran, 0, ',', '.') }},-</p>
+                <p>Nilai Invoice, Rp. {{ number_format($record->projectRequest->nilai_invoice, 0, ',', '.') }},-</p>
+                @php
+                    $marginAwal = $record->projectRequest->nilai_invoice - $record->total_anggaran;
+                @endphp
+                <p class="text-red-500">Margin, Rp. {{ number_format($marginAwal, 0, ',', '.') }},-</p>
+            </div>
+
+            <!-- DANA OPERASIONAL -->
+            <div class="mb-8">
+                <table class="w-1/2">
+                    <tbody class="bg-blue-100">
+                        <tr>
+                            <td class="px-3 py-1">Dana Operasional di Transfer oleh Natus,</td>
+                            <td class="px-3 py-1 font-semibold text-right">Rp</td>
+                            <td class="px-3 py-1 font-semibold text-right">
+                                {{ number_format($record->dana_operasional_transfer, 2, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-1">Pengeluaran Operasional Closed</td>
+                            <td class="px-3 py-1 font-semibold text-right">Rp</td>
+                            <td class="px-3 py-1 font-semibold text-right">
+                                {{ number_format($record->pengeluaran_operasional_closing, 2, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-1 text-blue-600 font-semibold">Sisa Dana Operasional (Dana Operasional
+                                Minus)</td>
+                            <td class="px-3 py-1 font-semibold text-right text-red-500">-Rp</td>
+                            <td class="px-3 py-1 font-semibold text-right text-red-500">
+                                {{ number_format(abs($record->sisa_dana_operasional), 2, ',', '.') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- JUSTIFIKASI -->
+            <div>
+                <h4 class="font-bold text-lg mb-2">Justifikasi :</h4>
+                <ol class="list-decimal list-inside space-y-2">
+                    @if ($record->justifikasi)
+                        @foreach (explode("\n", $record->justifikasi) as $line)
+                            @if (trim($line))
+                                <li>{{ $line }}</li>
+                            @endif
+                        @endforeach
+                    @else
+                        <li>Tidak ada justifikasi yang diberikan.</li>
+                    @endif
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3: Attachments -->
+    @php
+        $allItemsWithAttachments = $record->operasionalItems
+            ->merge($record->feePetugasItems)
+            ->filter(fn($item) => !empty($item->attachment));
+    @endphp
+
+    @if ($allItemsWithAttachments->isNotEmpty())
+        <div class="page print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
+            <header class="pb-4">
+                <img src="{{ asset('img/kop.png') }}" alt="Kop Surat" class="w-full">
+            </header>
 
             <div class="mt-12">
                 <h3 class="text-xl font-bold underline text-center mb-8">LAMPIRAN BUKTI TRANSAKSI</h3>
-
-                <!-- Menggunakan grid untuk menampilkan bukti secara berdampingan -->
-                <div class="grid grid-cols-3 gap-6">
+                <div class="grid grid-cols-2 gap-6">
                     @foreach ($allItemsWithAttachments as $item)
-                        <!-- Container untuk setiap item lampiran -->
                         <div class="attachment-item border rounded-lg p-3">
                             <h4 class="font-semibold text-sm mb-2">Bukti untuk: {{ $item->description }}</h4>
                             <div class="bg-gray-100 p-2 rounded">
@@ -177,9 +240,8 @@
                     @endforeach
                 </div>
             </div>
-        @endif
-
-    </div>
+        </div>
+    @endif
 </body>
 
 </html>
