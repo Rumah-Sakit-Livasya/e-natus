@@ -445,7 +445,16 @@ class ProjectRequestResource extends Resource
                             Notification::make()->title('Terjadi Kesalahan')->body($e->getMessage())->danger()->send();
                         }
                     })
-                    ->visible(fn(ProjectRequest $record): bool => $record->status === 'approved'),
+                    ->visible(fn(ProjectRequest $record): bool => !$record->rabClosing()->exists() && $record->status === 'approved'),
+
+                Action::make('printClosingRab')
+                    ->label('Print RAB Closing')
+                    ->icon('heroicon-o-printer')
+                    ->color('info')
+                    // Hanya tampilkan jika relasi rabClosing ADA
+                    ->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists())
+                    // Arahkan ke route yang akan kita buat nanti
+                    ->url(fn(ProjectRequest $record): string => route('rab-closing.print', ['record' => $record->rabClosing->id]), shouldOpenInNewTab: true),
 
                 Tables\Actions\Action::make('compare')
                     ->label('Bandingkan RAB')

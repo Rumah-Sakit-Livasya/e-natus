@@ -9,226 +9,180 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
-use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
-use App\Filament\Pages\CompareRab;
 
 class RabClosingResource extends Resource
 {
     protected static ?string $model = RabClosing::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
     protected static ?string $navigationGroup = 'Project';
-    protected static ?int $navigationSort = 4;
+
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                // Grid layout tidak berubah
-                // Gunakan Grid untuk mengatur layout multi-baris
-                Forms\Components\Grid::make()
-                    ->columns(12) // Tentukan jumlah total kolom dasar untuk grid
-                    ->schema([
-                        // --- BARIS PERTAMA --- (Tidak ada perubahan)
-                        Placeholder::make('project_name')
-                            ->label('Proyek')
-                            ->content(fn(?RabClosing $record): string => $record?->projectRequest->name ?? '-')
-                            ->columnSpan(4),
+        return $form->schema([
+            Section::make('Informasi Umum')
+                ->schema([
+                    Placeholder::make('project_name')
+                        ->label('Proyek')
+                        ->content(fn(?RabClosing $record): string => $record?->projectRequest->name ?? '-'),
+                    DatePicker::make('closing_date')->required()->label('Tanggal Closing'),
+                    Select::make('status')->options(['draft' => 'Draft', 'final' => 'Final'])->disabled()->required(),
+                ])->columns(3),
 
-                        DatePicker::make('closing_date')
-                            ->required()->label('Tanggal Closing')
-                            ->columnSpan(4),
+            Section::make('Operasional MCU')
+                ->schema([
+                    Repeater::make('operasionalItems')
+                        ->relationship()
+                        ->label('Item Operasional')
+                        ->schema([
+                            // Kita ubah layout kolomnya
+                            TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
+                            TextInput::make('price')->label('Harga')->numeric()->prefix('Rp')->required()->columnSpan(1),
 
-                        Select::make('status')
-                            ->options(['draft' => 'Draft', 'final' => 'Final'])
-                            ->disabled()->required()
-                            ->columnSpan(4),
+                            // TAMBAHKAN KOMPONEN FILE UPLOAD DI SINI
+                            FileUpload::make('attachment')
+                                ->label('Bukti/Struk')
+                                ->disk('public') // Menyimpan di storage/app/public
+                                ->directory('rab-attachments/operasional') // Membuat folder khusus
+                                ->columnSpan(2),
 
-                        // --- BARIS KEDUA --- (PERBAIKAN DI SINI)
-                        TextInput::make('total_anggaran')
-                            ->label('Anggaran Awal Proyek')
-                            ->prefix('Rp')
-                            ->readOnly()
-                            ->formatStateUsing(fn(?string $state) => number_format((float) $state, 0, ',', '.'))
-                            ->dehydrateStateUsing(fn($state) => preg_replace('/[^\d]/', '', $state))
-                            ->columnSpan(3),
+                        ])
+                        ->columns(5) // Total kolom tetap 5
+                        ->reorderable(false)->addActionLabel('Tambah Item Operasional')
+                        ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
+                ]),
 
-                        TextInput::make('total_realisasi')
-                            ->label('Total Realisasi')
-                            ->readOnly()
-                            ->prefix('Rp')
-                            ->formatStateUsing(fn(?string $state) => number_format((float) $state, 0, ',', '.'))
-                            ->dehydrateStateUsing(fn($state) => preg_replace('/[^\d]/', '', $state))
-                            ->columnSpan(3),
+            Section::make('Fee Petugas MCU')
+                ->schema([
+                    Repeater::make('feePetugasItems')
+                        ->relationship()
+                        ->label('Item Fee Petugas')
+                        ->schema([
+                            TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
+                            TextInput::make('price')->label('Harga')->numeric()->prefix('Rp')->required()->columnSpan(1),
 
-                        TextInput::make('selisih')
-                            ->label('Selisih')
-                            ->readOnly()
-                            ->prefix('Rp')
-                            ->formatStateUsing(fn(?string $state) => number_format((float) $state, 0, ',', '.'))
-                            ->dehydrateStateUsing(fn($state) => preg_replace('/[^\d]/', '', $state))
-                            ->columnSpan(3),
+                            // TAMBAHKAN KOMPONEN FILE UPLOAD DI SINI JUGA
+                            FileUpload::make('attachment')
+                                ->label('Bukti/Struk')
+                                ->disk('public')
+                                ->directory('rab-attachments/fee') // Folder berbeda untuk kerapian
+                                ->columnSpan(2),
+                        ])
+                        ->columns(5) // Total kolom tetap 5
+                        ->reorderable(false)->addActionLabel('Tambah Item Fee')
+                        ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
+                ]),
 
-                        TextInput::make('total_anggaran_closing')
-                            ->label('Total Anggaran Closing')
-                            ->readOnly()
-                            ->prefix('Rp')
-                            ->formatStateUsing(fn(?string $state) => number_format((float) $state, 0, ',', '.'))
-                            ->dehydrateStateUsing(fn($state) => preg_replace('/[^\d]/', '', $state))
-                            ->columnSpan(3),
+            // Kalkulasi Total Utama
+            Section::make('Kalkulasi Total')
+                ->schema([
+                    TextInput::make('total_anggaran_closing')->label('Total Biaya (Closing)')->numeric()->prefix('Rp')->readOnly(),
+                    TextInput::make('nilai_invoice_closing')->label('Nilai Invoice')->numeric()->prefix('Rp')
+                        ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
+                    TextInput::make('margin_closing')->label('Margin')->numeric()->prefix('Rp')->readOnly(),
+                ])->columns(3),
+
+            // Laporan dan Justifikasi (dari halaman 2)
+            Section::make('Laporan dan Justifikasi')
+                ->collapsible()
+                ->schema([
+                    Forms\Components\Grid::make(2)->schema([
+                        Section::make('Data Peserta MCU')->schema([
+                            TextInput::make('jumlah_peserta_awal')->numeric()->label('Estimasi Peserta Awal'),
+                            TextInput::make('jumlah_peserta_akhir')->numeric()->label('Peserta Setelah Closed'),
+                        ]),
+                        Section::make('RAB Awal')->schema([
+                            Placeholder::make('total_rab_awal_placeholder')->label('Total RAB Awal')
+                                ->content(fn(?RabClosing $record) => 'Rp ' . number_format($record->projectRequest->rencanaAnggaranBiaya()->sum('total'), 0, ',', '.')),
+                            Placeholder::make('nilai_invoice_awal_placeholder')->label('Nilai Invoice Awal')
+                                ->content(fn(?RabClosing $record) => 'Rp ' . number_format($record->projectRequest->nilai_invoice, 0, ',', '.')),
+                        ]),
                     ]),
-
-                // Repeater yang sudah disederhanakan
-                Repeater::make('items')
-                    ->label('Item Anggaran Closing')
-                    ->relationship()
-                    ->columnSpanFull()
-                    // Hanya butuh satu pemicu utama di sini
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(function (Get $get, Set $set, ?array $state) {
-                        // Panggil fungsi kalkulasi utama
-                        self::updateAllTotals($get, $set, $state);
-                    })
-                    ->schema([
-                        TextInput::make('description')->required()->columnSpan(2),
-                        TextInput::make('qty')
-                            ->numeric()->required()
-                            // Perubahan di sini akan ditangkap oleh Repeater
-                            ->live(onBlur: true),
-                        TextInput::make('harga_satuan')
-                            ->label('Harga Anggaran Closing')->prefix('Rp')->required()
-                            ->mask(RawJs::make('$money($input)'))->stripCharacters(',')
-                            // Perubahan di sini juga akan ditangkap oleh Repeater
-                            ->live(onBlur: true),
-                        // Field ini akan di-update oleh kalkulasi
-                        TextInput::make('total_anggaran')
-                            ->label('Total Anggaran Item')->prefix('Rp')->readOnly()
-                            ->formatStateUsing(fn(?string $state) => number_format(self::cleanMoneyValue($state), 0, ',', '.'))
-                            ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state)),
-                    ])
-                    ->columns(5)
-                    ->reorderableWithButtons()
-                    ->addActionLabel('Tambah Item')
-                    ->deleteAction(fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation())
-                    ->disabled(fn(?RabClosing $record) => $record?->status === 'final'),
-            ]);
+                    Forms\Components\Grid::make(2)->schema([
+                        Section::make('Dana Operasional')->schema([
+                            TextInput::make('dana_operasional_transfer')->numeric()->prefix('Rp')->label('Dana di Transfer oleh Natus')
+                                ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
+                            TextInput::make('pengeluaran_operasional_closing')->numeric()->prefix('Rp')->label('Pengeluaran Operasional Closed')->readOnly(),
+                            TextInput::make('sisa_dana_operasional')->numeric()->prefix('Rp')->label('Sisa/Minus Dana')->readOnly(),
+                        ]),
+                        Textarea::make('justifikasi')->label('Justifikasi Perbedaan RAB')->rows(8),
+                    ]),
+                ]),
+        ]);
     }
 
     private static function cleanMoneyValue(?string $value): float
     {
-        return (float) preg_replace('/[^\d]/', '', $value ?? '0');
+        return (float) preg_replace('/[^\d.]/', '', $value ?? '0');
     }
 
     /**
      * Fungsi tunggal untuk menghitung dan memperbarui SEMUA nilai.
      */
-    private static function updateAllTotals(Get $get, Set $set, ?array $state): void
+    private static function updateAllTotals(Get $get, Set $set): void
     {
-        if ($state === null) {
-            return;
-        }
+        // 1. Hitung total dari kedua repeater
+        $operasionalItems = $get('operasionalItems') ?? [];
+        $feePetugasItems = $get('feePetugasItems') ?? [];
 
-        $items = $state; // Ambil state repeater saat ini
-        $grandTotalAnggaranClosing = 0;
+        $totalOperasional = array_reduce($operasionalItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['price']), 0);
+        $totalFee = array_reduce($feePetugasItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['price']), 0);
 
-        // 1. Loop untuk MENGHITUNG ULANG total per item dan MENJUMLAHKAN grand total
-        foreach ($items as $key => $item) {
-            $qty = (int) ($item['qty'] ?? 0);
-            $hargaSatuan = self::cleanMoneyValue($item['harga_satuan']);
-            $totalItem = $qty * $hargaSatuan;
+        $totalBiayaClosing = $totalOperasional + $totalFee;
 
-            // Simpan total per item yang baru dihitung ke dalam array
-            $items[$key]['total_anggaran'] = $totalItem;
+        // 2. Hitung margin
+        $nilaiInvoice = self::cleanMoneyValue($get('nilai_invoice_closing'));
+        $margin = $nilaiInvoice - $totalBiayaClosing;
 
-            // Tambahkan ke grand total
-            $grandTotalAnggaranClosing += $totalItem;
-        }
+        // 3. Hitung sisa dana operasional
+        $danaTransfer = self::cleanMoneyValue($get('dana_operasional_transfer'));
+        $sisaDana = $danaTransfer - $totalOperasional; // Sisa dana hanya dihitung dari biaya operasional
 
-        // Ambil nilai realisasi dari form state (yang dimuat dari DB)
-        $totalRealisasi = self::cleanMoneyValue($get('total_realisasi'));
-
-        // Hitung selisihnya
-        $selisih = $grandTotalAnggaranClosing - $totalRealisasi;
-
-        // 2. SET ULANG semua nilai yang relevan dalam satu operasi
-        $set('items', $items); // Update repeater dengan total per item yang benar
-        $set('total_anggaran_closing', $grandTotalAnggaranClosing); // Update grand total
-        $set('selisih', $selisih); // Update selisih
-    }
-
-    /**
-     * Membersihkan data form sebelum disimpan untuk mencegah error.
-     */
-    public static function mutateFormDataBeforeCreate(array $data): array
-    {
-        return self::cleanAllMoneyFields($data);
-    }
-
-    public static function mutateFormDataBeforeSave(array $data): array
-    {
-        return self::cleanAllMoneyFields($data);
-    }
-
-    protected static function cleanAllMoneyFields(array $data): array
-    {
-        // Tetap bersihkan semua field uang sebagai pengaman
-        $moneyFields = ['total_anggaran_closing', 'total_realisasi', 'selisih'];
-        foreach ($moneyFields as $field) {
-            if (isset($data[$field])) {
-                $data[$field] = self::cleanMoneyValue($data[$field]);
-            }
-        }
-        return $data;
+        // 4. Set semua nilai yang dihitung
+        $set('total_anggaran_closing', $totalBiayaClosing);
+        $set('margin_closing', $margin);
+        $set('pengeluaran_operasional_closing', $totalOperasional);
+        $set('sisa_dana_operasional', $sisaDana);
     }
 
     public static function table(Table $table): Table
     {
+        // Fungsi table() Anda sudah cukup baik dan tidak perlu diubah.
         return $table
             ->columns([
-                TextColumn::make('projectRequest.name')
-                    ->searchable()->sortable()->label('Nama Proyek'),
-                TextColumn::make('closing_date')
-                    ->date('d M Y')->sortable()->label('Tanggal Closing'),
-                TextColumn::make('total_anggaran_closing') // Tampilkan anggaran closing
-                    ->label('Anggaran Closing')->numeric()->money('IDR')->sortable(),
-                TextColumn::make('total_realisasi')
-                    ->label('Total Realisasi')->numeric()->money('IDR')->sortable(),
-                TextColumn::make('selisih')
-                    ->label('Selisih')->numeric()->money('IDR')->sortable()
-                    ->color(fn(int $state): string => $state >= 0 ? 'success' : 'danger'),
+                TextColumn::make('projectRequest.name')->searchable()->sortable()->label('Nama Proyek'),
+                TextColumn::make('closing_date')->date('d M Y')->sortable()->label('Tanggal Closing'),
+                TextColumn::make('total_anggaran_closing')->label('Total Biaya Closing')->numeric()->money('IDR')->sortable(),
+                TextColumn::make('margin_closing')->label('Margin')->numeric()->money('IDR')->sortable(),
+                TextColumn::make('status')->badge(),
             ])
-            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('compare')
-                    ->label('Bandingkan')->icon('heroicon-o-scale')
-                    ->url(fn(RabClosing $record): string => CompareRab::getUrl(['record' => $record->project_request_id]))
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\ViewAction::make(),
             ]);
     }
 
+    // Fungsi lainnya (getRelations, getPages) bisa tetap sama.
     public static function getRelations(): array
     {
         return [];
     }
-
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListRabClosings::route('/'),
-            // 'create' => Pages\CreateRabClosing::route('/create'), // Dihilangkan karena dibuat dari Project Request
             'edit' => Pages\EditRabClosing::route('/{record}/edit'),
+            // 'view' => Pages\ViewRabClosing::route('/{record}'),
         ];
     }
 }
