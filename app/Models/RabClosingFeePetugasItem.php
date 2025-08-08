@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class RabClosingFeePetugasItem extends Model
 {
@@ -20,5 +21,10 @@ class RabClosingFeePetugasItem extends Model
     public function rabClosing()
     {
         return $this->belongsTo(RabClosing::class);
+    }
+
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(RabAttachment::class, 'attachable');
     }
 }

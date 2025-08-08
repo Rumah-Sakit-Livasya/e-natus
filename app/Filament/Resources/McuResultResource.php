@@ -246,7 +246,6 @@ class McuResultResource extends Resource
                             Forms\Components\TextInput::make('hasil_laboratorium.penanggung_jawab')->label('Penanggung Jawab')->default('ADRIAN SUHENDRA, dr., Sp.PK.'),
                         ]),
 
-                    // STEP BARU DITAMBAHKAN DI SINI
                     Forms\Components\Wizard\Step::make('Status Kesehatan')
                         ->schema([
                             Forms\Components\Section::make('A. Tes Kebugaran Jasmani')
@@ -266,7 +265,6 @@ class McuResultResource extends Resource
                                 ]),
                         ]),
 
-                    // STEP BARU DITAMBAHKAN DI SINI
                     Forms\Components\Wizard\Step::make('Hasil Pemeriksaan Penunjang Lainnya')
                         ->schema([
                             Forms\Components\Section::make('A. Pemeriksaan Radiologi')

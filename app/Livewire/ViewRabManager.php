@@ -2,20 +2,17 @@
 
 namespace App\Livewire;
 
+// Ganti namespace jika perlu, misal: App\Filament\Widgets
+// Hapus use statement yang tidak perlu seperti RealisationRabItem
+
 use App\Models\ProjectRequest;
-use App\Models\RealisationRabItem;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Notifications\Notification;
-use Filament\Support\RawJs;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 // Implementasikan HasForms dan HasActions
@@ -25,138 +22,81 @@ class ViewRabManager extends Component implements HasForms, HasActions
     use InteractsWithForms;
     use InteractsWithActions;
 
+    // Terima record ProjectRequest dari parent
     public ProjectRequest $project;
 
-    // Properti `$showCreateForm` dan properti form lainnya tidak diperlukan lagi
+    // --- DEKLARASIKAN PROPERTI PUBLIK UNTUK VIEW ---
+    // Properti ini akan otomatis tersedia sebagai variabel di file Blade.
+    public Collection $rabAwalItems;
+    public Collection $rabClosingOperasionalItems;
+    public Collection $rabClosingFeeItems;
+    public float $totalRabAwal = 0;
+    public float $totalRabClosing = 0;
+    public float $selisih = 0;
 
+    /**
+     * Method mount() dieksekusi saat komponen pertama kali dimuat.
+     * Ini adalah "konstruktor" untuk komponen.
+     */
     public function mount(ProjectRequest $project): void
     {
         $this->project = $project;
+
+        // Panggil method untuk mengisi data agar mount() tetap bersih
+        $this->loadData();
     }
 
     /**
-     * Ini adalah method utama untuk mendefinisikan semua tombol ("Actions")
-     * yang akan ditampilkan di view.
+     * Method helper untuk mengambil dan menghitung semua data.
+     */
+    public function loadData(): void
+    {
+        // Pastikan relasi sudah di-load untuk menghindari N+1 query problem
+        $this->project->loadMissing([
+            'rencanaAnggaranBiaya',
+            'rabClosing.operasionalItems',
+            'rabClosing.feePetugasItems'
+        ]);
+
+        // Isi properti dengan data yang sudah diambil.
+        $this->rabAwalItems = $this->project->rencanaAnggaranBiaya;
+
+        if ($this->project->rabClosing) {
+            $this->rabClosingOperasionalItems = $this->project->rabClosing->operasionalItems;
+            $this->rabClosingFeeItems = $this->project->rabClosing->feePetugasItems;
+        } else {
+            // Jika tidak ada RAB Closing, pastikan koleksinya kosong agar tidak error
+            $this->rabClosingOperasionalItems = collect();
+            $this->rabClosingFeeItems = collect();
+        }
+
+        // Lakukan kalkulasi dan isi properti total
+        $this->totalRabAwal = $this->rabAwalItems->sum('total');
+
+        if ($this->project->rabClosing) {
+            $this->totalRabClosing = $this->project->rabClosing->total_anggaran_closing;
+        }
+
+        $this->selisih = $this->totalRabClosing - $this->totalRabAwal;
+    }
+
+    /**
+     * Aksi tidak lagi dibutuhkan di sini karena perbandingan adalah tampilan statis.
+     * Anda bisa menambahkan tombol print di sini jika mau.
      */
     public function getActions(): array
     {
-        return [
-            // Aksi untuk membuka modal tambah realisasi
-            $this->createRealisasiAction(),
-
-            // Aksi untuk mencetak
-            $this->printRealisasiAction(),
-            $this->printRabAction(),
-        ];
+        // Kosongkan atau tambahkan tombol print jika perlu
+        return [];
     }
 
-    // Saya memecah setiap aksi menjadi method sendiri agar lebih rapi
-
-    protected function createRealisasiAction(): Action
-    {
-        return Action::make('createRealisasi')
-            ->label('Tambah Realisasi')
-            ->color('success')
-            ->icon('heroicon-o-plus-circle')
-            ->size('sm')
-            // Definisikan form yang akan muncul di dalam modal
-            ->form([
-                Select::make('rencana_anggaran_biaya_id')
-                    ->label('Item RAB Awal')
-                    ->options($this->project->rencanaAnggaranBiaya()->pluck('description', 'id')->toArray())
-                    ->searchable()
-                    ->required(),
-                TextInput::make('description')
-                    ->label('Deskripsi Realisasi')
-                    ->helperText('Isi deskripsi spesifik untuk realisasi ini, misal: "Sewa AC hari pertama".')
-                    ->required(),
-                TextInput::make('qty')->label('Jumlah')->numeric()->required(),
-                TextInput::make('harga')
-                    ->label('Harga')
-                    ->required()
-                    ->prefix('Rp')
-                    ->mask(RawJs::make('$money($input)'))
-                    ->stripCharacters(','),
-                DatePicker::make('tanggal_realisasi')->label('Tanggal Realisasi')->default(now())->required(),
-                Textarea::make('keterangan')->label('Keterangan')->rows(2)->nullable(),
-            ])
-            // Logika yang dijalankan saat tombol "Simpan" di modal diklik
-            ->action(function (array $data) {
-                // Ambil deskripsi dari item RAB awal sebagai fallback jika field 'description' tidak ada
-                $itemRAB = $this->project->rencanaAnggaranBiaya()->find($data['rencana_anggaran_biaya_id']);
-
-                RealisationRabItem::create([
-                    'project_request_id' => $this->project->id,
-                    'rencana_anggaran_biaya_id' => $data['rencana_anggaran_biaya_id'],
-                    'description' => $data['description'] ?? $itemRAB->description, // Gunakan deskripsi dari form
-                    'qty' => $data['qty'],
-                    'harga' => $data['harga'],
-                    'total' => (float) $data['qty'] * (float) $data['harga'],
-                    'tanggal_realisasi' => $data['tanggal_realisasi'],
-                    'keterangan' => $data['keterangan'] ?? null,
-                    'status' => 'draft',
-                ]);
-
-                Notification::make()
-                    ->title('Realisasi berhasil ditambahkan')
-                    ->success()
-                    ->send();
-            });
-    }
-
-    protected function printRealisasiAction(): Action
-    {
-        return Action::make('printRealisasi')
-            ->label('Cetak Realisasi')
-            ->icon('heroicon-o-printer')
-            ->color('gray')
-            ->size('sm')
-            ->url(route('print-realisasi-rab', $this->project))
-            ->openUrlInNewTab();
-    }
-
-    protected function printRabAction(): Action
-    {
-        return Action::make('printRab')
-            ->label('Cetak RAB')
-            ->icon('heroicon-o-printer')
-            ->color('gray')
-            ->size('sm')
-            ->url(route('print-rab', $this->project))
-            ->openUrlInNewTab();
-    }
-
-    // --- PERUBAHAN UTAMA ADA DI SINI ---
+    /**
+     * Method render() yang akan menampilkan file Blade.
+     * Karena properti sudah publik, kita tidak perlu mengirimnya secara manual.
+     * Livewire akan otomatis menyediakannya untuk view.
+     */
     public function render(): View
     {
-        // 1. Ambil data untuk Tabel Anggaran (RAB Awal)
-        $rabItems = $this->project->rencanaAnggaranBiaya;
-        $totalAnggaran = $rabItems->sum('total');
-
-        // 2. Ambil data untuk Tabel Realisasi
-        // Pastikan relasi 'realisationRabItems' ada di model ProjectRequest Anda
-        $realisasiItems = $this->project->realisationRabItems()->with('rabItem')->get();
-        $totalRealisasi = $realisasiItems->sum('total');
-
-        // 3. Hitung data summary lainnya
-        $nilaiInvoice = $this->project->nilai_invoice;
-        $selisih = $totalAnggaran - $totalRealisasi;
-        $margin = $nilaiInvoice - $totalAnggaran;
-
-        // 4. Kirim SEMUA data ke view
-        return view('livewire.view-rab-manager', [
-            // Data untuk Tabel 1: Anggaran
-            'rabItems' => $rabItems,
-            'totalAnggaran' => $totalAnggaran,
-
-            // Data untuk Tabel 2: Realisasi
-            'realisasiItems' => $realisasiItems,
-            'totalRealisasi' => $totalRealisasi,
-
-            // Data Summary
-            'nilaiInvoice' => $nilaiInvoice,
-            'selisih' => $selisih,
-            'margin' => $margin,
-        ]);
+        return view('livewire.view-rab-manager');
     }
 }

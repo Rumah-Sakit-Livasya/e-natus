@@ -11,7 +11,7 @@ use App\Models\Aset;
 use App\Models\Client;
 use App\Models\ProjectRequest;
 use Carbon\Carbon;
-use Filament\Forms\Components\{DatePicker, Repeater, Select, Textarea, TextInput};
+use Filament\Forms\Components\{DatePicker, Repeater, Section, Select, Textarea, TextInput};
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -23,6 +23,7 @@ use Filament\Pages\Route;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\{Action};
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Livewire\Livewire;
@@ -39,219 +40,98 @@ class ProjectRequestResource extends Resource
 
     public static function form(Form $form): Form
     {
-        // ... (seluruh fungsi form() tidak perlu diubah, karena sudah benar)
         return $form
             ->schema([
+                // Field-field informasi umum tidak perlu diubah
                 Select::make('client_id')
                     ->label('Klien')
-                    ->options(Client::pluck('name', 'id')
-                        ->toArray())
+                    ->options(Client::pluck('name', 'id')->toArray())
                     ->searchable()
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $client = Client::with('region')
-                            ->find($state);
+                        $client = Client::with('region')->find($state);
                         if ($client) {
                             $set('pic', $client->pic);
                             $set('lokasi', $client->region?->name);
                         }
                     })
                     ->required()
-                    ->createOptionForm([TextInput::make('name')
-                        ->label('Nama Klien')
-                        ->required(), TextInput::make('pic')
-                        ->label('PIC')
-                        ->required(), Select::make('region_id')
-                        ->label('Wilayah')
-                        ->options(\App\Models\Region::pluck('name', 'id'))
-                        ->searchable()
-                        ->nullable(), TextInput::make('phone')
-                        ->label('Nomor Telepon')
-                        ->tel(), TextInput::make('email')
-                        ->label('Email')
-                        ->email(),])
-                    ->createOptionUsing(function (array $data) {
-                        return Client::create(['name' => $data['name'], 'pic' => $data['pic'], 'region_id' => $data['region_id'] ?? null, 'phone' => $data['phone'] ?? null, 'email' => $data['email'] ?? null,])
-                            ->id;
-                    }),
+                    ->createOptionForm([TextInput::make('name')->label('Nama Klien')->required(), TextInput::make('pic')->label('PIC')->required(), Select::make('region_id')->label('Wilayah')->options(\App\Models\Region::pluck('name', 'id'))->searchable()->nullable(), TextInput::make('phone')->label('Nomor Telepon')->tel(), TextInput::make('email')->label('Email')->email(),])
+                    ->createOptionUsing(fn(array $data) => Client::create(['name' => $data['name'], 'pic' => $data['pic'], 'region_id' => $data['region_id'] ?? null, 'phone' => $data['phone'] ?? null, 'email' => $data['email'] ?? null,])->id),
 
-                TextInput::make('name')
-                    ->label('Nama Proyek')
-                    ->required(),
+                TextInput::make('name')->label('Nama Proyek')->required(),
 
-                Select::make('employee_ids')
-                    ->label('PIC')
-                    ->multiple()
-                    ->searchable()
-                    ->preload()
-                    ->options(\App\Models\Employee::join('users', 'employees.user_id', '=', 'users.id')
-                        ->pluck('users.name', 'employees.id')
-                        ->toArray())
-                    ->required()
-                    ->createOptionForm([TextInput::make('name')
-                        ->label('Nama Pegawai')
-                        ->required(),])
-                    ->createOptionUsing(function (array $data) {
-                        return \App\Models\SDM::create(['name' => $data['name'],])
-                            ->id;
-                    }),
+                Select::make('employee_ids')->label('PIC')->multiple()->searchable()->preload()->options(\App\Models\Employee::join('users', 'employees.user_id', '=', 'users.id')->pluck('users.name', 'employees.id')->toArray())->required()->createOptionForm([TextInput::make('name')->label('Nama Pegawai')->required(),])->createOptionUsing(fn(array $data) => \App\Models\SDM::create(['name' => $data['name'],])->id),
 
-                Select::make('sdm_ids')
-                    ->label('SDM')
-                    ->multiple()
-                    ->searchable()
-                    ->preload()
-                    ->options(\App\Models\SDM::pluck('name', 'id')
-                        ->toArray())
-                    ->required()
-                    ->createOptionForm([TextInput::make('name')
-                        ->label('Nama SDM')
-                        ->required(),])
-                    ->createOptionUsing(function (array $data) {
-                        return \App\Models\SDM::create(['name' => $data['name'],])
-                            ->id;
-                    }),
+                Select::make('sdm_ids')->label('SDM')->multiple()->searchable()->preload()->options(\App\Models\SDM::pluck('name', 'id')->toArray())->required()->createOptionForm([TextInput::make('name')->label('Nama SDM')->required(),])->createOptionUsing(fn(array $data) => \App\Models\SDM::create(['name' => $data['name'],])->id),
 
-                TextInput::make('jumlah')
-                    ->label('Jumlah Peserta')
-                    ->numeric()
-                    ->required(),
+                TextInput::make('jumlah')->label('Jumlah Peserta')->numeric()->required(),
+                TextInput::make('lokasi')->label('Lokasi')->required(),
+                DatePicker::make('start_period')->label('Periode Mulai')->required(),
+                DatePicker::make('end_period')->label('Periode Selesai')->required(),
 
-                TextInput::make('lokasi')
-                    ->label('Lokasi')
-                    ->required(),
+                Select::make('asset_ids')->label('Aset Terkait')->multiple()->searchable()->preload()->options(fn() => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
+                    $parts = explode('/', $asset->code);
+                    $index = end($parts);
+                    return [$asset->id => "{$asset->custom_name} - {$asset->lander->code}$index"];
+                })->filter(fn($label) => !is_null($label))->toArray())->createOptionForm(AsetResource::getAsetFormFields())->createOptionUsing(function (array $data) {
+                    if (empty($data['code'])) {
+                        unset($data['code']);
+                    }
+                    $aset = Aset::create($data);
+                    Notification::make()->title('Aset berhasil ditambahkan')->body("Aset \"{$aset->custom_name}\" telah dibuat.")->success()->send();
+                    return $aset->getKey();
+                }),
 
-                DatePicker::make('start_period')
-                    ->label('Periode Mulai')
-                    ->required()
-                    ->minDate(Carbon::today())
-                    ->reactive()
-                    ->afterStateUpdated(function (Get $get, Set $set) {
-                        self::updateAllTotalsInRepeater($get, $set);
-                    }),
+                Select::make('status')->label('Status')->options(['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'done' => 'Selesai',])->default('pending')->disabled()->dehydrated()->required(),
 
-                DatePicker::make('end_period')
-                    ->label('Periode Selesai')
-                    ->required()
-                    ->minDate(Carbon::today())
-                    ->reactive()
-                    ->afterStateUpdated(function (Get $get, Set $set) {
-                        self::updateAllTotalsInRepeater($get, $set);
-                    }),
+                // --- PERUBAHAN UTAMA FORM DIMULAI DI SINI ---
 
-                Select::make('asset_ids')
-                    ->label('Aset Terkait')
-                    ->multiple()
-                    ->searchable()
-                    ->preload()
-                    ->options(fn() => Aset::where('status', 'available')
-                        ->get()
-                        ->mapWithKeys(function ($asset) {
-                            $parts = explode('/', $asset->code);
-                            $index = end($parts);
-                            return [$asset->id => "{$asset->custom_name} - {$asset->lander->code}$index"];
-                        })
-                        ->filter(fn($label) => !is_null($label))
-                        ->toArray())
-                    ->createOptionForm(AsetResource::getAsetFormFields())
-                    ->createOptionUsing(function (array $data) {
-                        if (empty($data['code'])) {
-                            unset($data['code']);
-                        }
-                        $aset = Aset::create($data);
-                        Notification::make()
-                            ->title('Aset berhasil ditambahkan')
-                            ->body("Aset \"{$aset->custom_name}\" telah dibuat.")
-                            ->success()
-                            ->send();
-                        return $aset->getKey();
-                    }),
-
-                Select::make('status')
-                    ->label('Status')
-                    ->options(['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'done' => 'Selesai',])
-                    ->default('pending')
-                    ->disabled()
-                    ->dehydrated()
-                    ->required(),
-
-                Repeater::make('rencanaAnggaranBiaya')
-                    ->label('Rencana Anggaran Biaya')
-                    ->relationship()
+                // Hapus Repeater lama dan ganti dengan dua Section baru
+                Section::make('Rencana Biaya Operasional')
+                    ->collapsible()
                     ->schema([
-                        TextInput::make('description')
-                            ->label('Deskripsi')
-                            ->required()
-                            ->placeholder('Misalnya: Sewa AC Standing'),
+                        Repeater::make('rabOperasionalItems') // Gunakan nama relasi baru
+                            ->relationship()
+                            ->label(false)
+                            ->schema([
+                                TextInput::make('description')->label('Deskripsi')->required()->placeholder('Misalnya: Sewa Mobil Box'),
+                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()->live()->debounce(500)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()->live()->debounce(500)->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                TextInput::make('total')->label('Total')->prefix('Rp')->numeric(0, ',', '.')->disabled()->dehydrated()->required(),
+                            ])->columns(4)->createItemButtonLabel('Tambah Item Operasional'),
+                    ]),
 
-                        TextInput::make('qty_aset')
-                            ->label('Jumlah')
-                            ->numeric()
-                            ->required()
-                            ->live()
-                            ->debounce(500)
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                Section::make('Rencana Biaya Fee')
+                    ->collapsible()
+                    ->schema([
+                        Repeater::make('rabFeeItems') // Gunakan nama relasi baru
+                            ->relationship()
+                            ->label(false)
+                            ->schema([
+                                TextInput::make('description')->label('Deskripsi')->required()->placeholder('Misalnya: Fee Dokter GP'),
+                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()->live()->debounce(500)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()->live()->debounce(500)->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                TextInput::make('total')->label('Total')->prefix('Rp')->numeric(0, ',', '.')->disabled()->dehydrated()->required(),
+                            ])->columns(4)->createItemButtonLabel('Tambah Item Fee'),
+                    ]),
 
-                        TextInput::make('harga_sewa')
-                            ->label('Price')
-                            ->numeric()
-                            ->required()
-                            ->live()
-                            ->debounce(500)
-                            ->mask(RawJs::make('$money($input)'))
-                            ->stripCharacters(',')
-                            ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
-                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
-
-                        TextInput::make('total')
-                            ->label('Total')
-                            ->prefix('Rp')
-                            ->numeric(0, ',', '.')
-                            ->disabled()
-                            ->dehydrated()
-                            ->required(),
-                    ])
-                    ->columns(4)
-                    ->columnSpanFull()
-                    ->createItemButtonLabel('Tambah Item RAB'),
-
-                TextInput::make('nilai_invoice')
-                    ->label('Nilai Invoice')
-                    ->required()
-                    ->mask(RawJs::make('$money($input)'))
-                    ->stripCharacters(',')
-                    ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
-
-                DatePicker::make('due_date')
-                    ->label('Jatuh Tempo')
-                    ->required(),
-
-                Select::make('status_pembayaran')
-                    ->label('Status Pembayaran')
-                    ->options(['unpaid' => 'Unpaid', 'partial paid' => 'Partial Paid', 'paid' => 'Paid',])
-                    ->disabled()
-                    ->dehydrated()
-                    ->required()
-                    ->default('unpaid'),
-
-                Textarea::make('keterangan')
-                    ->label('Keterangan')
-                    ->nullable(),
+                // Field-field di bawahnya tidak perlu diubah
+                TextInput::make('nilai_invoice')->label('Nilai Invoice')->required()->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
+                DatePicker::make('due_date')->label('Jatuh Tempo')->required(),
+                Select::make('status_pembayaran')->label('Status Pembayaran')->options(['unpaid' => 'Unpaid', 'partial paid' => 'Partial Paid', 'paid' => 'Paid',])->disabled()->dehydrated()->required()->default('unpaid'),
+                Textarea::make('keterangan')->label('Keterangan')->nullable(),
             ]);
     }
 
-    // ... (fungsi table() tidak berubah)
     public static function table(Table $table): Table
     {
-        return $table->columns([TextColumn::make('name')
-            ->label('Nama Proyek')
-            ->searchable()
-            ->sortable(), TextColumn::make('client.name')
-            ->label('Klien')
-            ->sortable(), TextColumn::make('pic')
-            ->label('PIC'), TextColumn::make('employee_ids')
-            ->label('Employee')
-            ->formatStateUsing(function ($state) {
+        return $table->columns([
+            // ... (Kolom tabel tidak perlu diubah)
+            TextColumn::make('name')->label('Nama Proyek')->searchable()->sortable(),
+            TextColumn::make('client.name')->label('Klien')->sortable(),
+            TextColumn::make('pic')->label('PIC'),
+            TextColumn::make('employee_ids')->label('Employee')->formatStateUsing(function ($state) {
                 if (empty($state)) return '-';
                 if (!is_array($state)) {
                     $decoded = json_decode($state, true);
@@ -259,274 +139,137 @@ class ProjectRequestResource extends Resource
                 }
                 $state = array_filter($state);
                 if (empty($state)) return '-';
-                $names = \App\Models\Employee::whereIn('employees.id', $state)
-                    ->join('users', 'employees.user_id', '=', 'users.id')
-                    ->pluck('users.name')
-                    ->toArray();
+                $names = \App\Models\Employee::whereIn('employees.id', $state)->join('users', 'employees.user_id', '=', 'users.id')->pluck('users.name')->toArray();
                 return implode(', ', $names);
-            }), TextColumn::make('sdm_ids')
-            ->label('SDM')
-            ->formatStateUsing(function ($state) {
+            }),
+            TextColumn::make('sdm_ids')->label('SDM')->formatStateUsing(function ($state) {
                 if (!$state) return '-';
                 if (is_string($state)) {
                     $state = array_map('intval', explode(',', $state));
                 }
-                $names = \App\Models\SDM::whereIn('id', $state)
-                    ->pluck('name')
-                    ->toArray();
+                $names = \App\Models\SDM::whereIn('id', $state)->pluck('name')->toArray();
                 return implode(', ', $names);
-            }), TextColumn::make('jumlah')
-            ->label('Jumlah Peserta')
-            ->numeric(), TextColumn::make('lokasi')
-            ->label('Lokasi'), TextColumn::make('user.name')
-            ->label('Dibuat oleh')
-            ->sortable(), TextColumn::make('status')
-            ->label('Status')
-            ->badge()
-            ->color(fn(string $state): string => match ($state) {
+            }),
+            TextColumn::make('jumlah')->label('Jumlah Peserta')->numeric(),
+            TextColumn::make('lokasi')->label('Lokasi'),
+            TextColumn::make('user.name')->label('Dibuat oleh')->sortable(),
+            TextColumn::make('status')->label('Status')->badge()->color(fn(string $state): string => match ($state) {
                 'pending' => 'warning',
                 'approved' => 'success',
                 'rejected' => 'danger',
                 'done' => 'success',
-            })
-            ->sortable(),])
+            })->sortable(),
+        ])
             ->defaultSort('id', 'desc')
             ->filters([])
             ->actions([
-                Action::make('createRealisasiRab')
-                    ->label('Tambah Realisasi RAB')
-                    ->icon('heroicon-o-plus-circle')
-                    ->modalHeading('Tambah Realisasi RAB')
-                    ->hidden()
-                    ->form(function ($record) {
-                        return [Select::make('rencana_anggaran_biaya_id')
-                            ->label('Item RAB')
-                            ->options($record->rencanaAnggaranBiaya()
-                                ->pluck('description', 'id')
-                                ->toArray())
-                            ->searchable()
-                            ->required(), TextInput::make('description')
-                            ->label('Deskripsi')
-                            ->required(), TextInput::make('qty')
-                            ->label('Jumlah')
-                            ->numeric(), TextInput::make('harga')
-                            ->label('Harga')
-                            ->numeric()
-                            ->mask(RawJs::make('$money($input)'))
-                            ->stripCharacters(',')
-                            ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null), DatePicker::make('tanggal_realisasi')
-                            ->label('Tanggal Realisasi'), Select::make('status')
-                            ->label('Status')
-                            ->options(['draft' => 'Draft', 'approved' => 'Approved', 'rejected' => 'Rejected', 'done' => 'Done'])
-                            ->default('draft')
-                            ->required(), Textarea::make('keterangan')
-                            ->label('Keterangan')
-                            ->rows(2)
-                            ->nullable(),];
-                    })
-                    ->action(function (array $data, $record) {
-                        \App\Models\RealisationRabItem::create(['project_request_id' => $record->id, 'rencana_anggaran_biaya_id' => $data['rencana_anggaran_biaya_id'], 'description' => $data['description'], 'qty' => $data['qty'], 'harga' => $data['harga'], 'total' => $data['qty'] * $data['harga'], 'tanggal_realisasi' => $data['tanggal_realisasi'], 'keterangan' => $data['keterangan'] ?? null,]);
-                        Notification::make()
-                            ->title('Realisasi berhasil ditambahkan')
-                            ->success()
-                            ->send();
-                    }),
+                // --- PERUBAHAN UTAMA ACTIONS DI SINI ---
 
-                Action::make('viewAssets')
-                    ->icon('heroicon-o-eye')
-                    ->tooltip('Lihat Aset')
-                    ->label('Aset')
-                    ->modalHeading('Daftar Aset')
-                    ->modalSubheading('Berikut adalah aset yang terkait dengan project ini.')
-                    ->modalButton('Tutup')
-                    ->action(fn() => null)
-                    ->modalContent(fn($record) => new HtmlString(
-                        Livewire::mount('project-asset-table', [
-                            'assetIds' => $record->asset_ids ?? [],
-                        ])
-                    )),
+                // HAPUS Action 'createRealisasiRab' karena sudah tidak dipakai
 
-                Action::make('viewRAB')
+                // Action 'viewAssets' tetap berguna
+                Action::make('viewAssets')->icon('heroicon-o-eye')->tooltip('Lihat Aset')->label('Aset')->modalHeading('Daftar Aset')->modalSubheading('Berikut adalah aset yang terkait dengan project ini.')->modalButton('Tutup')->action(fn() => null)->modalContent(fn($record) => new HtmlString(Livewire::mount('project-asset-table', ['assetIds' => $record->asset_ids ?? [],]))),
+
+                // --- TAMBAHKAN TOMBOL BARU ANDA DI SINI ---
+                Action::make('viewRabAwal')
+                    ->label('Lihat RAB Awal')
                     ->icon('heroicon-o-document-text')
-                    ->tooltip('Lihat Rencana Anggaran Biaya')
-                    ->label('RAB')
-                    ->modalHeading('Rencana Anggaran Biaya')
-                    ->modalSubmitAction(false)
+                    ->tooltip('Lihat Rencana Anggaran Biaya Awal')
+                    ->color('gray')
+                    ->modalHeading('Rencana Anggaran Biaya Awal')
+                    ->modalSubmitAction(false) // Sembunyikan tombol "Save"
                     ->modalCancelActionLabel('Tutup')
                     ->modalWidth('4xl')
-                    ->visible(fn($record) => $record->rencanaAnggaranBiaya()->exists() && $record->status === 'approved')
-                    ->modalContent(function ($record) {
-                        return view('filament.tables.actions.view-rab-modal-content', ['record' => $record]);
-                    }),
+                    // Hanya tampilkan tombol jika ada item di salah satu kategori
+                    ->visible(
+                        fn(ProjectRequest $record): bool =>
+                        $record->rabOperasionalItems()->exists() || $record->rabFeeItems()->exists()
+                    )
+                    ->modalWidth('fit-content') // <-- Menggunakan ukuran adaptif
+                    // Muat konten modal dari file Blade yang kita buat
+                    ->modalContent(
+                        fn(ProjectRequest $record): View =>
+                        view('filament.tables.actions.view-rab-awal-modal-content', ['record' => $record])
+                    ),
 
-                Action::make('approve')
-                    ->icon('heroicon-o-check')
-                    ->tooltip('Setujui')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Setujui Permintaan Proyek')
-                    ->modalSubheading('Apakah Anda yakin ingin menyetujui permintaan proyek ini?')
-                    ->modalButton('Ya, Setujui')
-                    ->visible(fn($record) => $record->status === 'pending')
-                    ->action(function ($record) {
-                        $record->update(['status' => 'approved']);
-                        \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])
-                            ->update(['status' => 'unavailable']);
-                    }),
+                // HAPUS Action 'viewRAB' yang lama karena relasinya sudah tidak ada.
+                // Anda bisa membuat yang baru jika perlu, tapi untuk sekarang kita hapus.
 
-                Action::make('createClosingRab')
-                    ->label('RAB Closing')
-                    ->icon('heroicon-o-document-check')
-                    ->color('warning')
+                // Action 'approve' tetap penting
+                Action::make('approve')->icon('heroicon-o-check')->tooltip('Setujui')->color('success')->requiresConfirmation()->modalHeading('Setujui Permintaan Proyek')->modalSubheading('Apakah Anda yakin ingin menyetujui permintaan proyek ini?')->modalButton('Ya, Setujui')->visible(fn($record) => $record->status === 'pending')->action(function ($record) {
+                    $record->update(['status' => 'approved']);
+                    \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])->update(['status' => 'unavailable']);
+                }),
+
+                Action::make('manageClosingRab')
+                    // Label tombol akan berubah secara dinamis
+                    ->label(fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'Edit RAB Closing' : 'Buat RAB Closing')
+
+                    // Ikon juga bisa berubah
+                    ->icon(fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'heroicon-o-pencil-square' : 'heroicon-o-document-check')
+
+                    // Warna juga bisa berubah
+                    ->color(fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'info' : 'warning')
+
+                    // Tombol ini hanya akan muncul jika project sudah disetujui
+                    ->visible(fn(ProjectRequest $record): bool => $record->status === 'approved')
+
+                    // Logika Aksi yang digabungkan
                     ->action(function (ProjectRequest $record) {
-                        // Cek jika draft sudah ada (logika ini tetap sama)
-                        if ($record->rabClosing()->exists()) {
-                            Notification::make()
-                                ->title('Informasi')
-                                ->body('Draft RAB Closing sudah ada. Silakan edit dari sana.')
-                                ->info()
-                                ->send();
-                            return redirect()
-                                ->to(RabClosingResource::getUrl('edit', ['record' => $record->rabClosing->id]));
+
+                        // Cek jika RAB Closing sudah ada
+                        if ($rabClosing = $record->rabClosing) {
+                            // Jika SUDAH ADA, langsung arahkan ke halaman edit
+                            return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
                         }
 
+                        // Jika BELUM ADA, jalankan logika pembuatan draf
                         try {
                             DB::beginTransaction();
 
-                            // 1. Ambil data dari RAB awal
-                            $totalAnggaranAwal = $record->rencanaAnggaranBiaya()->sum('total');
+                            // 1. Hitung total dari dua sumber
+                            $totalOperasional = $record->rabOperasionalItems()->sum('total');
+                            $totalFee = $record->rabFeeItems()->sum('total');
+                            $totalAnggaranAwal = $totalOperasional + $totalFee;
                             $jumlahPesertaAwal = $record->jumlah;
 
                             // 2. Buat record RabClosing utama
                             $rabClosing = $record->rabClosing()->create([
                                 'closing_date'        => now(),
                                 'status'              => 'draft',
-                                'total_anggaran'      => $totalAnggaranAwal, // Ini adalah total dari RAB Awal
+                                'total_anggaran'      => $totalAnggaranAwal,
                                 'jumlah_peserta_awal' => $jumlahPesertaAwal,
-                                // Kolom lain akan diisi di form edit
                             ]);
 
-                            // --- PERBAIKAN UTAMA DI SINI ---
-                            // 3. Salin item dari RAB awal ke item Operasional di RAB Closing sebagai draf.
-                            foreach ($record->rencanaAnggaranBiaya as $itemAwal) {
-
-                                // Gunakan relasi baru ->operasionalItems()
+                            // 3. Salin item dari DUA SUMBER
+                            foreach ($record->rabOperasionalItems as $itemAwal) {
                                 $rabClosing->operasionalItems()->create([
                                     'description'    => $itemAwal->description,
-                                    // Karena tabel item closing hanya punya 'price', kita salin nilai 'total' dari item awal
+                                    'price'          => $itemAwal->total,
+                                ]);
+                            }
+                            foreach ($record->rabFeeItems as $itemAwal) {
+                                $rabClosing->feePetugasItems()->create([
+                                    'description'    => $itemAwal->description,
                                     'price'          => $itemAwal->total,
                                 ]);
                             }
 
                             DB::commit();
-                            Notification::make()
-                                ->title('Berhasil')
-                                ->body('Draft RAB Closing berhasil dibuat. Silakan lengkapi detailnya.')
-                                ->success()
-                                ->send();
+                            Notification::make()->title('Berhasil')->body('Draft RAB Closing berhasil dibuat.')->success()->send();
 
-                            // Arahkan ke halaman edit untuk melengkapi data
+                            // Arahkan ke halaman edit setelah berhasil dibuat
                             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
                         } catch (\Exception $e) {
                             DB::rollBack();
                             Notification::make()->title('Terjadi Kesalahan')->body($e->getMessage())->danger()->send();
                         }
-                    })
-                    // Pastikan logic visibility ini sesuai dengan tombol print Anda
-                    ->visible(fn(ProjectRequest $record): bool => !$record->rabClosing()->exists() && $record->status === 'approved'),
+                    }),
 
-                // Action::make('createClosingRab')
-                //     ->label('RAB Closing')
-                //     ->icon('heroicon-o-document-check')
-                //     ->color('warning')
-                //     ->action(function (ProjectRequest $record, $livewire) {
-                //         // Cek jika draft sudah ada
-                //         if ($record->rabClosing()->exists()) {
-                //             Notification::make()
-                //                 ->title('Informasi')
-                //                 ->body('Draft RAB Closing sudah ada. Silakan edit dari sana.')
-                //                 ->info()
-                //                 ->send();
-                //             return redirect()
-                //                 ->to(RabClosingResource::getUrl('edit', ['record' => $record->rabClosing->id]));
-                //         }
-
-                //         try {
-                //             DB::beginTransaction();
-
-                //             // --- PERUBAHAN DIMULAI DI SINI ---
-
-                //             // 1. Hitung total anggaran dari RAB awal (sudah benar)
-                //             $totalAnggaranAwal = $record->rencanaAnggaranBiaya()->sum('total');
-
-                //             // 2. Hitung total realisasi dari semua item realisasi yang terkait
-                //             $totalRealisasiAwal = $record->realisationRabItems()->sum('total');
-
-                //             // 3. Hitung selisih awal
-                //             $selisihAwal = $totalAnggaranAwal - $totalRealisasiAwal;
-                //             // dd($totalAnggaranAwal . " " . $totalRealisasiAwal . " " . $selisihAwal);
-
-                //             // 4. Buat record RabClosing dengan data yang sudah dihitung
-                //             $rabClosing = $record->rabClosing()->create([
-                //                 'closing_date'    => now(),
-                //                 'status'          => 'draft',
-                //                 'total_anggaran'  => $totalAnggaranAwal,
-                //                 'total_realisasi' => $totalRealisasiAwal, // Menggunakan total realisasi yang dihitung
-                //                 'selisih'         => $selisihAwal,         // Menggunakan selisih yang dihitung
-                //             ]);
-
-                //             // --- AKHIR PERUBAHAN ---
-
-                //             // Salin item dari RAB awal ke item RAB Closing (logika ini tetap sama)
-                //             foreach ($record->rencanaAnggaranBiaya as $itemAwal) {
-                //                 // Untuk bagian ini, kita hanya menyalin data ANGGARAN.
-                //                 // Data REALISASI akan diisi/diedit di form RAB Closing nanti.
-                //                 $rabClosing->items()->create([
-                //                     'description'    => $itemAwal->description,
-                //                     'qty'            => $itemAwal->qty_aset,
-                //                     'harga_satuan'   => $itemAwal->harga_sewa,
-                //                     'total_anggaran' => $itemAwal->total,
-                //                     // Anda bisa menambahkan kolom realisasi di sini jika perlu,
-                //                     // atau membiarkannya kosong untuk diisi nanti.
-                //                     // 'harga_realisasi' => 0,
-                //                     // 'total_realisasi' => 0,
-                //                 ]);
-                //             }
-
-                //             DB::commit();
-                //             Notification::make()
-                //                 ->title('Berhasil')
-                //                 ->body('Draft RAB Closing berhasil dibuat dengan data realisasi terkini.')
-                //                 ->success()
-                //                 ->send();
-                //             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
-                //         } catch (\Exception $e) {
-                //             DB::rollBack();
-                //             Notification::make()->title('Terjadi Kesalahan')->body($e->getMessage())->danger()->send();
-                //         }
-                //     })
-                //     ->visible(fn(ProjectRequest $record): bool => !$record->rabClosing()->exists() && $record->status === 'approved'),
-
-                Action::make('printClosingRab')
-                    ->label('Print RAB Closing')
-                    ->icon('heroicon-o-printer')
-                    ->color('info')
-                    // Hanya tampilkan jika relasi rabClosing ADA
-                    ->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists())
-                    // Arahkan ke route yang akan kita buat nanti
-                    ->url(fn(ProjectRequest $record): string => route('rab-closing.print', ['record' => $record->rabClosing->id]), shouldOpenInNewTab: true),
-
-                Tables\Actions\Action::make('compare')
-                    ->label('Bandingkan RAB')
-                    ->icon('heroicon-o-scale')
-                    ->color('info')
-                    ->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists() && $record->status === 'approved')
-                    // Arahkan ke URL halaman kustom kita dengan query parameter
-                    ->url(fn(ProjectRequest $record): string => ProjectFinanceComparison::getUrl(['project' => $record->id])),
-
-                // Tables\Actions\EditAction::make(),
+                // Action 'compare' tetap sama
+                Tables\Actions\Action::make('compare')->label('Bandingkan RAB')->icon('heroicon-o-scale')->color('info')->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists())->url(fn(ProjectRequest $record): string => ProjectFinanceComparison::getUrl(['project' => $record->id])),
             ])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make(),]);
+            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 
     // --- PERBAIKAN DI SINI ---
@@ -540,40 +283,35 @@ class ProjectRequestResource extends Resource
         return (float) preg_replace('/[^\d]/', '', $value);
     }
 
-    // Fungsi updateRowTotal sekarang akan bekerja dengan benar karena cleanMoneyValue sudah diperbaiki
+    // FUNGSI INI MASIH DIPAKAI OLEH KEDUA REPEATER
     protected static function updateRowTotal(Get $get, Set $set): void
     {
         $qty = (int) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
-        // $start = $get('../../start_period');
-        // $end = $get('../../end_period');
-        // $days = self::getDaysBetween($start, $end);
-
-        // $set('total', $qty * $harga * $days);
         $set('total', $qty * $harga);
     }
 
     // Fungsi updateAllTotalsInRepeater sekarang juga akan bekerja dengan benar
-    protected static function updateAllTotalsInRepeater(Get $get, Set $set): void
-    {
-        $items = $get('rencanaAnggaranBiaya');
-        $start = $get('start_period');
-        $end = $get('end_period');
-        $days = self::getDaysBetween($start, $end);
+    // protected static function updateAllTotalsInRepeater(Get $get, Set $set): void
+    // {
+    //     $items = $get('rencanaAnggaranBiaya');
+    //     $start = $get('start_period');
+    //     $end = $get('end_period');
+    //     $days = self::getDaysBetween($start, $end);
 
-        $updatedItems = [];
-        if (is_array($items)) {
-            foreach ($items as $key => $item) {
-                $qty = (int) ($item['qty_aset'] ?? 0);
-                $harga = self::cleanMoneyValue($item['harga_sewa']);
+    //     $updatedItems = [];
+    //     if (is_array($items)) {
+    //         foreach ($items as $key => $item) {
+    //             $qty = (int) ($item['qty_aset'] ?? 0);
+    //             $harga = self::cleanMoneyValue($item['harga_sewa']);
 
-                $item['total'] = $qty * $harga * $days;
-                $updatedItems[$key] = $item;
-            }
-        }
+    //             $item['total'] = $qty * $harga * $days;
+    //             $updatedItems[$key] = $item;
+    //         }
+    //     }
 
-        $set('rencanaAnggaranBiaya', $updatedItems);
-    }
+    //     $set('rencanaAnggaranBiaya', $updatedItems);
+    // }
 
     // ... sisa fungsi (getRelations, getDaysBetween, getPages, canViewAny) tidak berubah
     public static function getRelations(): array

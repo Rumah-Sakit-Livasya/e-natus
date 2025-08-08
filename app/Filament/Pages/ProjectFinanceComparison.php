@@ -4,154 +4,86 @@ namespace App\Filament\Pages;
 
 use App\Models\ProjectRequest;
 use Filament\Pages\Page;
-use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Livewire\Attributes\Computed; // <-- Import Atribut Computed
-use Livewire\Attributes\Url;
 
 class ProjectFinanceComparison extends Page
 {
-    protected static ?string $navigationGroup = 'Project';
-    protected static ?string $navigationLabel = 'Perbandingan RAB';
     protected static ?string $navigationIcon = 'heroicon-o-scale';
     protected static string $view = 'filament.pages.project-finance-comparison';
 
-    #[Url(as: 'project', keep: true)]
-    public ?int $projectId = null;
+    protected static bool $shouldRegisterNavigation = false;
 
-    public ?ProjectRequest $project = null;
-
-    // Hapus properti-properti ini, kita akan menggantinya dengan Computed Properties
-    // public Collection $comparisonData;
-    // public float $totalAwal = 0;
-    // public float $totalClosing = 0;
-    // public float $totalRealisasi = 0;
-
-    public function mount(): void
-    {
-        // Mount sekarang hanya bertugas memuat model utama.
-        if ($this->projectId) {
-            $this->project = ProjectRequest::with([
-                'rencanaAnggaranBiaya',
-                'realisationRabItems',
-                'rabClosing.items'
-            ])->find($this->projectId);
-        }
-    }
-
-    public function getTitle(): string | Htmlable
-    {
-        return 'Bandingkan Anggaran Proyek';
-    }
-
-    public function getSubheading(): string | Htmlable | null
-    {
-        return $this->project?->name;
-    }
-
-    //==============================================================
-    // COMPUTED PROPERTIES: Logika utama dan kalkulasi ada di sini
-    //==============================================================
+    // --- PERUBAHAN UTAMA: DEKLARASIKAN PROPERTI PUBLIK ---
+    // Properti ini akan secara otomatis tersedia sebagai variabel di file Blade TABS Anda.
+    public ?ProjectRequest $project;
+    public Collection $rabAwalItems;
+    public Collection $rabClosingOperasionalItems;
+    public Collection $rabClosingFeeItems;
+    public float $totalRabAwal = 0;
+    public float $totalRabClosing = 0;
+    public float $selisih = 0;
 
     /**
-     * Data perbandingan utama.
-     * Menggunakan #[Computed] akan meng-cache hasil dari fungsi ini,
-     * sehingga tidak dihitung ulang pada setiap render kecuali dependensinya berubah.
+     * Method mount() dieksekusi saat halaman pertama kali dimuat.
      */
-    #[Computed(persist: true)]
-    public function comparisonData(): Collection
+    public function mount(Request $request): void
     {
-        if (!$this->project) {
-            return collect();
+        $projectId = $request->query('project');
+        if (!$projectId) {
+            abort(404, 'Project not found.');
         }
 
-        $rabAwal = $this->project->rencanaAnggaranBiaya;
-        $rabClosingItems = $this->project->rabClosing?->items;
-        $realisasiItems = $this->project->realisationRabItems;
+        // Ambil data project beserta semua relasi yang dibutuhkan
+        $this->project = ProjectRequest::with([
+            'rencanaAnggaranBiaya',
+            'rabClosing.operasionalItems',
+            'rabClosing.feePetugasItems'
+        ])->find($projectId);
 
-        $allDescriptions = collect()
-            ->merge($rabAwal->pluck('description'))
-            ->merge($rabClosingItems ? $rabClosingItems->pluck('description') : [])
-            ->merge($realisasiItems->pluck('description'))
-            ->unique()->values();
+        if (!$this->project) {
+            abort(404, 'Project not found.');
+        }
 
-        return $allDescriptions->map(function ($description) use ($rabAwal, $rabClosingItems, $realisasiItems) {
-            $awalItem = $rabAwal->firstWhere('description', $description);
-            $closingItem = $rabClosingItems ? $rabClosingItems->firstWhere('description', $description) : null;
-            $realisasiTotal = $realisasiItems->where('description', $description)->sum('total');
+        // --- PERUBAHAN UTAMA: ISI PROPERTI PUBLIK ---
+        // Isi properti dengan data yang sudah diambil.
+        $this->rabAwalItems = $this->project->rencanaAnggaranBiaya;
 
-            return [
-                'description'     => $description,
-                'awal_total'      => $awalItem?->total ?? 0,
-                'closing_total'   => $closingItem?->total_anggaran ?? 0,
-                'realisasi_total' => $realisasiTotal,
-            ];
-        });
+        if ($this->project->rabClosing) {
+            $this->rabClosingOperasionalItems = $this->project->rabClosing->operasionalItems;
+            $this->rabClosingFeeItems = $this->project->rabClosing->feePetugasItems;
+        } else {
+            // Jika tidak ada RAB Closing, pastikan koleksinya kosong agar tidak error
+            $this->rabClosingOperasionalItems = collect();
+            $this->rabClosingFeeItems = collect();
+        }
+
+        // Lakukan kalkulasi dan isi properti total
+        $this->calculateTotals();
     }
 
-    #[Computed]
-    public function totalAwal(): float
+    /**
+     * Method helper untuk menghitung semua total dan mengisi properti.
+     */
+    protected function calculateTotals(): void
     {
-        return $this->comparisonData()->sum('awal_total');
+        // Hitung total RAB Awal dari koleksi yang sudah di-load
+        $this->totalRabAwal = $this->rabAwalItems->sum('total');
+
+        if ($this->project->rabClosing) {
+            // Ambil total closing langsung dari recordnya untuk efisiensi
+            $this->totalRabClosing = $this->project->rabClosing->total_anggaran_closing;
+        }
+
+        // Hitung selisih antara Closing dan Awal
+        $this->selisih = $this->totalRabClosing - $this->totalRabAwal;
     }
 
-    #[Computed]
-    public function totalClosing(): float
+    /**
+     * Mengatur judul halaman.
+     */
+    public function getTitle(): string
     {
-        return $this->comparisonData()->sum('closing_total');
-    }
-
-    #[Computed]
-    public function totalRealisasi(): float
-    {
-        return $this->comparisonData()->sum('realisasi_total');
-    }
-
-    #[Computed]
-    public function selisihVsAwal(): float
-    {
-        return $this->totalAwal() - $this->totalRealisasi();
-    }
-
-    #[Computed]
-    public function selisihFinal(): float
-    {
-        return $this->totalClosing() - $this->totalRealisasi();
-    }
-
-    // Helper untuk deskripsi dan warna di stat card
-    #[Computed]
-    public function selisihVsAwalDescription(): string
-    {
-        return $this->selisihVsAwal() >= 0 ? __('project.under_budget') : __('project.over_budget');
-    }
-
-    #[Computed]
-    public function selisihVsAwalIcon(): string
-    {
-        return $this->selisihVsAwal() >= 0 ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up';
-    }
-
-    #[Computed]
-    public function selisihVsAwalColor(): string
-    {
-        return $this->selisihVsAwal() >= 0 ? 'success' : 'danger';
-    }
-
-    #[Computed]
-    public function selisihFinalDescription(): string
-    {
-        $status = $this->selisihFinal() >= 0 ? __('project.profit_label') : __('project.loss_label');
-        $formattedValue = 'Rp ' . number_format(abs($this->selisihFinal()), 0, ',', '.');
-        return "{$status} {$formattedValue}";
-    }
-
-    #[Computed]
-    public function selisihFinalColor(): string
-    {
-        // Kita berikan nama class CSS langsung untuk kemudahan di Blade
-        return $this->selisihFinal() >= 0
-            ? 'text-success-600 dark:text-success-400'
-            : 'text-danger-600 dark:text-danger-400';
+        return 'Perbandingan Anggaran: ' . ($this->project->name ?? '...');
     }
 }

@@ -45,19 +45,20 @@ class RabClosingResource extends Resource
                         ->relationship()
                         ->label('Item Operasional')
                         ->schema([
-                            // Kita ubah layout kolomnya
                             TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
                             TextInput::make('price')->label('Harga')->numeric()->prefix('Rp')->required()->columnSpan(1),
 
-                            // TAMBAHKAN KOMPONEN FILE UPLOAD DI SINI
-                            FileUpload::make('attachment')
+                            // --- PERBAIKAN: GUNAKAN NAMA YANG KONSISTEN ---
+                            FileUpload::make('attachments_upload') // <-- UBAH MENJADI 'attachments_upload'
                                 ->label('Bukti/Struk')
-                                ->disk('public') // Menyimpan di storage/app/public
-                                ->directory('rab-attachments/operasional') // Membuat folder khusus
-                                ->columnSpan(2),
-
+                                ->multiple()
+                                ->reorderable()
+                                ->appendFiles()
+                                ->disk('public')
+                                ->directory('rab-attachments/operasional')
+                                ->columnSpan(2), // <-- PERBAIKAN: columnSpan harus 2 agar pas
                         ])
-                        ->columns(5) // Total kolom tetap 5
+                        ->columns(5)
                         ->reorderable(false)->addActionLabel('Tambah Item Operasional')
                         ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
                 ]),
@@ -71,14 +72,16 @@ class RabClosingResource extends Resource
                             TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
                             TextInput::make('price')->label('Harga')->numeric()->prefix('Rp')->required()->columnSpan(1),
 
-                            // TAMBAHKAN KOMPONEN FILE UPLOAD DI SINI JUGA
-                            FileUpload::make('attachment')
+                            FileUpload::make('attachments_upload') // <-- Nama ini sudah benar
                                 ->label('Bukti/Struk')
+                                ->multiple()
+                                ->reorderable()
+                                ->appendFiles()
                                 ->disk('public')
-                                ->directory('rab-attachments/fee') // Folder berbeda untuk kerapian
-                                ->columnSpan(2),
+                                ->directory('rab-attachments/fee')
+                                ->columnSpan(2), // <-- PERBAIKAN: columnSpan harus 2
                         ])
-                        ->columns(5) // Total kolom tetap 5
+                        ->columns(5)
                         ->reorderable(false)->addActionLabel('Tambah Item Fee')
                         ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
                 ]),
@@ -98,16 +101,31 @@ class RabClosingResource extends Resource
                 ->schema([
                     Forms\Components\Grid::make(2)->schema([
                         Section::make('Data Peserta MCU')->schema([
+                            // Field ini sudah benar
                             TextInput::make('jumlah_peserta_awal')->numeric()->label('Estimasi Peserta Awal'),
                             TextInput::make('jumlah_peserta_akhir')->numeric()->label('Peserta Setelah Closed'),
                         ]),
+
+                        // --- PERBAIKAN UTAMA ADA DI SECTION INI ---
                         Section::make('RAB Awal')->schema([
+                            // Ambil total dari kolom yang sudah ada di $record
                             Placeholder::make('total_rab_awal_placeholder')->label('Total RAB Awal')
-                                ->content(fn(?RabClosing $record) => 'Rp ' . number_format($record->projectRequest->rencanaAnggaranBiaya()->sum('total'), 0, ',', '.')),
+                                ->content(fn(?RabClosing $record): string => $record ? 'Rp ' . number_format($record->total_anggaran, 0, ',', '.') : 'Rp 0'),
+
+                            // Ambil nilai invoice dari relasi projectRequest (ini sudah benar)
                             Placeholder::make('nilai_invoice_awal_placeholder')->label('Nilai Invoice Awal')
-                                ->content(fn(?RabClosing $record) => 'Rp ' . number_format($record->projectRequest->nilai_invoice, 0, ',', '.')),
+                                ->content(fn(?RabClosing $record): string => $record ? 'Rp ' . number_format($record->projectRequest->nilai_invoice, 0, ',', '.') : 'Rp 0'),
+
+                            // Add margin calculation placeholder
+                            Placeholder::make('margin_awal_placeholder')->label('Margin Awal')
+                                ->content(
+                                    fn(?RabClosing $record): string => $record
+                                        ? 'Rp ' . number_format($record->projectRequest->nilai_invoice - $record->total_anggaran, 0, ',', '.')
+                                        : 'Rp 0'
+                                ),
                         ]),
                     ]),
+
                     Forms\Components\Grid::make(2)->schema([
                         Section::make('Dana Operasional')->schema([
                             TextInput::make('dana_operasional_transfer')->numeric()->prefix('Rp')->label('Dana di Transfer oleh Natus')
@@ -115,10 +133,35 @@ class RabClosingResource extends Resource
                             TextInput::make('pengeluaran_operasional_closing')->numeric()->prefix('Rp')->label('Pengeluaran Operasional Closed')->readOnly(),
                             TextInput::make('sisa_dana_operasional')->numeric()->prefix('Rp')->label('Sisa/Minus Dana')->readOnly(),
                         ]),
-                        Textarea::make('justifikasi')->label('Justifikasi Perbedaan RAB')->rows(8),
+
+                        Forms\Components\RichEditor::make('justifikasi')
+                            ->label('Justifikasi Perbedaan RAB')
+                            ->required()
+                            ->toolbarButtons([
+                                'attachFiles',
+                                'blockquote',
+                                'bold',
+                                'bulletList',
+                                'codeBlock',
+                                'h2',
+                                'h3',
+                                'italic',
+                                'link',
+                                'orderedList',
+                                'redo',
+                                'strike',
+                                'underline',
+                                'undo'
+                            ])
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('justifikasi-attachments')
+                            ->fileAttachmentsVisibility('public')
+                            ->columnSpanFull() // Make the rich editor span full width
                     ]),
                 ]),
-        ]);
+
+        ])
+            ->disabled(fn(?RabClosing $record) => $record?->status === 'final');
     }
 
     private static function cleanMoneyValue(?string $value): float

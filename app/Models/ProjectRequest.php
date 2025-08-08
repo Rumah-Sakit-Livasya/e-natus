@@ -92,9 +92,19 @@ class ProjectRequest extends Model
         return $this->hasMany(RencanaAnggaranBiaya::class);
     }
 
-    public function realisationRabItems(): HasMany
+    // public function realisationRabItems(): HasMany
+    // {
+    //     return $this->hasMany(\App\Models\RealisationRabItem::class);
+    // }
+
+    public function rabOperasionalItems(): HasMany
     {
-        return $this->hasMany(\App\Models\RealisationRabItem::class);
+        return $this->hasMany(RabOperasionalItem::class);
+    }
+
+    public function rabFeeItems(): HasMany
+    {
+        return $this->hasMany(RabFeeItem::class);
     }
 
     public function rabClosing(): HasOne
