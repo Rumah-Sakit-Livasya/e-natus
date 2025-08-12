@@ -267,7 +267,7 @@ class ProjectRequestResource extends Resource
                     }),
 
                 // Action 'compare' tetap sama
-                Tables\Actions\Action::make('compare')->label('Bandingkan RAB')->icon('heroicon-o-scale')->color('info')->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists())->url(fn(ProjectRequest $record): string => ProjectFinanceComparison::getUrl(['project' => $record->id])),
+                // Tables\Actions\Action::make('compare')->label('Bandingkan RAB')->icon('heroicon-o-scale')->color('info')->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists())->url(fn(ProjectRequest $record): string => ProjectFinanceComparison::getUrl(['project' => $record->id])),
             ])
             ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }

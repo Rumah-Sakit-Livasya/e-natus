@@ -15,7 +15,7 @@ class ParticipantResource extends Resource
     protected static ?string $model = Participant::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationGroup = 'Manajemen Proyek & Peserta';
+    protected static ?string $navigationGroup = 'Project';
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form

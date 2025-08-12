@@ -26,6 +26,8 @@ class RabClosingResource extends Resource
     protected static ?string $model = RabClosing::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
     protected static ?string $navigationGroup = 'Project';
+    protected static ?string $navigationLabel = 'RAB Closing';
+    protected static ?string $pluralLabel = 'RAB Closings';
 
     public static function form(Form $form): Form
     {

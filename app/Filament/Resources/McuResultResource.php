@@ -5,8 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\McuResultResource\Pages;
 use App\Filament\Resources\McuResultResource\RelationManagers;
 use App\Models\McuResult;
-use Filament\Forms;
 use Filament\Forms\Get;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -16,7 +16,9 @@ class McuResultResource extends Resource
 {
     protected static ?string $model = McuResult::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Project MCU';
+    protected static ?string $navigationGroup = 'Project';
+    protected static ?string $label = 'MCU Result';
+    protected static ?string $pluralLabel = 'MCU Results';
 
     public static function form(Form $form): Form
     {
