@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class RabAttachment extends Model
 {
-    protected $fillable = ['file_path'];
+    use HasFactory;
+
+    protected $guarded = ['id'];
 
     public function attachable(): MorphTo
     {

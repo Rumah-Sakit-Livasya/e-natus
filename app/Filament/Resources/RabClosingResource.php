@@ -44,22 +44,25 @@ class RabClosingResource extends Resource
             Section::make('Operasional MCU')
                 ->schema([
                     Repeater::make('operasionalItems')
-                        ->relationship()
+                        // ->relationship()
                         ->label('Item Operasional')
                         ->schema([
                             TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
                             TextInput::make('price')->label('Harga')->numeric()->prefix('Rp')->required()->columnSpan(1),
 
-                            // --- PERBAIKAN: GUNAKAN NAMA YANG KONSISTEN ---
-                            FileUpload::make('attachments_upload') // <-- UBAH MENJADI 'attachments_upload'
+                            FileUpload::make('attachments')
                                 ->label('Bukti/Struk')
                                 ->multiple()
                                 ->reorderable()
                                 ->appendFiles()
                                 ->disk('public')
                                 ->directory('rab-attachments/operasional')
-                                ->columnSpan(2), // <-- PERBAIKAN: columnSpan harus 2 agar pas
+                                ->storeFileNamesIn('original_filename')
+                                ->columnSpan(2),
                         ])
+                        ->deleteAction(
+                            fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
+                        )
                         ->columns(5)
                         ->reorderable(false)->addActionLabel('Tambah Item Operasional')
                         ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
@@ -68,21 +71,25 @@ class RabClosingResource extends Resource
             Section::make('Fee Petugas MCU')
                 ->schema([
                     Repeater::make('feePetugasItems')
-                        ->relationship()
+                        // ->relationship()
                         ->label('Item Fee Petugas')
                         ->schema([
                             TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
                             TextInput::make('price')->label('Harga')->numeric()->prefix('Rp')->required()->columnSpan(1),
 
-                            FileUpload::make('attachments_upload') // <-- Nama ini sudah benar
+                            FileUpload::make('attachments')
                                 ->label('Bukti/Struk')
                                 ->multiple()
                                 ->reorderable()
                                 ->appendFiles()
                                 ->disk('public')
                                 ->directory('rab-attachments/fee')
-                                ->columnSpan(2), // <-- PERBAIKAN: columnSpan harus 2
+                                ->storeFileNamesIn('original_filename')
+                                ->columnSpan(2),
                         ])
+                        ->deleteAction(
+                            fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
+                        )
                         ->columns(5)
                         ->reorderable(false)->addActionLabel('Tambah Item Fee')
                         ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),

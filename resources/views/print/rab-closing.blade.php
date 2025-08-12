@@ -215,9 +215,15 @@
 
     <!-- Page 3: Attachments -->
     @php
-        $allItemsWithAttachments = $record->operasionalItems
-            ->merge($record->feePetugasItems)
-            ->filter(fn($item) => !empty($item->attachment));
+        // Logika baru untuk mengambil SEMUA item yang memiliki lampiran
+        // Kita filter berdasarkan apakah relasi 'attachments' memiliki data (count > 0)
+        $operasionalItemsWithAttachments = $record->operasionalItems->filter(
+            fn($item) => $item->attachments->isNotEmpty(),
+        );
+        $feeItemsWithAttachments = $record->feePetugasItems->filter(fn($item) => $item->attachments->isNotEmpty());
+
+        // Gabungkan keduanya menjadi satu koleksi
+        $allItemsWithAttachments = $operasionalItemsWithAttachments->merge($feeItemsWithAttachments);
     @endphp
 
     @if ($allItemsWithAttachments->isNotEmpty())
@@ -228,20 +234,31 @@
 
             <div class="mt-12">
                 <h3 class="text-xl font-bold underline text-center mb-8">LAMPIRAN BUKTI TRANSAKSI</h3>
-                <div class="grid grid-cols-2 gap-6">
-                    @foreach ($allItemsWithAttachments as $item)
-                        <div class="attachment-item border rounded-lg p-3">
-                            <h4 class="font-semibold text-sm mb-2">Bukti untuk: {{ $item->description }}</h4>
-                            <div class="bg-gray-100 p-2 rounded">
-                                <img src="{{ asset('storage/' . $item->attachment) }}"
-                                    alt="Bukti untuk {{ $item->description }}" class="w-auto h-auto max-h-96 mx-auto">
-                            </div>
+
+                {{-- Loop melalui setiap ITEM yang memiliki lampiran --}}
+                @foreach ($allItemsWithAttachments as $item)
+                    <div class="mb-8 attachment-item">
+                        <h4 class="font-semibold text-lg mb-2 bg-gray-100 p-2 rounded-t-lg">
+                            Bukti untuk: {{ $item->description }}
+                        </h4>
+
+                        {{-- Di dalam setiap item, loop melalui SEMUA LAMPIRANNYA --}}
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-b-lg">
+                            @foreach ($item->attachments as $attachment)
+                                <div class="bg-gray-50 p-2 rounded border">
+                                    {{-- Gunakan $attachment->file_path untuk mendapatkan path file --}}
+                                    <img src="{{ asset('storage/' . $attachment->file_path) }}"
+                                        alt="Bukti untuk {{ $item->description }}"
+                                        class="w-full h-auto max-h-96 object-contain mx-auto">
+                                </div>
+                            @endforeach
                         </div>
-                    @endforeach
-                </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     @endif
+
 </body>
 
 </html>
