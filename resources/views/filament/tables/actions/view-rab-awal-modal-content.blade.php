@@ -39,7 +39,7 @@
     </div>
 
     {{-- BAGIAN BIAYA FEE --}}
-    <div>
+    <div class="mt-6">
         <h3 class="text-lg font-semibold mb-2">Rencana Biaya Fee</h3>
         <x-filament-tables::table>
             <x-slot:header>
@@ -79,11 +79,20 @@
 
     {{-- GRAND TOTAL --}}
     <hr class="my-4">
-    <div class="flex justify-end text-lg font-bold pr-4">
-        <span class="mr-4">Grand Total RAB Awal:</span>
-        <span>
-            Rp
-            {{ number_format($record->rabOperasionalItems->sum('total') + $record->rabFeeItems->sum('total'), 0, ',', '.') }}
-        </span>
+    <div class="flex flex-col items-end pr-4 space-y-2">
+        <div class="flex items-center text-base font-semibold text-gray-700">
+            <span class="mr-4">Grand Total RAB Awal:</span>
+            <span>
+                Rp
+                {{ number_format($record->rabOperasionalItems->sum('total') + $record->rabFeeItems->sum('total'), 0, ',', '.') }}
+            </span>
+        </div>
+        <div class="flex items-center  text-lg font-bold">
+            <span class="mr-4">Nilai Invoice:</span>
+            <span>
+                Rp
+                {{ number_format($record->nilai_invoice ?? 0, 0, ',', '.') }}
+            </span>
+        </div>
     </div>
 </div>

@@ -30,7 +30,7 @@ use Livewire\Livewire;
 
 class ProjectRequestResource extends Resource
 {
-    // ... (properti model dan navigasi tidak berubah)
+    // ... (properti statis seperti $model, $navigationIcon, dll. tetap sama)
     protected static ?string $model = ProjectRequest::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Project';
@@ -42,7 +42,7 @@ class ProjectRequestResource extends Resource
     {
         return $form
             ->schema([
-                // Field-field informasi umum tidak perlu diubah
+                // Field-field awal tidak berubah...
                 Select::make('client_id')
                     ->label('Klien')
                     ->options(Client::pluck('name', 'id')->toArray())
@@ -85,19 +85,26 @@ class ProjectRequestResource extends Resource
 
                 Select::make('status')->label('Status')->options(['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'done' => 'Selesai',])->default('pending')->disabled()->dehydrated()->required(),
 
-                // --- PERUBAHAN UTAMA FORM DIMULAI DI SINI ---
-
-                // Hapus Repeater lama dan ganti dengan dua Section baru
                 Section::make('Rencana Biaya Operasional')
                     ->collapsible()
                     ->schema([
-                        Repeater::make('rabOperasionalItems') // Gunakan nama relasi baru
+                        Repeater::make('rabOperasionalItems')
                             ->relationship()
                             ->label(false)
                             ->schema([
                                 TextInput::make('description')->label('Deskripsi')->required()->placeholder('Misalnya: Sewa Mobil Box'),
-                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()->live()->debounce(500)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
-                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()->live()->debounce(500)->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+
+                                // --- PERUBAHAN DI SINI ---
+                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()
+                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
+                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+
+                                // --- PERUBAHAN DI SINI ---
+                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()
+                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
+                                    ->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+
                                 TextInput::make('total')->label('Total')->prefix('Rp')->numeric(0, ',', '.')->disabled()->dehydrated()->required(),
                             ])->columns(4)->createItemButtonLabel('Tambah Item Operasional'),
                     ]),
@@ -105,13 +112,23 @@ class ProjectRequestResource extends Resource
                 Section::make('Rencana Biaya Fee')
                     ->collapsible()
                     ->schema([
-                        Repeater::make('rabFeeItems') // Gunakan nama relasi baru
+                        Repeater::make('rabFeeItems')
                             ->relationship()
                             ->label(false)
                             ->schema([
                                 TextInput::make('description')->label('Deskripsi')->required()->placeholder('Misalnya: Fee Dokter GP'),
-                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()->live()->debounce(500)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
-                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()->live()->debounce(500)->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+
+                                // --- PERUBAHAN DI SINI ---
+                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()
+                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
+                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+
+                                // --- PERUBAHAN DI SINI ---
+                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()
+                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
+                                    ->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+
                                 TextInput::make('total')->label('Total')->prefix('Rp')->numeric(0, ',', '.')->disabled()->dehydrated()->required(),
                             ])->columns(4)->createItemButtonLabel('Tambah Item Fee'),
                     ]),
@@ -124,6 +141,7 @@ class ProjectRequestResource extends Resource
             ]);
     }
 
+    // ... (Sisa dari kelas Anda, termasuk table() dan fungsi helper, tetap sama)
     public static function table(Table $table): Table
     {
         return $table->columns([
@@ -271,57 +289,25 @@ class ProjectRequestResource extends Resource
             ])
             ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
-
-    // --- PERBAIKAN DI SINI ---
     protected static function cleanMoneyValue(?string $value): int|float
     {
         if ($value === null || $value === '') {
             return 0;
         }
-        // Hapus semua karakter yang BUKAN angka.
-        // Ini akan mengubah "10,000,000" menjadi "10000000"
         return (float) preg_replace('/[^\d]/', '', $value);
     }
-
-    // FUNGSI INI MASIH DIPAKAI OLEH KEDUA REPEATER
     protected static function updateRowTotal(Get $get, Set $set): void
     {
         $qty = (int) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
         $set('total', $qty * $harga);
     }
-
-    // Fungsi updateAllTotalsInRepeater sekarang juga akan bekerja dengan benar
-    // protected static function updateAllTotalsInRepeater(Get $get, Set $set): void
-    // {
-    //     $items = $get('rencanaAnggaranBiaya');
-    //     $start = $get('start_period');
-    //     $end = $get('end_period');
-    //     $days = self::getDaysBetween($start, $end);
-
-    //     $updatedItems = [];
-    //     if (is_array($items)) {
-    //         foreach ($items as $key => $item) {
-    //             $qty = (int) ($item['qty_aset'] ?? 0);
-    //             $harga = self::cleanMoneyValue($item['harga_sewa']);
-
-    //             $item['total'] = $qty * $harga * $days;
-    //             $updatedItems[$key] = $item;
-    //         }
-    //     }
-
-    //     $set('rencanaAnggaranBiaya', $updatedItems);
-    // }
-
-    // ... sisa fungsi (getRelations, getDaysBetween, getPages, canViewAny) tidak berubah
     public static function getRelations(): array
     {
         return [
-            // Daftarkan Relation Manager Anda di sini
             RelationManagers\ParticipantsRelationManager::class,
         ];
     }
-
     protected static function getDaysBetween($start, $end): int
     {
         if (!$start || !$end) return 1;
@@ -333,17 +319,14 @@ class ProjectRequestResource extends Resource
             return 1;
         }
     }
-
     public static function getPages(): array
     {
-        // HANYA daftarkan halaman CRUD standar
         return [
             'index' => Pages\ListProjectRequests::route('/'),
             'create' => Pages\CreateProjectRequest::route('/create'),
             'edit' => Pages\EditProjectRequest::route('/{record}/edit'),
         ];
     }
-
     public static function canViewAny(): bool
     {
         $user = auth()->user();

@@ -27,4 +27,3 @@
         @endif
     </x-filament::modal>
 </div>
-php artisan vendor:publish --tag=filament-views
