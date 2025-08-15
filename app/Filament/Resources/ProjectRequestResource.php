@@ -2,16 +2,18 @@
 
 namespace App\Filament\Resources;
 
-// ... (semua use statement tetap sama)
 use App\Filament\Resources\ProjectRequestResource\Pages;
-use  App\Filament\Resources\ProjectRequestResource\RelationManagers;
-use App\Filament\Resources\ProjectRequestResource\Pages\CompareRab;
-use App\Filament\Pages\ProjectFinanceComparison;
+use App\Filament\Resources\ProjectRequestResource\RelationManagers;
 use App\Models\Aset;
 use App\Models\Client;
 use App\Models\ProjectRequest;
 use Carbon\Carbon;
-use Filament\Forms\Components\{DatePicker, Repeater, Section, Select, Textarea, TextInput};
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -19,10 +21,9 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Support\RawJs;
 use Filament\Tables;
-use Filament\Pages\Route;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\{Action};
+use Filament\Tables\Actions\Action;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
@@ -30,228 +31,344 @@ use Livewire\Livewire;
 
 class ProjectRequestResource extends Resource
 {
-    // ... (properti statis seperti $model, $navigationIcon, dll. tetap sama)
+    protected static ?int $navigationSort = 2;
     protected static ?string $model = ProjectRequest::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Project';
     protected static ?string $navigationLabel = 'List Project';
     protected static ?string $pluralModelLabel = 'List Project';
 
-
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                // Field-field awal tidak berubah...
-                Select::make('client_id')
-                    ->label('Klien')
-                    ->options(Client::pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        $client = Client::with('region')->find($state);
-                        if ($client) {
-                            $set('pic', $client->pic);
-                            $set('lokasi', $client->region?->name);
-                        }
-                    })
-                    ->required()
-                    ->createOptionForm([TextInput::make('name')->label('Nama Klien')->required(), TextInput::make('pic')->label('PIC')->required(), Select::make('region_id')->label('Wilayah')->options(\App\Models\Region::pluck('name', 'id'))->searchable()->nullable(), TextInput::make('phone')->label('Nomor Telepon')->tel(), TextInput::make('email')->label('Email')->email(),])
-                    ->createOptionUsing(fn(array $data) => Client::create(['name' => $data['name'], 'pic' => $data['pic'], 'region_id' => $data['region_id'] ?? null, 'phone' => $data['phone'] ?? null, 'email' => $data['email'] ?? null,])->id),
+        return $form->schema([
+            Select::make('client_id')
+                ->label('Klien')
+                ->options(Client::pluck('name', 'id')->toArray())
+                ->searchable()
+                ->reactive()
+                ->afterStateUpdated(function ($state, callable $set) {
+                    $client = Client::with('region')->find($state);
+                    if ($client) {
+                        $set('pic', $client->pic);
+                        $set('lokasi', $client->region?->name);
+                    }
+                })
+                ->required()
+                ->createOptionForm([
+                    TextInput::make('name')->label('Nama Klien')->required(),
+                    TextInput::make('pic')->label('PIC')->required(),
+                    Select::make('region_id')->label('Wilayah')->options(\App\Models\Region::pluck('name', 'id'))->searchable()->nullable(),
+                    TextInput::make('phone')->label('Nomor Telepon')->tel(),
+                    TextInput::make('email')->label('Email')->email(),
+                ])
+                ->createOptionUsing(fn(array $data) => Client::create([
+                    'name' => $data['name'],
+                    'pic' => $data['pic'],
+                    'region_id' => $data['region_id'] ?? null,
+                    'phone' => $data['phone'] ?? null,
+                    'email' => $data['email'] ?? null,
+                ])->id),
 
-                TextInput::make('name')->label('Nama Proyek')->required(),
+            TextInput::make('name')->label('Nama Proyek')->required(),
 
-                Select::make('employee_ids')->label('PIC')->multiple()->searchable()->preload()->options(\App\Models\Employee::join('users', 'employees.user_id', '=', 'users.id')->pluck('users.name', 'employees.id')->toArray())->required()->createOptionForm([TextInput::make('name')->label('Nama Pegawai')->required(),])->createOptionUsing(fn(array $data) => \App\Models\SDM::create(['name' => $data['name'],])->id),
+            Select::make('employee_ids')
+                ->label('PIC')
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->options(
+                    \App\Models\Employee::join('users', 'employees.user_id', '=', 'users.id')
+                        ->pluck('users.name', 'employees.id')
+                        ->toArray()
+                )
+                ->required()
+                ->createOptionForm([
+                    TextInput::make('name')->label('Nama Pegawai')->required(),
+                ])
+                ->createOptionUsing(fn(array $data) => \App\Models\SDM::create([
+                    'name' => $data['name'],
+                ])->id),
 
-                Select::make('sdm_ids')->label('SDM')->multiple()->searchable()->preload()->options(\App\Models\SDM::pluck('name', 'id')->toArray())->required()->createOptionForm([TextInput::make('name')->label('Nama SDM')->required(),])->createOptionUsing(fn(array $data) => \App\Models\SDM::create(['name' => $data['name'],])->id),
+            Select::make('sdm_ids')
+                ->label('SDM')
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->options(\App\Models\SDM::pluck('name', 'id')->toArray())
+                ->required()
+                ->createOptionForm([
+                    TextInput::make('name')->label('Nama SDM')->required(),
+                ])
+                ->createOptionUsing(fn(array $data) => \App\Models\SDM::create([
+                    'name' => $data['name'],
+                ])->id),
 
-                TextInput::make('jumlah')->label('Jumlah Peserta')->numeric()->required(),
-                TextInput::make('lokasi')->label('Lokasi')->required(),
-                DatePicker::make('start_period')->label('Periode Mulai')->required(),
-                DatePicker::make('end_period')->label('Periode Selesai')->required(),
+            TextInput::make('jumlah')->label('Jumlah Peserta')->numeric()->required(),
+            TextInput::make('lokasi')->label('Lokasi')->required(),
+            DatePicker::make('start_period')->label('Periode Mulai')->required(),
+            DatePicker::make('end_period')->label('Periode Selesai')->required(),
 
-                Select::make('asset_ids')->label('Aset Terkait')->multiple()->searchable()->preload()->options(fn() => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
+            Select::make('asset_ids')
+                ->label('Aset Terkait')
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->options(fn() => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
                     $parts = explode('/', $asset->code);
                     $index = end($parts);
                     return [$asset->id => "{$asset->custom_name} - {$asset->lander->code}$index"];
-                })->filter(fn($label) => !is_null($label))->toArray())->createOptionForm(AsetResource::getAsetFormFields())->createOptionUsing(function (array $data) {
+                })->filter(fn($label) => !is_null($label))->toArray())
+                ->createOptionForm(AsetResource::getAsetFormFields())
+                ->createOptionUsing(function (array $data) {
                     if (empty($data['code'])) {
                         unset($data['code']);
                     }
                     $aset = Aset::create($data);
-                    Notification::make()->title('Aset berhasil ditambahkan')->body("Aset \"{$aset->custom_name}\" telah dibuat.")->success()->send();
+                    Notification::make()
+                        ->title('Aset berhasil ditambahkan')
+                        ->body("Aset \"{$aset->custom_name}\" telah dibuat.")
+                        ->success()
+                        ->send();
                     return $aset->getKey();
                 }),
 
-                Select::make('status')->label('Status')->options(['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'done' => 'Selesai',])->default('pending')->disabled()->dehydrated()->required(),
+            Select::make('status')
+                ->label('Status')
+                ->options([
+                    'pending' => 'Pending',
+                    'approved' => 'Disetujui',
+                    'rejected' => 'Ditolak',
+                    'done' => 'Selesai',
+                ])
+                ->default('pending')
+                ->disabled()
+                ->dehydrated()
+                ->required(),
 
-                Section::make('Rencana Biaya Operasional')
-                    ->collapsible()
-                    ->schema([
-                        Repeater::make('rabOperasionalItems')
-                            ->relationship()
-                            ->label(false)
-                            ->schema([
-                                TextInput::make('description')->label('Deskripsi')->required()->placeholder('Misalnya: Sewa Mobil Box'),
+            Section::make('Rencana Biaya Operasional')
+                ->collapsible()
+                ->schema([
+                    Repeater::make('rabOperasionalItems')
+                        ->relationship()
+                        ->label(false)
+                        ->schema([
+                            TextInput::make('description')
+                                ->label('Deskripsi')
+                                ->required()
+                                ->placeholder('Misalnya: Sewa Mobil Box'),
 
-                                // --- PERUBAHAN DI SINI ---
-                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()
-                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
-                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                            TextInput::make('qty_aset')
+                                ->label('Jumlah')
+                                ->numeric()
+                                ->default(1)
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
-                                // --- PERUBAHAN DI SINI ---
-                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()
-                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
-                                    ->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
-                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                            TextInput::make('harga_sewa')
+                                ->label('Price')
+                                ->numeric()
+                                ->required()
+                                ->live(onBlur: true)
+                                ->mask(RawJs::make('$money($input)'))
+                                ->stripCharacters(',')
+                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
-                                TextInput::make('total')->label('Total')->prefix('Rp')->numeric(0, ',', '.')->disabled()->dehydrated()->required(),
-                            ])->columns(4)->createItemButtonLabel('Tambah Item Operasional'),
-                    ]),
+                            TextInput::make('total')
+                                ->label('Total')
+                                ->prefix('Rp')
+                                ->numeric(0, ',', '.')
+                                ->disabled()
+                                ->dehydrated()
+                                ->required(),
+                        ])
+                        ->columns(4)
+                        ->createItemButtonLabel('Tambah Item Operasional'),
+                ]),
 
-                Section::make('Rencana Biaya Fee')
-                    ->collapsible()
-                    ->schema([
-                        Repeater::make('rabFeeItems')
-                            ->relationship()
-                            ->label(false)
-                            ->schema([
-                                TextInput::make('description')->label('Deskripsi')->required()->placeholder('Misalnya: Fee Dokter GP'),
+            Section::make('Rencana Biaya Fee')
+                ->collapsible()
+                ->schema([
+                    Repeater::make('rabFeeItems')
+                        ->relationship()
+                        ->label(false)
+                        ->schema([
+                            TextInput::make('description')
+                                ->label('Deskripsi')
+                                ->required()
+                                ->placeholder('Misalnya: Fee Dokter GP'),
 
-                                // --- PERUBAHAN DI SINI ---
-                                TextInput::make('qty_aset')->label('Jumlah')->numeric()->default(1)->required()
-                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
-                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                            TextInput::make('qty_aset')
+                                ->label('Jumlah')
+                                ->numeric()
+                                ->default(1)
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
-                                // --- PERUBAHAN DI SINI ---
-                                TextInput::make('harga_sewa')->label('Price')->numeric()->required()
-                                    ->live(onBlur: true) // Menggunakan onBlur untuk memicu update
-                                    ->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
-                                    ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                            TextInput::make('harga_sewa')
+                                ->label('Price')
+                                ->numeric()
+                                ->required()
+                                ->live(onBlur: true)
+                                ->mask(RawJs::make('$money($input)'))
+                                ->stripCharacters(',')
+                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
-                                TextInput::make('total')->label('Total')->prefix('Rp')->numeric(0, ',', '.')->disabled()->dehydrated()->required(),
-                            ])->columns(4)->createItemButtonLabel('Tambah Item Fee'),
-                    ]),
+                            TextInput::make('total')
+                                ->label('Total')
+                                ->prefix('Rp')
+                                ->numeric(0, ',', '.')
+                                ->disabled()
+                                ->dehydrated()
+                                ->required(),
+                        ])
+                        ->columns(4)
+                        ->createItemButtonLabel('Tambah Item Fee'),
+                ]),
 
-                // Field-field di bawahnya tidak perlu diubah
-                TextInput::make('nilai_invoice')->label('Nilai Invoice')->required()->mask(RawJs::make('$money($input)'))->stripCharacters(',')->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
-                DatePicker::make('due_date')->label('Jatuh Tempo')->required(),
-                Select::make('status_pembayaran')->label('Status Pembayaran')->options(['unpaid' => 'Unpaid', 'partial paid' => 'Partial Paid', 'paid' => 'Paid',])->disabled()->dehydrated()->required()->default('unpaid'),
-                Textarea::make('keterangan')->label('Keterangan')->nullable(),
-            ]);
+            TextInput::make('nilai_invoice')
+                ->label('Nilai Invoice')
+                ->required()
+                ->mask(RawJs::make('$money($input)'))
+                ->stripCharacters(',')
+                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
+
+            DatePicker::make('due_date')->label('Jatuh Tempo')->required(),
+
+            Select::make('status_pembayaran')
+                ->label('Status Pembayaran')
+                ->options([
+                    'unpaid' => 'Unpaid',
+                    'partial paid' => 'Partial Paid',
+                    'paid' => 'Paid',
+                ])
+                ->disabled()
+                ->dehydrated()
+                ->required()
+                ->default('unpaid'),
+
+            Textarea::make('keterangan')->label('Keterangan')->nullable(),
+        ]);
     }
 
-    // ... (Sisa dari kelas Anda, termasuk table() dan fungsi helper, tetap sama)
     public static function table(Table $table): Table
     {
-        return $table->columns([
-            // ... (Kolom tabel tidak perlu diubah)
-            TextColumn::make('name')->label('Nama Proyek')->searchable()->sortable(),
-            TextColumn::make('client.name')->label('Klien')->sortable(),
-            TextColumn::make('pic')->label('PIC'),
-            TextColumn::make('employee_ids')->label('Employee')->formatStateUsing(function ($state) {
-                if (empty($state)) return '-';
-                if (!is_array($state)) {
-                    $decoded = json_decode($state, true);
-                    $state = is_array($decoded) ? $decoded : array_map('intval', explode(',', (string)$state));
-                }
-                $state = array_filter($state);
-                if (empty($state)) return '-';
-                $names = \App\Models\Employee::whereIn('employees.id', $state)->join('users', 'employees.user_id', '=', 'users.id')->pluck('users.name')->toArray();
-                return implode(', ', $names);
-            }),
-            TextColumn::make('sdm_ids')->label('SDM')->formatStateUsing(function ($state) {
-                if (!$state) return '-';
-                if (is_string($state)) {
-                    $state = array_map('intval', explode(',', $state));
-                }
-                $names = \App\Models\SDM::whereIn('id', $state)->pluck('name')->toArray();
-                return implode(', ', $names);
-            }),
-            TextColumn::make('jumlah')->label('Jumlah Peserta')->numeric(),
-            TextColumn::make('lokasi')->label('Lokasi'),
-            TextColumn::make('user.name')->label('Dibuat oleh')->sortable(),
-            TextColumn::make('status')->label('Status')->badge()->color(fn(string $state): string => match ($state) {
-                'pending' => 'warning',
-                'approved' => 'success',
-                'rejected' => 'danger',
-                'done' => 'success',
-            })->sortable(),
-        ])
+        return $table
+            ->columns([
+                TextColumn::make('name')->label('Nama Proyek')->searchable()->sortable(),
+                TextColumn::make('client.name')->label('Klien')->sortable(),
+                TextColumn::make('pic')->label('PIC'),
+                TextColumn::make('employee_ids')->label('Employee')->formatStateUsing(function ($state) {
+                    if (empty($state)) return '-';
+                    if (!is_array($state)) {
+                        $decoded = json_decode($state, true);
+                        $state = is_array($decoded) ? $decoded : array_map('intval', explode(',', (string)$state));
+                    }
+                    $state = array_filter($state);
+                    if (empty($state)) return '-';
+                    $names = \App\Models\Employee::whereIn('employees.id', $state)
+                        ->join('users', 'employees.user_id', '=', 'users.id')
+                        ->pluck('users.name')
+                        ->toArray();
+                    return implode(', ', $names);
+                }),
+                TextColumn::make('sdm_ids')->label('SDM')->formatStateUsing(function ($state) {
+                    if (!$state) return '-';
+                    if (is_string($state)) {
+                        $state = array_map('intval', explode(',', $state));
+                    }
+                    $names = \App\Models\SDM::whereIn('id', $state)->pluck('name')->toArray();
+                    return implode(', ', $names);
+                }),
+                TextColumn::make('jumlah')->label('Jumlah Peserta')->numeric(),
+                TextColumn::make('lokasi')->label('Lokasi'),
+                TextColumn::make('user.name')->label('Dibuat oleh')->sortable(),
+                TextColumn::make('status')->label('Status')->badge()->color(fn(string $state): string => match ($state) {
+                    'pending' => 'warning',
+                    'approved' => 'success',
+                    'rejected' => 'danger',
+                    'done' => 'success',
+                })->sortable(),
+            ])
             ->defaultSort('id', 'desc')
             ->filters([])
             ->actions([
-                // --- PERUBAHAN UTAMA ACTIONS DI SINI ---
+                Action::make('viewAssets')
+                    ->icon('heroicon-o-eye')
+                    ->tooltip('Lihat Aset')
+                    ->label('Aset')
+                    ->modalHeading('Daftar Aset')
+                    ->modalSubheading('Berikut adalah aset yang terkait dengan project ini.')
+                    ->modalButton('Tutup')
+                    ->action(fn() => null)
+                    ->modalContent(fn($record) => new HtmlString(
+                        Livewire::mount('project-asset-table', [
+                            'assetIds' => $record->asset_ids ?? [],
+                        ])
+                    )),
 
-                // HAPUS Action 'createRealisasiRab' karena sudah tidak dipakai
-
-                // Action 'viewAssets' tetap berguna
-                Action::make('viewAssets')->icon('heroicon-o-eye')->tooltip('Lihat Aset')->label('Aset')->modalHeading('Daftar Aset')->modalSubheading('Berikut adalah aset yang terkait dengan project ini.')->modalButton('Tutup')->action(fn() => null)->modalContent(fn($record) => new HtmlString(Livewire::mount('project-asset-table', ['assetIds' => $record->asset_ids ?? [],]))),
-
-                // --- TAMBAHKAN TOMBOL BARU ANDA DI SINI ---
                 Action::make('viewRabAwal')
                     ->label('Lihat RAB Awal')
                     ->icon('heroicon-o-document-text')
                     ->tooltip('Lihat Rencana Anggaran Biaya Awal')
                     ->color('gray')
                     ->modalHeading('Rencana Anggaran Biaya Awal')
-                    ->modalSubmitAction(false) // Sembunyikan tombol "Save"
+                    ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
-                    ->modalWidth('4xl')
-                    // Hanya tampilkan tombol jika ada item di salah satu kategori
+                    ->modalWidth('fit-content')
                     ->visible(
                         fn(ProjectRequest $record): bool =>
                         $record->rabOperasionalItems()->exists() || $record->rabFeeItems()->exists()
                     )
-                    ->modalWidth('fit-content') // <-- Menggunakan ukuran adaptif
-                    // Muat konten modal dari file Blade yang kita buat
                     ->modalContent(
                         fn(ProjectRequest $record): View =>
                         view('filament.tables.actions.view-rab-awal-modal-content', ['record' => $record])
                     ),
 
-                // HAPUS Action 'viewRAB' yang lama karena relasinya sudah tidak ada.
-                // Anda bisa membuat yang baru jika perlu, tapi untuk sekarang kita hapus.
-
-                // Action 'approve' tetap penting
-                Action::make('approve')->icon('heroicon-o-check')->tooltip('Setujui')->color('success')->requiresConfirmation()->modalHeading('Setujui Permintaan Proyek')->modalSubheading('Apakah Anda yakin ingin menyetujui permintaan proyek ini?')->modalButton('Ya, Setujui')->visible(fn($record) => $record->status === 'pending')->action(function ($record) {
-                    $record->update(['status' => 'approved']);
-                    \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])->update(['status' => 'unavailable']);
-                }),
+                Action::make('approve')
+                    ->icon('heroicon-o-check')
+                    ->tooltip('Setujui')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Setujui Permintaan Proyek')
+                    ->modalSubheading('Apakah Anda yakin ingin menyetujui permintaan proyek ini?')
+                    ->modalButton('Ya, Setujui')
+                    ->visible(fn($record) => $record->status === 'pending')
+                    ->action(function ($record) {
+                        $record->update(['status' => 'approved']);
+                        \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])->update(['status' => 'unavailable']);
+                    }),
 
                 Action::make('manageClosingRab')
-                    // Label tombol akan berubah secara dinamis
-                    ->label(fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'Edit RAB Closing' : 'Buat RAB Closing')
-
-                    // Ikon juga bisa berubah
-                    ->icon(fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'heroicon-o-pencil-square' : 'heroicon-o-document-check')
-
-                    // Warna juga bisa berubah
-                    ->color(fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'info' : 'warning')
-
-                    // Tombol ini hanya akan muncul jika project sudah disetujui
+                    ->label(
+                        fn(ProjectRequest $record): string =>
+                        $record->rabClosing()->exists() ? 'Edit RAB Closing' : 'Buat RAB Closing'
+                    )
+                    ->icon(
+                        fn(ProjectRequest $record): string =>
+                        $record->rabClosing()->exists() ? 'heroicon-o-pencil-square' : 'heroicon-o-document-check'
+                    )
+                    ->color(
+                        fn(ProjectRequest $record): string =>
+                        $record->rabClosing()->exists() ? 'info' : 'warning'
+                    )
                     ->visible(fn(ProjectRequest $record): bool => $record->status === 'approved')
-
-                    // Logika Aksi yang digabungkan
                     ->action(function (ProjectRequest $record) {
-
-                        // Cek jika RAB Closing sudah ada
                         if ($rabClosing = $record->rabClosing) {
-                            // Jika SUDAH ADA, langsung arahkan ke halaman edit
                             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
                         }
 
-                        // Jika BELUM ADA, jalankan logika pembuatan draf
                         try {
                             DB::beginTransaction();
 
-                            // 1. Hitung total dari dua sumber
                             $totalOperasional = $record->rabOperasionalItems()->sum('total');
                             $totalFee = $record->rabFeeItems()->sum('total');
                             $totalAnggaranAwal = $totalOperasional + $totalFee;
                             $jumlahPesertaAwal = $record->jumlah;
 
-                            // 2. Buat record RabClosing utama
                             $rabClosing = $record->rabClosing()->create([
                                 'closing_date'        => now(),
                                 'status'              => 'draft',
@@ -259,36 +376,42 @@ class ProjectRequestResource extends Resource
                                 'jumlah_peserta_awal' => $jumlahPesertaAwal,
                             ]);
 
-                            // 3. Salin item dari DUA SUMBER
                             foreach ($record->rabOperasionalItems as $itemAwal) {
                                 $rabClosing->operasionalItems()->create([
-                                    'description'    => $itemAwal->description,
-                                    'price'          => $itemAwal->total,
+                                    'description' => $itemAwal->description,
+                                    'price'       => $itemAwal->total,
                                 ]);
                             }
                             foreach ($record->rabFeeItems as $itemAwal) {
                                 $rabClosing->feePetugasItems()->create([
-                                    'description'    => $itemAwal->description,
-                                    'price'          => $itemAwal->total,
+                                    'description' => $itemAwal->description,
+                                    'price'       => $itemAwal->total,
                                 ]);
                             }
 
                             DB::commit();
-                            Notification::make()->title('Berhasil')->body('Draft RAB Closing berhasil dibuat.')->success()->send();
+                            Notification::make()
+                                ->title('Berhasil')
+                                ->body('Draft RAB Closing berhasil dibuat.')
+                                ->success()
+                                ->send();
 
-                            // Arahkan ke halaman edit setelah berhasil dibuat
                             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
                         } catch (\Exception $e) {
                             DB::rollBack();
-                            Notification::make()->title('Terjadi Kesalahan')->body($e->getMessage())->danger()->send();
+                            Notification::make()
+                                ->title('Terjadi Kesalahan')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
                         }
                     }),
-
-                // Action 'compare' tetap sama
-                // Tables\Actions\Action::make('compare')->label('Bandingkan RAB')->icon('heroicon-o-scale')->color('info')->visible(fn(ProjectRequest $record): bool => $record->rabClosing()->exists())->url(fn(ProjectRequest $record): string => ProjectFinanceComparison::getUrl(['project' => $record->id])),
             ])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make()
+            ]);
     }
+
     protected static function cleanMoneyValue(?string $value): int|float
     {
         if ($value === null || $value === '') {
@@ -296,18 +419,21 @@ class ProjectRequestResource extends Resource
         }
         return (float) preg_replace('/[^\d]/', '', $value);
     }
+
     protected static function updateRowTotal(Get $get, Set $set): void
     {
         $qty = (int) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
         $set('total', $qty * $harga);
     }
+
     public static function getRelations(): array
     {
         return [
             RelationManagers\ParticipantsRelationManager::class,
         ];
     }
+
     protected static function getDaysBetween($start, $end): int
     {
         if (!$start || !$end) return 1;
@@ -319,6 +445,7 @@ class ProjectRequestResource extends Resource
             return 1;
         }
     }
+
     public static function getPages(): array
     {
         return [
@@ -327,6 +454,7 @@ class ProjectRequestResource extends Resource
             'edit' => Pages\EditProjectRequest::route('/{record}/edit'),
         ];
     }
+
     public static function canViewAny(): bool
     {
         $user = auth()->user();
@@ -334,6 +462,6 @@ class ProjectRequestResource extends Resource
         if ($user->isSuperAdmin()) {
             return true;
         }
-        return auth()->user()->can('view projects');
+        return $user->can('view projects');
     }
 }
