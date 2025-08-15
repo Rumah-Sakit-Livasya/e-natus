@@ -92,8 +92,9 @@ class Aset extends Model
 
     public function projectRequests()
     {
+        // Pastikan pencarian juga cocok dengan string id (misal: "1" bukan 1)
         return \App\Models\ProjectRequest::query()
-            ->whereJsonContains('asset_ids', $this->id);
+            ->whereJsonContains('asset_ids', (string) $this->id);
     }
 
     public function getProjectRequestsAttribute()

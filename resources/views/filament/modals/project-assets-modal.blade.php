@@ -1,4 +1,4 @@
-<table class="min-w-full divide-y divide-gray-200 text-sm">
+{{-- <table class="min-w-full divide-y divide-gray-200 text-sm">
     <thead>
         <tr>
             <th class="text-left px-4 py-2 font-semibold text-gray-700">Nama Aset</th>
@@ -33,4 +33,4 @@
             </tr>
         @endforelse
     </tbody>
-</table>
+</table> --}}

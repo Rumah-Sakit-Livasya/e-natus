@@ -52,8 +52,6 @@ class NotificationResource extends Resource
                         Placeholder::make('Waktu Diterima')
                             ->content(fn(DatabaseNotification $record): string => $record->created_at->isoFormat('dddd, D MMMM YYYY - HH:mm')),
 
-                        // --- PERBAIKAN DI SINI ---
-                        // Ganti Placeholder dengan komponen View
                         View::make('filament.forms.components.notification-link')
                             ->viewData(fn(DatabaseNotification $record): array => [
                                 'url' => $record->data['url'] ?? null,
