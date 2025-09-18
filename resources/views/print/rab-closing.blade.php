@@ -118,6 +118,30 @@
             </table>
         </div>
 
+        <!-- Tambahkan RAB BMHP di bawah Fee Petugas MCU -->
+        <div class="mb-8">
+            <h4 class="font-bold bg-yellow-400 text-gray-800 px-3 py-1 mb-2">RAB BMHP :</h4>
+            <table class="w-full text-sm table-print">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-3 py-2 text-left w-12">No</th>
+                        <th class="px-3 py-2 text-left">Description</th>
+                        <th class="px-3 py-2 text-right w-48">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($record->bmhpItems as $index => $item)
+                        <tr>
+                            <td class="px-3 py-1 text-center">{{ $index + 1 }}</td>
+                            <td class="px-3 py-1">{{ $item->name }}</td>
+                            <td class="px-3 py-1 text-right">Rp {{ number_format($item->total, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <!-- End RAB BMHP -->
+
         <div class="flex justify-end">
             <div class="w-1/2">
                 <table class="w-full text-sm">
@@ -221,9 +245,12 @@
             fn($item) => $item->attachments->isNotEmpty(),
         );
         $feeItemsWithAttachments = $record->feePetugasItems->filter(fn($item) => $item->attachments->isNotEmpty());
+        $bmhpItemsWithAttachments = $record->bmhpItems->filter(fn($item) => $item->attachments->isNotEmpty());
 
-        // Gabungkan keduanya menjadi satu koleksi
-        $allItemsWithAttachments = $operasionalItemsWithAttachments->merge($feeItemsWithAttachments);
+        // Gabungkan ketiganya menjadi satu koleksi
+        $allItemsWithAttachments = $operasionalItemsWithAttachments
+            ->merge($feeItemsWithAttachments)
+            ->merge($bmhpItemsWithAttachments);
     @endphp
 
     @if ($allItemsWithAttachments->isNotEmpty())

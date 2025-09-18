@@ -133,4 +133,21 @@ class ProjectRequest extends Model
     {
         return $this->hasMany(Participant::class);
     }
+
+    public function projectBmhp()
+    {
+        return $this->hasMany(ProjectBmhp::class);
+    }
+
+    public function bmhpClosingItems(): HasMany
+    {
+        return $this->hasManyThrough(
+            RabClosingBmhpItem::class,
+            RabClosing::class,
+            'project_request_id', // FK di RabClosing
+            'rab_closing_id',     // FK di RabClosingBmhpItem
+            'id',
+            'id'
+        );
+    }
 }
