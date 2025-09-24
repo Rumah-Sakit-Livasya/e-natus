@@ -1,4 +1,4 @@
-{{-- File: resources/views/filament/forms/components/notification-link.blade.php --}}
+{{-- File:resources/views/filament/forms/components/notification-link.blade.php --}}
 
 @php
     // Variabel $url dikirim dari method ->viewData() di resource PHP
