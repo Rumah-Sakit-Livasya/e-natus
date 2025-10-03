@@ -229,6 +229,42 @@ class ProjectRequestResource extends Resource
                         ->createItemButtonLabel('Tambah Item Fee'),
                 ]),
 
+            Repeater::make('bmhp')
+                ->relationship('projectBmhp') // gunakan relasi yang benar
+                ->label('BMHP yang digunakan')
+                ->schema([
+                    Select::make('bmhp_id')
+                        ->label('BMHP')
+                        ->searchable()
+                        ->options(\App\Models\Bmhp::pluck('name', 'id')->toArray())
+                        ->required(),
+
+                    TextInput::make('jumlah_rencana')
+                        ->label('Jumlah')
+                        ->numeric()
+                        ->default(1)
+                        ->required()
+                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
+
+                    TextInput::make('harga_satuan')
+                        ->label('Harga Satuan')
+                        ->numeric()
+                        ->required()
+                        ->live(onBlur: true)
+                        ->mask(RawJs::make('$money($input)'))
+                        ->stripCharacters(',')
+                        ->dehydrateStateUsing(fn(?string $state) => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
+
+                    TextInput::make('total')
+                        ->label('Total')
+                        ->disabled()
+                        ->dehydrated(), // simpan langsung ke kolom total
+                ])
+                ->columns(4)
+                ->columnSpanFull()
+                ->createItemButtonLabel('Tambah BMHP'),
+
             TextInput::make('nilai_invoice')
                 ->label('Nilai Invoice')
                 ->required()
@@ -366,7 +402,8 @@ class ProjectRequestResource extends Resource
 
                             $totalOperasional = $record->rabOperasionalItems()->sum('total');
                             $totalFee = $record->rabFeeItems()->sum('total');
-                            $totalAnggaranAwal = $totalOperasional + $totalFee;
+                            $totalBmhp = $record->projectBmhp()->sum('total');
+                            $totalAnggaranAwal = $totalOperasional + $totalFee + $totalBmhp;
                             $jumlahPesertaAwal = $record->jumlah;
 
                             $rabClosing = $record->rabClosing()->create([
@@ -386,6 +423,17 @@ class ProjectRequestResource extends Resource
                                 $rabClosing->feePetugasItems()->create([
                                     'description' => $itemAwal->description,
                                     'price'       => $itemAwal->total,
+                                ]);
+                            }
+
+                            foreach ($record->projectBmhp as $itemBmhp) {
+                                $rabClosing->bmhpItems()->create([
+                                    'bmhp_id'        => $itemBmhp->bmhp_id,
+                                    'name'           => optional($itemBmhp->bmhp)->name,
+                                    'satuan'         => optional($itemBmhp->bmhp)->satuan,
+                                    'jumlah_rencana' => $itemBmhp->jumlah_rencana,
+                                    'harga_satuan'   => $itemBmhp->harga_satuan,
+                                    'total'          => $itemBmhp->total,
                                 ]);
                             }
 
@@ -425,6 +473,13 @@ class ProjectRequestResource extends Resource
         $qty = (int) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
         $set('total', $qty * $harga);
+    }
+
+    protected static function updateBmhpRowTotal(Get $get, Set $set): void
+    {
+        $jumlah = (int) ($get('jumlah_rencana') ?? 0);
+        $harga = self::cleanMoneyValue($get('harga_satuan')); // gunakan cleanMoneyValue
+        $set('total', $jumlah * $harga);
     }
 
     public static function getRelations(): array

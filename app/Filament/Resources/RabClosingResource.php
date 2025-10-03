@@ -71,7 +71,7 @@ class RabClosingResource extends Resource
             Section::make('Fee Petugas MCU')
                 ->schema([
                     Repeater::make('feePetugasItems')
-                        // ->relationship()
+                        ->relationship('feePetugasItems') // Aktifkan relasi agar data muncul
                         ->label('Item Fee Petugas')
                         ->schema([
                             TextInput::make('description')->label('Deskripsi')->required()->columnSpan(2),
@@ -92,6 +92,36 @@ class RabClosingResource extends Resource
                         )
                         ->columns(5)
                         ->reorderable(false)->addActionLabel('Tambah Item Fee')
+                        ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
+                ]),
+
+            Section::make('BMHP (Bahan Medis Habis Pakai)')
+                ->schema([
+                    Repeater::make('bmhpItems')
+                        ->relationship('bmhpItems') // Aktifkan relasi agar data BMHP muncul
+                        ->label('Item BMHP')
+                        ->schema([
+                            TextInput::make('name')->label('Deskripsi')->required()->columnSpan(2),
+                            // TextInput::make('satuan')->label('Satuan')->columnSpan(1),
+                            // TextInput::make('jumlah_rencana')->label('Jumlah')->numeric()->columnSpan(1),
+                            // TextInput::make('harga_satuan')->label('Harga Satuan')->numeric()->prefix('Rp')->columnSpan(1),
+                            TextInput::make('total')->label('Total')->numeric()->prefix('Rp')->required()->columnSpan(1),
+                            FileUpload::make('attachments')
+                                ->label('Struk')
+                                ->multiple()
+                                ->reorderable()
+                                ->appendFiles()
+                                ->disk('public')
+                                ->directory('rab-attachments/bmhp')
+                                ->storeFileNamesIn('original_filename')
+                                ->columnSpan(2),
+                        ])
+                        ->deleteAction(
+                            fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
+                        )
+                        ->columns(5)
+                        ->reorderable(false)
+                        ->addActionLabel('Tambah Item BMHP')
                         ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
                 ]),
 
@@ -183,14 +213,16 @@ class RabClosingResource extends Resource
      */
     private static function updateAllTotals(Get $get, Set $set): void
     {
-        // 1. Hitung total dari kedua repeater
+        // 1. Hitung total dari ketiga repeater: operasional, fee, dan bmhp
         $operasionalItems = $get('operasionalItems') ?? [];
         $feePetugasItems = $get('feePetugasItems') ?? [];
+        $bmhpItems = $get('bmhpItems') ?? [];
 
         $totalOperasional = array_reduce($operasionalItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['price']), 0);
         $totalFee = array_reduce($feePetugasItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['price']), 0);
+        $totalBmhp = array_reduce($bmhpItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['total']), 0);
 
-        $totalBiayaClosing = $totalOperasional + $totalFee;
+        $totalBiayaClosing = $totalOperasional + $totalFee + $totalBmhp;
 
         // 2. Hitung margin
         $nilaiInvoice = self::cleanMoneyValue($get('nilai_invoice_closing'));

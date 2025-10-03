@@ -52,4 +52,9 @@ class RabClosing extends Model
     {
         return $this->hasMany(RabClosingFeePetugasItem::class);
     }
+
+    public function bmhpItems(): HasMany
+    {
+        return $this->hasMany(RabClosingBmhpItem::class);
+    }
 }
