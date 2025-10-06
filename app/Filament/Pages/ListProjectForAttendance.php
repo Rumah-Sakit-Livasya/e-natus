@@ -67,4 +67,13 @@ class ListProjectForAttendance extends Page implements HasTable
                 ->url(EmployeeResource::getUrl('report')),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return true; // bypass semua permission cek
+        }
+        return auth()->user()->can('view attendance project');
+    }
 }

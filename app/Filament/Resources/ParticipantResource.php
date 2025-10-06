@@ -146,4 +146,13 @@ class ParticipantResource extends Resource
             'edit' => Pages\EditParticipant::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return true; // bypass semua permission cek
+        }
+        return auth()->user()->can('view participant project');
+    }
 }
