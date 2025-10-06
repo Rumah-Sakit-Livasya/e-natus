@@ -22,8 +22,10 @@ use App\Filament\Widgets\{
     AttendanceChart,
     AttendanceStatsOverview,
     ClientRegionChart,
+    LowStockBmhpWidget,
     ProjectCalendarWidget,
-    ProjectStatsWidget
+    ProjectStatsWidget,
+    PaymentReminderWidget
 };
 
 class DashboardPanelProvider extends PanelProvider
@@ -70,6 +72,7 @@ class DashboardPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->widgets([
+                LowStockBmhpWidget::class,
                 AssetOverviewWidget::class,
                 ProjectCalendarWidget::class,
                 Widgets\AccountWidget::class,
@@ -78,6 +81,7 @@ class DashboardPanelProvider extends PanelProvider
                 ClientRegionChart::class,
                 AttendanceStatsOverview::class,
                 AttendanceChart::class,
+                PaymentReminderWidget::class,
             ])
             ->sidebarCollapsibleOnDesktop();
     }

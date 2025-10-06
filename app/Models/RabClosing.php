@@ -29,6 +29,12 @@ class RabClosing extends Model
         'pengeluaran_operasional_closing',
         'sisa_dana_operasional',
         'justifikasi',
+        'documentation',
+    ];
+
+    protected $casts = [
+        'documentation' => 'array',
+        'closing_date' => 'date',
     ];
 
     public function projectRequest(): BelongsTo

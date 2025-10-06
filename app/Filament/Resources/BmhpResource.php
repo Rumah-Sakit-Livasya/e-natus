@@ -23,10 +23,20 @@ class BmhpResource extends Resource
         return $form->schema([
             TextInput::make('name')->label('Nama BMHP')->required(),
             TextInput::make('satuan')->label('Satuan'),
-            TextInput::make('stok_awal')->numeric()->label('Stok Awal')->default(0),
-            TextInput::make('stok_sisa')->numeric()->label('Stok Sisa')->default(0),
             TextInput::make('harga_satuan')->numeric()->label('Harga Satuan')->prefix('Rp'),
-        ]);
+            TextInput::make('stok_awal')->numeric()->label('Stok Awal')->default(0),
+            TextInput::make('stok_sisa')
+                ->numeric()
+                ->label('Stok Sisa')
+                ->default(0)
+                ->disabledOn('edit'),
+            TextInput::make('min_stok')
+                ->numeric()
+                ->label('Stok Minimum')
+                ->default(0)
+                ->helperText('Stok akan ditandai jika sisa stok sama atau di bawah angka ini.'),
+
+        ])->columns(2);
     }
 
     public static function table(Table $table): Table
@@ -36,7 +46,13 @@ class BmhpResource extends Resource
                 TextColumn::make('name')->label('Nama')->searchable(),
                 TextColumn::make('satuan')->label('Satuan'),
                 TextColumn::make('stok_awal')->label('Stok Awal')->sortable(),
-                TextColumn::make('stok_sisa')->label('Stok Sisa')->sortable()->color(fn($state) => $state <= 5 ? 'danger' : 'success'),
+                TextColumn::make('stok_sisa')->label('Stok Sisa')->sortable()
+                    ->color(function ($state, Bmhp $record): string {
+                        if ($record->min_stok > 0 && $state <= $record->min_stok) {
+                            return 'danger'; // Merah jika di bawah atau sama dengan stok min
+                        }
+                        return 'success'; // Hijau jika aman
+                    }),
                 TextColumn::make('harga_satuan')->money('idr', true)->label('Harga'),
             ])
             ->actions([
@@ -50,7 +66,7 @@ class BmhpResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // App\Filament\Resources\BmhpResource\RelationManagers\StockOpnamesRelationManager::class,
+            \App\Filament\Resources\BmhpResource\RelationManagers\StockOpnamesRelationManager::class,
         ];
     }
 

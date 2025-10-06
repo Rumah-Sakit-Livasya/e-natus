@@ -22,6 +22,7 @@ class ProjectRequest extends Model
         'employee_ids' => 'array',
         'sdm_ids' => 'array',
         'asset_ids' => 'array',
+        'due_date' => 'date',
         'start_period' => 'date',
         'end_period' => 'date',
     ];

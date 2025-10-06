@@ -39,7 +39,8 @@
                 page-break-after: always;
             }
 
-            .attachment-item {
+            .attachment-item,
+            .documentation-item {
                 break-inside: avoid;
             }
         }
@@ -54,8 +55,9 @@
         </button>
     </div>
 
-    <!-- Page 1: Main Report -->
+    <!-- Halaman 1: Laporan Utama (Tidak ada perubahan) -->
     <div class="page print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
+        {{-- ... Seluruh konten Halaman 1 tetap sama ... --}}
         <header class="pb-4">
             <img src="{{ asset('img/kop.png') }}" alt="Kop Surat" class="w-full">
         </header>
@@ -118,7 +120,6 @@
             </table>
         </div>
 
-        <!-- Tambahkan RAB BMHP di bawah Fee Petugas MCU -->
         <div class="mb-8">
             <h4 class="font-bold bg-yellow-400 text-gray-800 px-3 py-1 mb-2">RAB BMHP :</h4>
             <table class="w-full text-sm table-print">
@@ -140,7 +141,6 @@
                 </tbody>
             </table>
         </div>
-        <!-- End RAB BMHP -->
 
         <div class="flex justify-end">
             <div class="w-1/2">
@@ -167,23 +167,23 @@
         </div>
     </div>
 
-    <!-- Page 2: Justification -->
+    <!-- Halaman 2: Justifikasi, Keterangan, dll. -->
     <div class="page print-container max-w-4xl mx-auto my-8 bg-white p-8 shadow-lg">
         <header class="pb-4">
             <img src="{{ asset('img/kop.png') }}" alt="Kop Surat" class="w-full">
         </header>
 
-        <div class="mt-8">
+        <div class="mt-8 space-y-8">
             <!-- DATA PESERTA -->
-            <div class="mb-6">
-                <h4 class="font-bold">Report Data Peserta MCU :</h4>
+            <div>
+                <h4 class="font-bold text-lg mb-2">Report Data Peserta MCU :</h4>
                 <p>ESTIMASI PESERTA AWAL : {{ $record->jumlah_peserta_awal }} PESERTA</p>
                 <p>PESERTA SETELAH CLOSED : {{ $record->jumlah_peserta_akhir }} PESERTA</p>
             </div>
 
             <!-- RAB AWAL -->
-            <div class="mb-6">
-                <h4 class="font-bold">RAB AWAL :</h4>
+            <div>
+                <h4 class="font-bold text-lg mb-2">RAB AWAL :</h4>
                 <p>Total RAB, Rp. {{ number_format($record->total_anggaran, 0, ',', '.') }},-</p>
                 <p>Nilai Invoice, Rp. {{ number_format($record->projectRequest->nilai_invoice, 0, ',', '.') }},-</p>
                 @php
@@ -193,13 +193,13 @@
             </div>
 
             <!-- DANA OPERASIONAL -->
-            <div class="mb-8">
-                <table class="w-1/2">
+            <div>
+                <table class="w-full md:w-3/4">
                     <tbody class="bg-blue-100">
                         <tr>
                             <td class="px-3 py-1">Dana Operasional di Transfer oleh Natus,</td>
                             <td class="px-3 py-1 font-semibold text-right">Rp</td>
-                            <td class="px-3 py-1 font-semibold text-right">
+                            <td class="px-3 py-1 font-semibold text-right w-48">
                                 {{ number_format($record->dana_operasional_transfer, 2, ',', '.') }}</td>
                         </tr>
                         <tr>
@@ -208,10 +208,11 @@
                             <td class="px-3 py-1 font-semibold text-right">
                                 {{ number_format($record->pengeluaran_operasional_closing, 2, ',', '.') }}</td>
                         </tr>
-                        <tr>
+                        <tr class="border-t-2 border-blue-200">
                             <td class="px-3 py-1 text-blue-600 font-semibold">Sisa Dana Operasional (Dana Operasional
                                 Minus)</td>
-                            <td class="px-3 py-1 font-semibold text-right text-red-500">-Rp</td>
+                            <td class="px-3 py-1 font-semibold text-right text-red-500">
+                                {{ $record->sisa_dana_operasional < 0 ? '-Rp' : 'Rp' }}</td>
                             <td class="px-3 py-1 font-semibold text-right text-red-500">
                                 {{ number_format(abs($record->sisa_dana_operasional), 2, ',', '.') }}</td>
                         </tr>
@@ -219,35 +220,53 @@
                 </table>
             </div>
 
-            <!-- JUSTIFIKASI -->
+            <!-- PERBAIKAN: JUSTIFIKASI -->
             <div>
                 <h4 class="font-bold text-lg mb-2">Justifikasi :</h4>
-                <ol class="list-decimal list-inside space-y-2">
+                <div class="prose max-w-none text-sm">
                     @if ($record->justifikasi)
-                        @foreach (explode("\n", $record->justifikasi) as $line)
-                            @if (trim($line))
-                                <li>{{ $line }}</li>
-                            @endif
-                        @endforeach
+                        {!! $record->justifikasi !!}
                     @else
-                        <li>Tidak ada justifikasi yang diberikan.</li>
+                        <p>Tidak ada justifikasi yang diberikan.</p>
                     @endif
-                </ol>
+                </div>
+            </div>
+
+            <!-- BARU: Halaman 4: Lampiran Dokumentasi Proyek -->
+            @if (is_array($record->documentation) && !empty($record->documentation))
+                <div class="mt-8">
+                    <h3 class="text-xl font-bold underline text-center mb-8">LAMPIRAN DOKUMENTASI PROYEK</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        @foreach ($record->documentation as $docPath)
+                            <div class="documentation-item border rounded-lg p-2">
+                                <img src="{{ asset('storage/' . $docPath) }}" alt="Dokumentasi Proyek"
+                                    class="w-full h-auto object-contain rounded">
+                            </div>
+                        @endforeach
+
+                    </div>
+                </div>
+            @endif
+
+            <div>
+                <h4 class="font-bold text-lg mb-2">Catatan / Keterangan Tambahan :</h4>
+                <div class="text-sm p-4 bg-gray-50 border rounded-lg">
+                    @if ($record->keterangan)
+                        <p class="whitespace-pre-wrap">{{ $record->keterangan }}</p>
+                    @else
+                        <p class="text-gray-500">Tidak ada catatan tambahan.</p>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Page 3: Attachments -->
+    <!-- Halaman 3: Lampiran Bukti Transaksi -->
     @php
-        // Logika baru untuk mengambil SEMUA item yang memiliki lampiran
-        // Kita filter berdasarkan apakah relasi 'attachments' memiliki data (count > 0)
-        $operasionalItemsWithAttachments = $record->operasionalItems->filter(
-            fn($item) => $item->attachments->isNotEmpty(),
-        );
-        $feeItemsWithAttachments = $record->feePetugasItems->filter(fn($item) => $item->attachments->isNotEmpty());
-        $bmhpItemsWithAttachments = $record->bmhpItems->filter(fn($item) => $item->attachments->isNotEmpty());
-
-        // Gabungkan ketiganya menjadi satu koleksi
+        $operasionalItemsWithAttachments = $record->operasionalItems->filter(fn($item) => !empty($item->attachments));
+        $feeItemsWithAttachments = $record->feePetugasItems->filter(fn($item) => !empty($item->attachments));
+        $bmhpItemsWithAttachments = $record->bmhpItems->filter(fn($item) => !empty($item->attachments));
         $allItemsWithAttachments = $operasionalItemsWithAttachments
             ->merge($feeItemsWithAttachments)
             ->merge($bmhpItemsWithAttachments);
@@ -258,24 +277,19 @@
             <header class="pb-4">
                 <img src="{{ asset('img/kop.png') }}" alt="Kop Surat" class="w-full">
             </header>
-
-            <div class="mt-12">
+            <div class="mt-8">
                 <h3 class="text-xl font-bold underline text-center mb-8">LAMPIRAN BUKTI TRANSAKSI</h3>
-
-                {{-- Loop melalui setiap ITEM yang memiliki lampiran --}}
                 @foreach ($allItemsWithAttachments as $item)
                     <div class="mb-8 attachment-item">
                         <h4 class="font-semibold text-lg mb-2 bg-gray-100 p-2 rounded-t-lg">
-                            Bukti untuk: {{ $item->description }}
+                            Bukti untuk: {{ $item->description ?? $item->name }}
                         </h4>
-
-                        {{-- Di dalam setiap item, loop melalui SEMUA LAMPIRANNYA --}}
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-b-lg">
-                            @foreach ($item->attachments as $attachment)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border p-4 rounded-b-lg">
+                            {{-- Di dalam setiap item, loop melalui SEMUA LAMPIRANNYA --}}
+                            @foreach ($item->attachments as $attachmentPath)
                                 <div class="bg-gray-50 p-2 rounded border">
-                                    {{-- Gunakan $attachment->file_path untuk mendapatkan path file --}}
-                                    <img src="{{ asset('storage/' . $attachment->file_path) }}"
-                                        alt="Bukti untuk {{ $item->description }}"
+                                    <img src="{{ asset('storage/' . $attachmentPath) }}"
+                                        alt="Bukti untuk {{ $item->description ?? $item->name }}"
                                         class="w-full h-auto max-h-96 object-contain mx-auto">
                                 </div>
                             @endforeach

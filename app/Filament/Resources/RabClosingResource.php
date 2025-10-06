@@ -195,7 +195,26 @@ class RabClosingResource extends Resource
                             ->fileAttachmentsDisk('public')
                             ->fileAttachmentsDirectory('justifikasi-attachments')
                             ->fileAttachmentsVisibility('public')
-                            ->columnSpanFull() // Make the rich editor span full width
+                            ->columnSpanFull(),
+
+                        Section::make('Dokumentasi dan Catatan Tambahan')
+                            ->collapsible()
+                            ->schema([
+                                Textarea::make('keterangan')
+                                    ->label('Catatan / Keterangan Closing')
+                                    ->placeholder('Tambahkan catatan penting atau ringkasan terkait proses closing proyek ini.')
+                                    ->columnSpanFull(),
+
+                                FileUpload::make('documentation')
+                                    ->label('Unggah Dokumentasi Proyek (Foto, Laporan, dll.)')
+                                    ->multiple()
+                                    ->reorderable()
+                                    ->appendFiles()
+                                    ->disk('public')
+                                    ->directory('rab-closing-documentation')
+                                    ->storeFileNamesIn('original_filename')
+                                    ->columnSpanFull(),
+                            ])
                     ]),
                 ]),
 
