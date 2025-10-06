@@ -372,7 +372,12 @@ class ProjectRequestResource extends Resource
                     ->modalHeading('Setujui Permintaan Proyek')
                     ->modalSubheading('Apakah Anda yakin ingin menyetujui permintaan proyek ini?')
                     ->modalButton('Ya, Setujui')
-                    ->visible(fn($record) => $record->status === 'pending')
+                    ->visible(function ($record) {
+                        $user = auth()->user();
+                        $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+                        $isOwner = $record->user_id === $user->id;
+                        return $record->status === 'pending' && ($isSuperAdmin || $isOwner);
+                    })
                     ->action(function ($record) {
                         $record->update(['status' => 'approved']);
                         \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])->update(['status' => 'unavailable']);
