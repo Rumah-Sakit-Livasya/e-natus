@@ -373,9 +373,13 @@ class ProjectRequestResource extends Resource
                     ->modalSubheading('Apakah Anda yakin ingin menyetujui permintaan proyek ini?')
                     ->modalButton('Ya, Setujui')
                     ->visible(function ($record) {
-                        $user = auth()->user();
-                        $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
-                        $isOwner = $record->user_id === $user->id;
+                        $user = auth()?->user();
+                        if (!$user) {
+                            return false;
+                        }
+                        $roles = $user->roles()->pluck('name')->toArray();
+                        $isSuperAdmin = in_array('super-admin', $roles);
+                        $isOwner = in_array('owner', $roles);
                         return $record->status === 'pending' && ($isSuperAdmin || $isOwner);
                     })
                     ->action(function ($record) {
