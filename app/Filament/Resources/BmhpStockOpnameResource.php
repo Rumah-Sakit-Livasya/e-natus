@@ -153,4 +153,13 @@ class BmhpStockOpnameResource extends Resource
             'index' => Pages\ListBmhpStockOpnames::route('/'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return true; // bypass semua permission cek
+        }
+        return auth()->user()->can('view stock opname');
+    }
 }
