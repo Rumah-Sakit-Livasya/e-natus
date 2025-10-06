@@ -244,4 +244,13 @@ class PengajuanDanaResource extends Resource
             'edit' => Pages\EditPengajuanDana::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            return true; // bypass semua permission cek
+        }
+        return auth()->user()->can('view pengajuan dana');
+    }
 }
