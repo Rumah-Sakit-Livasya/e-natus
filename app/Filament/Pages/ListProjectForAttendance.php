@@ -2,9 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Resources\EmployeeResource; // <-- PASTIKAN ANDA MENAMBAHKAN INI
+use App\Filament\Resources\EmployeeResource;
 use App\Models\ProjectRequest;
-use Filament\Actions\Action;                   // <-- DAN INI JUGA PENTING
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
@@ -22,7 +22,12 @@ class ListProjectForAttendance extends Page implements HasTable
     protected static string $view = 'filament.pages.list-project-for-attendance';
     protected static ?string $title = 'Pilih Proyek untuk Mengelola Absensi';
 
-    // Method table() Anda tidak perlu diubah, sudah benar.
+    public static function shouldRegisterNavigation(): bool
+    {
+        // Hanya tampilkan menu jika user boleh melihat halaman ini
+        return static::canViewAny();
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -40,7 +45,6 @@ class ListProjectForAttendance extends Page implements HasTable
                 })->sortable(),
             ])
             ->actions([
-                // Saya ganti nama aliasnya menjadi TableAction agar tidak bentrok
                 TableAction::make('manage_attendance')
                     ->label('Kelola Absensi')
                     ->icon('heroicon-o-arrow-right-circle')
@@ -54,9 +58,6 @@ class ListProjectForAttendance extends Page implements HasTable
             ->defaultSort('id', 'desc');
     }
 
-    // ==========================================================
-    // ===== TAMBAHKAN METHOD INI =============================
-    // ==========================================================
     protected function getHeaderActions(): array
     {
         return [
@@ -70,10 +71,13 @@ class ListProjectForAttendance extends Page implements HasTable
 
     public static function canViewAny(): bool
     {
-        $user = auth()->user();
-        if ($user->isSuperAdmin()) {
-            return true; // bypass semua permission cek
+        $user = auth()?->user();
+        if (!$user) {
+            return false;
         }
-        return auth()->user()->can('view attendance project');
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view attendance project');
     }
 }
