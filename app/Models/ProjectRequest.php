@@ -34,9 +34,10 @@ class ProjectRequest extends Model
                 $projectRequest->user_id = Auth::id();
             }
 
-            $superadmins = User::role('super-admin')->get();
+            // Ambil user dengan role super-admin dan owner
+            $users = User::role(['super-admin', 'owner'])->get();
 
-            foreach ($superadmins as $user) {
+            foreach ($users as $user) {
                 $user->notify(new ProjectRequestCreated($projectRequest));
             }
 

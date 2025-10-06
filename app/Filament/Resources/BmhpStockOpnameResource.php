@@ -44,6 +44,10 @@ class BmhpStockOpnameResource extends Resource
                     ->disabledOn('edit'),
                 Textarea::make('keterangan')
                     ->columnSpanFull(),
+                // Tambahkan user_id secara tersembunyi (hidden)
+                \Filament\Forms\Components\Hidden::make('user_id')
+                    ->default(fn() => auth()->id())
+                    ->dehydrated(true),
             ]);
     }
 
