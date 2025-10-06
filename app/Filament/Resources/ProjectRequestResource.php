@@ -507,6 +507,7 @@ class ProjectRequestResource extends Resource
             'index' => Pages\ListProjectRequests::route('/'),
             'create' => Pages\CreateProjectRequest::route('/create'),
             'edit' => Pages\EditProjectRequest::route('/{record}/edit'),
+            'view' => Pages\ViewProjectRequest::route('/{record}'),
         ];
     }
 

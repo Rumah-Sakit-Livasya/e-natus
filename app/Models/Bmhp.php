@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Bmhp extends Model
@@ -17,6 +18,7 @@ class Bmhp extends Model
         'stok_awal',
         'stok_sisa',
         'harga_satuan',
+        'min_stok',
     ];
 
     // Ubah relasi ke project bmhp menjadi hasMany ke ProjectBmhp
@@ -25,8 +27,8 @@ class Bmhp extends Model
         return $this->hasMany(ProjectBmhp::class, 'bmhp_id');
     }
 
-    public function stockOpnames()
+    public function stockOpnames(): HasMany
     {
-        return $this->hasMany(\App\Models\BmhpStockOpname::class);
+        return $this->hasMany(BmhpStockOpname::class);
     }
 }
