@@ -10,6 +10,7 @@ use App\Http\Controllers\ProjectRealisationController;
 use App\Models\Aset;
 use Illuminate\Support\Facades\DB;
 use App\Filament\Resources\ProjectRequestResource\Pages\CompareRab;
+use App\Http\Controllers\ProjectRequestController;
 use App\Http\Controllers\RabClosingController;
 
 // Redirect root to dashboard login
@@ -22,6 +23,8 @@ Route::post('/project-requests/{id}/reject', [ProjectRequestActionController::cl
 Route::get('/rab-closings/{record}/print', [RabClosingController::class, 'print'])
     ->middleware('auth') // Pastikan hanya pengguna yang login yang bisa akses
     ->name('rab-closing.print');
+Route::get('/project-requests/{projectRequest}/invoice', [ProjectRequestController::class, 'printInvoice'])
+    ->name('project-requests.invoice');
 Route::middleware(['auth'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/aset/{aset}/mark-unavailable', function (Aset $aset) {
