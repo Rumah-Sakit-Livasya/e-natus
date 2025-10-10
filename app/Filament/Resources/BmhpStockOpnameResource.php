@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\BmhpStockOpnameResource\Pages;
 use App\Models\Bmhp;
 use App\Models\BmhpStockOpname;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -13,15 +14,16 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\BadgeColumn; // <-- Gunakan BadgeColumn untuk status
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Actions\Action;
 
 class BmhpStockOpnameResource extends Resource
 {
     protected static ?string $model = BmhpStockOpname::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'Riwayat Stock Opname';
@@ -29,25 +31,14 @@ class BmhpStockOpnameResource extends Resource
 
     public static function form(Form $form): Form
     {
-        // Form ini tetap ada untuk Aksi Edit
         return $form
             ->schema([
-                Select::make('bmhp_id')
-                    ->relationship('bmhp', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->disabledOn('edit'), // Tidak bisa mengubah item saat edit
-                TextInput::make('stok_fisik')
-                    ->numeric()
-                    ->required()
-                    ->disabledOn('edit'),
-                Textarea::make('keterangan')
-                    ->columnSpanFull(),
-                // Tambahkan user_id secara tersembunyi (hidden)
-                \Filament\Forms\Components\Hidden::make('user_id')
-                    ->default(fn() => auth()->id())
-                    ->dehydrated(true),
+                // Form ini digunakan untuk halaman Edit
+                Select::make('bmhp_id')->relationship('bmhp', 'name')->disabled(),
+                TextInput::make('stok_fisik')->numeric()->disabled(),
+                Textarea::make('keterangan')->columnSpanFull(),
+                TextInput::make('status')->disabled(), // Tampilkan status, tapi tidak bisa diubah
+                Hidden::make('user_id')->default(fn() => auth()->id())->dehydrated(true),
             ]);
     }
 
@@ -55,23 +46,23 @@ class BmhpStockOpnameResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('bmhp.name')
-                    ->label('Nama BMHP')
-                    ->searchable()
+                TextColumn::make('bmhp.name')->label('Nama BMHP')->searchable()->sortable(),
+                TextColumn::make('stok_fisik')->sortable(),
+
+                // ==========================================================
+                // ▼▼▼ PERUBAHAN 1: TAMPILKAN KOLOM STATUS ▼▼▼
+                // ==========================================================
+                BadgeColumn::make('status')
+                    ->colors([
+                        'warning' => 'pending',
+                        'success' => 'approved',
+                        'danger' => 'rejected', // Opsional, jika ada status reject
+                    ])
                     ->sortable(),
-                TextColumn::make('stok_fisik')
-                    ->sortable(),
-                TextColumn::make('user.name')
-                    ->label('Diperbarui Oleh')
-                    ->searchable()
-                    ->sortable()
-                    ->default('N/A'),
-                TextColumn::make('keterangan')
-                    ->limit(50),
-                TextColumn::make('created_at')
-                    ->label('Tanggal Opname')
-                    ->dateTime('d M Y, H:i')
-                    ->sortable(),
+
+                TextColumn::make('user.name')->label('Dibuat Oleh')->searchable()->sortable(),
+                TextColumn::make('keterangan')->limit(50),
+                TextColumn::make('created_at')->label('Tanggal Pengajuan')->dateTime('d M Y, H:i')->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -79,91 +70,100 @@ class BmhpStockOpnameResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+
+                // ==========================================================
+                // ▼▼▼ PERUBAHAN 2: TAMBAHKAN TOMBOL APPROVE ▼▼▼
+                // ==========================================================
+                Tables\Actions\Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation() // Minta konfirmasi sebelum approve
+                    ->action(function (BmhpStockOpname $record) {
+                        if ($record->status !== 'pending') {
+                            Notification::make()->warning()->title('Sudah Diproses')->body('Pengajuan ini sudah diproses sebelumnya.')->send();
+                            return;
+                        }
+
+                        DB::transaction(function () use ($record) {
+                            // 1. Update stok di tabel master BMHP
+                            $record->bmhp->update(['stok_sisa' => $record->stok_fisik]);
+
+                            // 2. Update status pengajuan menjadi 'approved'
+                            $record->update(['status' => 'approved']);
+                        });
+
+                        Notification::make()->success()->title('Berhasil Disetujui')->body('Stok BMHP telah berhasil diperbarui.')->send();
+                    })
+                    // Tombol ini hanya muncul jika statusnya 'pending'
+                    ->visible(fn(BmhpStockOpname $record): bool => $record->status === 'pending'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            // ==========================================================
-            // ▼▼▼ BAGIAN BARU DITAMBAHKAN DI SINI ▼▼▼
-            // ==========================================================
             ->headerActions([
                 Action::make('createMultiple')
-                    ->label('Buat Stock Opname Massal')
+                    ->label('Buat Pengajuan Stock Opname') // Ganti label
                     ->icon('heroicon-o-plus-circle')
                     ->color('primary')
                     ->form([
                         Repeater::make('opname_items')
                             ->label('Item Stock Opname')
                             ->schema([
-                                Select::make('bmhp_id')
-                                    ->label('Pilih BMHP')
-                                    ->options(Bmhp::query()->pluck('name', 'id'))
-                                    ->searchable()
-                                    ->required(),
-                                TextInput::make('stok_fisik')
-                                    ->numeric()
-                                    ->required(),
-                                TextInput::make('keterangan')
-                                    ->label('Keterangan (Opsional)'),
+                                Select::make('bmhp_id')->label('Pilih BMHP')->options(Bmhp::query()->pluck('name', 'id'))->searchable()->required(),
+                                TextInput::make('stok_fisik')->numeric()->required(),
+                                TextInput::make('keterangan')->label('Keterangan (Opsional)'),
+                                Hidden::make('user_id')->default(fn() => auth()->id())->dehydrated(true),
                             ])
                             ->columns(3)
                             ->addActionLabel('Tambah Item BMHP'),
                     ])
                     ->action(function (array $data) {
-                        // 1. Dapatkan data dari repeater
                         $items = $data['opname_items'] ?? [];
-
                         if (empty($items)) {
-                            Notification::make()
-                                ->warning()
-                                ->title('Tidak ada item')
-                                ->body('Anda harus menambahkan setidaknya satu item untuk disimpan.')
-                                ->send();
+                            // ... notifikasi jika kosong
                             return;
                         }
 
-                        // 2. Gunakan Transaction untuk menjaga konsistensi data
-                        DB::transaction(function () use ($items) {
-                            foreach ($items as $item) {
-                                // 3. Buat record stock opname baru
-                                BmhpStockOpname::create([
-                                    'bmhp_id' => $item['bmhp_id'],
-                                    'stok_fisik' => $item['stok_fisik'],
-                                    'keterangan' => $item['keterangan'],
-                                ]);
+                        // ==========================================================
+                        // ▼▼▼ PERUBAHAN 3: LOGIKA PEMBUATAN HANYA MEMBUAT PENGAJUAN ▼▼▼
+                        // ==========================================================
+                        foreach ($items as $item) {
+                            // Hanya buat record baru dengan status default 'pending'
+                            // Tidak ada lagi update ke stok master di sini!
+                            BmhpStockOpname::create([
+                                'bmhp_id' => $item['bmhp_id'],
+                                'stok_fisik' => $item['stok_fisik'],
+                                'keterangan' => $item['keterangan'] ?? null,
+                                'user_id' => $item['user_id'] ?? auth()->id(),
+                                'status' => 'pending', // Eksplisit set status
+                            ]);
+                        }
 
-                                // 4. Update stok_sisa di tabel master Bmhp
-                                Bmhp::where('id', $item['bmhp_id'])->update([
-                                    'stok_sisa' => $item['stok_fisik']
-                                ]);
-                            }
-                        });
-
-                        // 5. Kirim notifikasi sukses
-                        Notification::make()
-                            ->success()
-                            ->title('Stock opname berhasil disimpan')
-                            ->body('Sebanyak ' . count($items) . ' item BMHP telah diperbarui stoknya.')
-                            ->send();
+                        Notification::make()->success()->title('Pengajuan berhasil dibuat')->body('Pengajuan stock opname Anda telah dikirim untuk persetujuan.')->send();
                     }),
             ]);
     }
 
+    // ==========================================================
+    // ▼▼▼ PERUBAHAN 4: TAMBAHKAN HALAMAN EDIT AGAR URL NOTIFIKASI VALID ▼▼▼
+    // ==========================================================
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListBmhpStockOpnames::route('/'),
+            'edit' => Pages\EditBmhpStockOpname::route('/{record}/edit'),
         ];
     }
 
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return auth()->user()->can('view stock opname');
+        return $user && $user->can('view stock opname');
     }
 }

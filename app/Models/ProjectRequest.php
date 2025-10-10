@@ -29,20 +29,25 @@ class ProjectRequest extends Model
 
     protected static function booted()
     {
+        // Event yang berjalan SEBELUM record disimpan
         static::creating(function ($projectRequest) {
-            if (Auth::check()) {
+            if (empty($projectRequest->user_id) && Auth::check()) {
                 $projectRequest->user_id = Auth::id();
-            }
-
-            // Ambil user dengan role super-admin dan owner
-            $users = User::role(['super-admin', 'owner'])->get();
-
-            foreach ($users as $user) {
-                $user->notify(new ProjectRequestCreated($projectRequest));
             }
 
             if (empty($projectRequest->code)) {
                 $projectRequest->code = self::generateCode($projectRequest->name);
+            }
+        });
+
+        // Event yang berjalan SETELAH record disimpan
+        static::created(function ($projectRequest) {
+            // Ambil user dengan role super-admin dan owner
+            $users = User::role(['super-admin', 'owner'])->get();
+
+            // Kirim notifikasi SEKARANG (ID sudah ada dan valid)
+            foreach ($users as $user) {
+                $user->notify(new ProjectRequestCreated($projectRequest));
             }
         });
     }

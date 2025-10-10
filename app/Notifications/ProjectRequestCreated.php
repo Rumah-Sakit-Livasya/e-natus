@@ -48,10 +48,20 @@ class ProjectRequestCreated extends Notification
      */
     public function toDatabase($notifiable): DatabaseMessage
     {
+        $userName = $this->projectRequest->user?->name ?? 'Sistem';
+
         return new DatabaseMessage([
-            'title' => 'Permintaan Proyek Baru',
-            'message' => "{$this->projectRequest->name} membutuhkan persetujuan.",
-            'url' => ProjectRequestResource::getUrl(), // untuk index,
+            'title' => 'Persetujuan Proyek Baru',
+            'message' => "Proyek '{$this->projectRequest->name}' oleh {$userName} membutuhkan persetujuan.",
+
+            // ==========================================================
+            // ▼▼▼ PERBAIKAN DI SINI ▼▼▼
+            // ==========================================================
+            'url' => ProjectRequestResource::getUrl('edit', ['record' => $this->projectRequest]),
+
+            'is_approvable' => true,
+            'record_model' => ProjectRequest::class,
+            'record_id' => $this->projectRequest->id,
         ]);
     }
 

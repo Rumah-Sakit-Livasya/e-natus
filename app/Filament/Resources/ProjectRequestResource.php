@@ -14,6 +14,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle; // <-- Tambahkan ini untuk toggle PPN
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -272,6 +273,20 @@ class ProjectRequestResource extends Resource
                 ->stripCharacters(',')
                 ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
 
+            // =================== PERUBAHAN DIMULAI DI SINI ===================
+            Toggle::make('with_ppn')
+                ->label('Sertakan PPN?')
+                ->reactive()
+                ->default(false),
+
+            TextInput::make('ppn_percentage')
+                ->label('Persentase PPN (%)')
+                ->numeric()
+                ->default(11)
+                ->required()
+                ->visible(fn(Get $get) => $get('with_ppn')),
+            // =================== PERUBAHAN SELESAI DI SINI ===================
+
             DatePicker::make('due_date')->label('Jatuh Tempo')->required(),
 
             Select::make('status_pembayaran')
@@ -386,6 +401,14 @@ class ProjectRequestResource extends Resource
                         $record->update(['status' => 'approved']);
                         \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])->update(['status' => 'unavailable']);
                     }),
+
+                Action::make('printInvoice')
+                    ->label('Print Invoice')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn(ProjectRequest $record): string => route('project-requests.invoice', $record))
+                    ->openUrlInNewTab()
+                    ->visible(fn(ProjectRequest $record): bool => in_array($record->status, ['approved', 'done'])),
 
                 Action::make('manageClosingRab')
                     ->label(
