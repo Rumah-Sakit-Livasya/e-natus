@@ -347,6 +347,16 @@ class ProjectRequestResource extends Resource
             ->defaultSort('id', 'desc')
             ->filters([])
             ->actions([
+                Action::make('addParticipant')
+                    ->label('Tambah Peserta')
+                    ->icon('heroicon-o-user-plus')
+                    ->color('success')
+                    ->url(
+                        fn(ProjectRequest $record): string =>
+                        \App\Filament\Resources\ParticipantResource::getUrl('create', ['project_request_id' => $record->id])
+                    )
+                    ->visible(fn(ProjectRequest $record): bool => $record->status === 'approved'),
+
                 Action::make('viewAssets')
                     ->icon('heroicon-o-eye')
                     ->tooltip('Lihat Aset')
@@ -514,8 +524,16 @@ class ProjectRequestResource extends Resource
         $set('total', $jumlah * $harga);
     }
 
+    /**
+     * Enable editing Participants from the relation tab, even in the "view" page.
+     */
     public static function getRelations(): array
     {
+        // By default, all relation managers registered here are available
+        // on both edit and view pages (if the page uses HasRelationManagers trait).
+        // To explicitly allow editing from the view page, ensure the View page
+        // uses HasRelationManagers and that the ParticipantsRelationManager
+        // defines the necessary create & edit actions.
         return [
             RelationManagers\ParticipantsRelationManager::class,
         ];
