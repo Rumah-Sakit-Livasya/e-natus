@@ -13,6 +13,8 @@ class ParticipantsRelationManager extends RelationManager
     protected static string $relationship = 'participants';
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected bool $isReadOnly = false;
+
     public function form(Form $form): Form
     {
         return $form

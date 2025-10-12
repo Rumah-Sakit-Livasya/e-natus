@@ -10,8 +10,17 @@ use App\Http\Controllers\ProjectRealisationController;
 use App\Models\Aset;
 use Illuminate\Support\Facades\DB;
 use App\Filament\Resources\ProjectRequestResource\Pages\CompareRab;
+use App\Http\Controllers\AudiometryCheckController;
+use App\Http\Controllers\DrugTestController;
+use App\Http\Controllers\EkgCheckController;
+use App\Http\Controllers\LabCheckController;
 use App\Http\Controllers\ProjectRequestController;
 use App\Http\Controllers\RabClosingController;
+use App\Http\Controllers\RontgenCheckController;
+use App\Http\Controllers\SpirometryCheckController;
+use App\Http\Controllers\TreadmillCheckController;
+use App\Http\Controllers\UsgAbdomenCheckController;
+use App\Http\Controllers\UsgMammaeCheckController;
 
 // Redirect root to dashboard login
 Route::get('/', function () {
@@ -44,6 +53,25 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/realisation-rab-items', [ProjectRealisationController::class, 'store'])
         ->name('realisation-rab-items.store');
+
+    Route::get('/audiometry-checks/{record}/print', [AudiometryCheckController::class, 'print'])
+        ->name('audiometry.print');
+
+    Route::get('/drug-tests/{record}/print', [DrugTestController::class, 'print'])->name('drug-test.print');
+
+    Route::get('/ekg-checks/{record}/print', [EkgCheckController::class, 'print'])->name('ekg.print');
+
+    Route::get('/lab-checks/{record}/print', [LabCheckController::class, 'print'])->name('lab.print');
+
+    Route::get('/spirometry-checks/{record}/print', [SpirometryCheckController::class, 'print'])->name('spirometri.print');
+
+    Route::get('/rontgen-checks/{record}/print', [RontgenCheckController::class, 'print'])->name('rontgen.print');
+
+    Route::get('/treadmill-checks/{record}/print', [TreadmillCheckController::class, 'print'])->name('treadmill.print');
+
+    Route::get('/usg-abdomen-checks/{record}/print', [UsgAbdomenCheckController::class, 'print'])->name('usg.print');
+
+    Route::get('/usg-mammae-checks/{record}/print', [UsgMammaeCheckController::class, 'print'])->name('usg-mammae.print');
 });
 
 

@@ -5,8 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ParticipantResource\Pages;
 use App\Models\Participant;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -18,20 +21,37 @@ class ParticipantResource extends Resource
     protected static ?string $navigationGroup = 'Project';
     protected static ?int $navigationSort = 2;
 
+    // Tambahkan use jika belum ada:
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Pribadi Peserta')
+                Forms\Components\Section::make('Informasi Proyek & Peserta')
                     ->schema([
-                        // TAMBAHKAN KOMPONEN UPLOAD FOTO DI SINI
+                        // =================== KOMPONEN PROYEK REQUEST ===================
+                        Select::make('project_request_id')
+                            ->label('Proyek')
+                            ->options(
+                                \App\Models\ProjectRequest::orderByDesc('created_at')->pluck('name', 'id')
+                            )
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            // Mengambil nilai 'project_request_id' dari URL
+                            ->default(request('project_request_id'))
+                            // Menonaktifkan field ini jika sudah terisi dari URL
+                            ->disabled(filled(request('project_request_id')))
+                            ->columnSpanFull(),
+                        // ===============================================================
+
                         Forms\Components\FileUpload::make('photo')
                             ->label('Foto Peserta')
-                            ->image() // Memastikan hanya file gambar yang bisa diunggah
-                            ->imageEditor() // Memberikan editor gambar sederhana (crop, rotate)
-                            ->disk('public') // Menyimpan file di disk 'public'
-                            ->directory('participant-photos') // Di dalam folder storage/app/public/participant-photos
-                            ->columnSpanFull(), // Foto memakan lebar penuh
+                            ->image()
+                            ->imageEditor()
+                            ->disk('public')
+                            ->directory('participant-photos')
+                            ->columnSpanFull(),
 
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -79,7 +99,7 @@ class ParticipantResource extends Resource
                         Forms\Components\Textarea::make('note')
                             ->label('Catatan Tambahan')
                             ->columnSpanFull(),
-                    ])
+                    ]),
             ]);
     }
 
@@ -87,15 +107,22 @@ class ParticipantResource extends Resource
     {
         return $table
             ->columns([
-                // TAMBAHKAN KOLOM GAMBAR DI SINI
                 Tables\Columns\ImageColumn::make('photo')
                     ->label('Foto')
-                    ->circular(), // Membuat gambar menjadi lingkaran
+                    ->circular(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Peserta')
                     ->searchable()
                     ->sortable(),
+
+                // =================== TAMBAHKAN KOLOM INI ===================
+                TextColumn::make('projectRequest.name')
+                    ->label('Nama Proyek')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+                // =========================================================
 
                 Tables\Columns\TextColumn::make('employee_code')
                     ->label('No. Pegawai')
@@ -117,7 +144,13 @@ class ParticipantResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                // =================== TAMBAHKAN FILTER INI ===================
+                SelectFilter::make('project_request_id')
+                    ->label('Filter Berdasarkan Proyek')
+                    ->relationship('projectRequest', 'name')
+                    ->searchable()
+                    ->preload(),
+                // ==========================================================
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
