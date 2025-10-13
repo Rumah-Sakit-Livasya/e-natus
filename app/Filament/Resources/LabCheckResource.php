@@ -211,4 +211,14 @@ class LabCheckResource extends Resource
             'edit' => Pages\EditLabCheck::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
+    }
 }

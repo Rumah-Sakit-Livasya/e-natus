@@ -195,4 +195,14 @@ class AudiometryCheckResource extends Resource
             'edit' => Pages\EditAudiometryCheck::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
+    }
 }

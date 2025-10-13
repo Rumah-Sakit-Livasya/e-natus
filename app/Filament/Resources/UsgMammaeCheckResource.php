@@ -118,4 +118,14 @@ class UsgMammaeCheckResource extends Resource
             'edit' => Pages\EditUsgMammaeCheck::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
+    }
 }

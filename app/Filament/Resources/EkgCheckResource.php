@@ -117,4 +117,14 @@ class EkgCheckResource extends Resource
             'edit' => Pages\EditEkgCheck::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
+    }
 }

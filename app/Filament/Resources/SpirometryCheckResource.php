@@ -145,4 +145,14 @@ class SpirometryCheckResource extends Resource
             'edit' => Pages\EditSpirometryCheck::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
+    }
 }

@@ -116,4 +116,14 @@ class RontgenCheckResource extends Resource
             'edit' => Pages\EditRontgenCheck::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
+    }
 }
