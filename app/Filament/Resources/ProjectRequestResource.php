@@ -355,7 +355,21 @@ class ProjectRequestResource extends Resource
                         fn(ProjectRequest $record): string =>
                         \App\Filament\Resources\ParticipantResource::getUrl('create', ['project_request_id' => $record->id])
                     )
-                    ->visible(fn(ProjectRequest $record): bool => $record->status === 'approved'),
+                    ->visible(function (ProjectRequest $record) {
+                        $user = auth()?->user();
+                        if (!$user) {
+                            return false;
+                        }
+                        // Only show if the user's role/permission allows viewing hasil mcu
+                        if (
+                            $user->isSuperAdmin
+                            && is_callable([$user, 'isSuperAdmin'])
+                            && $user->isSuperAdmin()
+                        ) {
+                            return $record->status === 'approved';
+                        }
+                        return $record->status === 'approved' && $user->can('view hasil mcu');
+                    }),
 
                 Action::make('viewAssets')
                     ->icon('heroicon-o-eye')
