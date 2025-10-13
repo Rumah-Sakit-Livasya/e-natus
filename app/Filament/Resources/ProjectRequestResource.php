@@ -360,12 +360,22 @@ class ProjectRequestResource extends Resource
                         if (!$user) {
                             return false;
                         }
-                        // Use the isSuperAdmin relationship to determine super admin status
+                        // Safely check isSuperAdmin, handling possible bool return
                         if (
                             method_exists($user, 'isSuperAdmin')
-                            && $user->isSuperAdmin()->exists()
                         ) {
-                            return $record->status === 'approved';
+                            $isSuperAdmin = $user->isSuperAdmin();
+                            // If isSuperAdmin is a boolean
+                            if (is_bool($isSuperAdmin)) {
+                                if ($isSuperAdmin) {
+                                    return $record->status === 'approved';
+                                }
+                                // If isSuperAdmin returns a relation/query builder
+                            } elseif (is_object($isSuperAdmin) && method_exists($isSuperAdmin, 'exists')) {
+                                if ($isSuperAdmin->exists()) {
+                                    return $record->status === 'approved';
+                                }
+                            }
                         }
                         return $record->status === 'approved' && $user->can('view hasil mcu');
                     }),
