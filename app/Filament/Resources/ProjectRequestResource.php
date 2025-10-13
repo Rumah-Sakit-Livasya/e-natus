@@ -360,11 +360,10 @@ class ProjectRequestResource extends Resource
                         if (!$user) {
                             return false;
                         }
-                        // Only show if the user's role/permission allows viewing hasil mcu
+                        // Use the isSuperAdmin relationship to determine super admin status
                         if (
-                            $user->isSuperAdmin
-                            && is_callable([$user, 'isSuperAdmin'])
-                            && $user->isSuperAdmin()
+                            method_exists($user, 'isSuperAdmin')
+                            && $user->isSuperAdmin()->exists()
                         ) {
                             return $record->status === 'approved';
                         }
