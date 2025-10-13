@@ -48,7 +48,8 @@ class AudiometryCheckResource extends Resource
                             ->relationship('participant', 'name')
                             ->searchable()
                             ->preload()
-                            ->live() // Membuat field ini reaktif
+                            ->live()
+                            // afterStateUpdated tetap diperlukan jika user mengganti pilihan secara manual
                             ->afterStateUpdated(function (Set $set, ?string $state) {
                                 if ($state) {
                                     $participant = Participant::find($state);
@@ -57,9 +58,16 @@ class AudiometryCheckResource extends Resource
                                         $set('umur', Carbon::parse($participant->date_of_birth)->age);
                                         $set('jenis_kelamin', $participant->gender);
                                     }
+                                } else {
+                                    // Kosongkan field jika pilihan dihapus
+                                    $set('tanggal_lahir', null);
+                                    $set('umur', null);
+                                    $set('jenis_kelamin', null);
                                 }
                             })
                             ->required()
+                            ->default(request('participant_id'))
+                            ->disabled(filled(request('participant_id')))
                             ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('tanggal_lahir')
@@ -186,5 +194,15 @@ class AudiometryCheckResource extends Resource
             // 'view' => Pages\ViewAudiometryCheck::route('/{record}'),
             'edit' => Pages\EditAudiometryCheck::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
     }
 }

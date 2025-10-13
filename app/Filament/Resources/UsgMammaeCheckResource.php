@@ -36,15 +36,32 @@ class UsgMammaeCheckResource extends Resource
                 Section::make('Informasi Pasien')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Select::make('participant_id')->label('Nama Peserta')->relationship('participant', 'name')->searchable()->preload()->live()
+                        Forms\Components\Select::make('participant_id')
+                            ->label('Nama Peserta')
+                            ->relationship('participant', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->live()
                             ->afterStateUpdated(function (Set $set, ?string $state) {
                                 if ($state) {
                                     $p = Participant::find($state);
                                     $set('tgl_lahir', Carbon::parse($p->date_of_birth)->translatedFormat('j F Y'));
                                     $set('usia', Carbon::parse($p->date_of_birth)->age);
                                     $set('jenis_kelamin', $p->gender);
+                                    $set('instansi', $p->department); // Tambahkan ini
+                                } else {
+                                    $set('tgl_lahir', null);
+                                    $set('usia', null);
+                                    $set('jenis_kelamin', null);
+                                    $set('instansi', null);
                                 }
-                            })->required(),
+                            })
+                            ->required()
+                            // =======================================================
+                            //           PERUBAHAN UTAMA ADA DI DUA BARIS INI
+                            // =======================================================
+                            ->default(request('participant_id'))
+                            ->disabled(filled(request('participant_id'))),
                         Forms\Components\TextInput::make('no_rm')->label('No. RM'),
                         Forms\Components\TextInput::make('tgl_lahir')->label('Tanggal Lahir')->readOnly(),
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),
@@ -100,5 +117,15 @@ class UsgMammaeCheckResource extends Resource
             'create' => Pages\CreateUsgMammaeCheck::route('/create'),
             'edit' => Pages\EditUsgMammaeCheck::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
     }
 }

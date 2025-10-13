@@ -45,8 +45,21 @@ class RontgenCheckResource extends Resource
                                     $set('tgl_lahir', Carbon::parse($p->date_of_birth)->translatedFormat('j F Y'));
                                     $set('usia', Carbon::parse($p->date_of_birth)->age);
                                     $set('jenis_kelamin', $p->gender);
+                                    $set('instansi', $p->department); // Tambahkan ini
+                                } else {
+                                    $set('tgl_lahir', null);
+                                    $set('usia', null);
+                                    $set('jenis_kelamin', null);
+                                    $set('instansi', null);
                                 }
-                            })->required()->columnSpan(2),
+                            })
+                            ->required()
+                            // =======================================================
+                            //           PERUBAHAN UTAMA ADA DI DUA BARIS INI
+                            // =======================================================
+                            ->default(request('participant_id'))
+                            ->disabled(filled(request('participant_id')))
+                            ->columnSpan(2),
 
                         Forms\Components\TextInput::make('no_rontgen')->label('No. Rontgen'),
                         Forms\Components\TextInput::make('no_rm')->label('No. RM'),
@@ -61,11 +74,9 @@ class RontgenCheckResource extends Resource
                     ->schema([
                         Forms\Components\Textarea::make('temuan')
                             ->label('Yth, TS.')
-                            ->rows(8)
-                            ->default($defaultTemuan),
+                            ->rows(8),
                         Forms\Components\TextInput::make('kesan')
-                            ->label('Kesan')
-                            ->default('NORMAL CHEST'),
+                            ->label('Kesan'),
                     ]),
 
                 Section::make('Radiologist & Lampiran')
@@ -104,5 +115,15 @@ class RontgenCheckResource extends Resource
             'create' => Pages\CreateRontgenCheck::route('/create'),
             'edit' => Pages\EditRontgenCheck::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
     }
 }

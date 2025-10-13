@@ -42,6 +42,7 @@ class EkgCheckResource extends Resource
                                     $set('jenis_kelamin', $p->gender);
                                 }
                             })
+                            ->disabled(filled(request('participant_id')))
                             ->required()->columnSpan(2),
 
                         Forms\Components\TextInput::make('no_rm')->label('No. RM'),
@@ -115,5 +116,15 @@ class EkgCheckResource extends Resource
             'create' => Pages\CreateEkgCheck::route('/create'),
             'edit' => Pages\EditEkgCheck::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
     }
 }

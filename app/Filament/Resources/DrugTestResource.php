@@ -51,14 +51,20 @@ class DrugTestResource extends Resource
                                 }
                             })
                             ->required()
+                            ->disabled(filled(request('participant_id')))
                             ->columnSpan(2),
+
+                        Forms\Components\TextInput::make('no_mcu')
+                            ->label('No. MCU')
+                            ->required()
+                            ->maxLength(255),
 
                         Forms\Components\TextInput::make('nik')
                             ->label('No. NIK')
                             ->readOnly(),
 
                         Forms\Components\TextInput::make('department')
-                            ->label('PT / Dept')
+                            ->label('Instansi')
                             ->maxLength(255),
 
                         Forms\Components\TextInput::make('tgl_lahir')
@@ -73,11 +79,6 @@ class DrugTestResource extends Resource
                         Forms\Components\TextInput::make('j_kel')
                             ->label('J. Kel')
                             ->readOnly(),
-
-                        Forms\Components\TextInput::make('no_mcu')
-                            ->label('No. MCU')
-                            ->required()
-                            ->maxLength(255),
 
                         Forms\Components\DatePicker::make('tanggal_pemeriksaan')
                             ->default(now())
@@ -149,5 +150,15 @@ class DrugTestResource extends Resource
             // 'view' => Pages\ViewDrugTest::route('/{record}'),
             'edit' => Pages\EditDrugTest::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        return $user->can('view hasil mcu');
     }
 }

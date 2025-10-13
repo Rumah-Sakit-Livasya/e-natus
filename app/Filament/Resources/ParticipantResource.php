@@ -11,6 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Table;
 
 class ParticipantResource extends Resource
@@ -69,7 +71,7 @@ class ParticipantResource extends Resource
                                     ->required(),
 
                                 Forms\Components\TextInput::make('department')
-                                    ->label('Departemen / Bagian')
+                                    ->label('Instansi')
                                     ->maxLength(255),
 
                                 Forms\Components\Select::make('gender')
@@ -129,7 +131,7 @@ class ParticipantResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('department')
-                    ->label('Departemen')
+                    ->label('Instansi')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('date_of_birth')
@@ -153,8 +155,54 @@ class ParticipantResource extends Resource
                 // ==========================================================
             ])
             ->actions([
+                Action::make('print_summary')
+                    ->label('Rekap Laporan')
+                    ->icon('heroicon-o-document-chart-bar')
+                    ->color('warning')
+                    ->url(fn(Participant $record): string => route('participant.report.print', $record))
+                    ->openUrlInNewTab(),
+
+                ActionGroup::make([
+                    Action::make('audiometry')
+                        ->label('Audiometri')
+                        ->icon('heroicon-o-clipboard-document-list')
+                        ->url(fn(Participant $record): string => AudiometryCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('drug_test')
+                        ->label('Tes Narkoba')
+                        ->icon('heroicon-o-beaker')
+                        ->url(fn(Participant $record): string => DrugTestResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('ekg')
+                        ->label('EKG')
+                        ->icon('heroicon-o-heart')
+                        ->url(fn(Participant $record): string => EkgCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('lab_check')
+                        ->label('Lab Lengkap')
+                        ->icon('heroicon-o-clipboard-document-list')
+                        ->url(fn(Participant $record): string => LabCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('rontgen')
+                        ->label('Rontgen')
+                        ->icon('heroicon-o-viewfinder-circle')
+                        ->url(fn(Participant $record): string => RontgenCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('spirometry')
+                        ->label('Spirometri')
+                        ->icon('heroicon-o-scale')
+                        ->url(fn(Participant $record): string => SpirometryCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('treadmill')
+                        ->label('Treadmill')
+                        ->icon('heroicon-o-presentation-chart-line')
+                        ->url(fn(Participant $record): string => TreadmillCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('usg_abdomen')
+                        ->label('USG Abdomen')
+                        ->icon('heroicon-o-photo')
+                        ->url(fn(Participant $record): string => UsgAbdomenCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                    Action::make('usg_mammae')
+                        ->label('USG Mammae')
+                        ->icon('heroicon-o-sparkles')
+                        ->url(fn(Participant $record): string => UsgMammaeCheckResource::getUrl('create', ['participant_id' => $record->id])),
+                ])->label('Pemeriksaan')->icon('heroicon-m-plus')->color('success'),
+
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make(),
+                // Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
