@@ -403,10 +403,15 @@ class ProjectRequestResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->modalWidth('fit-content')
-                    ->visible(
-                        fn(ProjectRequest $record): bool =>
-                        $record->rabOperasionalItems()->exists() || $record->rabFeeItems()->exists()
-                    )
+                    ->visible(function (ProjectRequest $record) {
+                        $user = auth()?->user();
+                        if (!$user) {
+                            return false;
+                        }
+                        // Hanya user yang memiliki permission 'view rab' boleh melihat action ini
+                        return ($record->rabOperasionalItems()->exists() || $record->rabFeeItems()->exists())
+                            && $user->can('view rab awal');
+                    })
                     ->modalContent(
                         fn(ProjectRequest $record): View =>
                         view('filament.tables.actions.view-rab-awal-modal-content', ['record' => $record])
@@ -441,7 +446,13 @@ class ProjectRequestResource extends Resource
                     ->color('gray')
                     ->url(fn(ProjectRequest $record): string => route('project-requests.invoice', $record))
                     ->openUrlInNewTab()
-                    ->visible(fn(ProjectRequest $record): bool => in_array($record->status, ['approved', 'done'])),
+                    ->visible(function (ProjectRequest $record): bool {
+                        $user = auth()?->user();
+                        if (!$user) {
+                            return false;
+                        }
+                        return in_array($record->status, ['approved', 'done']) && $user->can('print invoice project');
+                    }),
 
                 Action::make('manageClosingRab')
                     ->label(
@@ -456,7 +467,13 @@ class ProjectRequestResource extends Resource
                         fn(ProjectRequest $record): string =>
                         $record->rabClosing()->exists() ? 'info' : 'warning'
                     )
-                    ->visible(fn(ProjectRequest $record): bool => $record->status === 'approved')
+                    ->visible(function (ProjectRequest $record): bool {
+                        $user = auth()?->user();
+                        if (!$user) {
+                            return false;
+                        }
+                        return $record->status === 'approved' && $user->can('rab manage');
+                    })
                     ->action(function (ProjectRequest $record) {
                         if ($rabClosing = $record->rabClosing) {
                             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
