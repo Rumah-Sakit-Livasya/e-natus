@@ -25,4 +25,49 @@ class Participant extends Model
     {
         return $this->belongsTo(ProjectRequest::class);
     }
+
+    public function audiometryChecks(): HasMany
+    {
+        return $this->hasMany(AudiometryCheck::class);
+    }
+
+    public function drugTests(): HasMany
+    {
+        return $this->hasMany(DrugTest::class);
+    }
+
+    public function ekgChecks(): HasMany
+    {
+        return $this->hasMany(EkgCheck::class);
+    }
+
+    public function labChecks(): HasMany
+    {
+        return $this->hasMany(LabCheck::class);
+    }
+
+    public function rontgenChecks(): HasMany
+    {
+        return $this->hasMany(RontgenCheck::class);
+    }
+
+    public function spirometryChecks(): HasMany
+    {
+        return $this->hasMany(SpirometryCheck::class);
+    }
+
+    public function treadmillChecks(): HasMany
+    {
+        return $this->hasMany(TreadmillCheck::class);
+    }
+
+    public function usgAbdomenChecks(): HasMany
+    {
+        return $this->hasMany(UsgAbdomenCheck::class);
+    }
+
+    public function usgMammaeChecks(): HasMany
+    {
+        return $this->hasMany(UsgMammaeCheck::class);
+    }
 }

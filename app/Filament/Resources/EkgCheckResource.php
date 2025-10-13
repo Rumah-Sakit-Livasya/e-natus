@@ -42,6 +42,7 @@ class EkgCheckResource extends Resource
                                     $set('jenis_kelamin', $p->gender);
                                 }
                             })
+                            ->disabled(filled(request('participant_id')))
                             ->required()->columnSpan(2),
 
                         Forms\Components\TextInput::make('no_rm')->label('No. RM'),

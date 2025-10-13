@@ -14,6 +14,7 @@ use App\Http\Controllers\AudiometryCheckController;
 use App\Http\Controllers\DrugTestController;
 use App\Http\Controllers\EkgCheckController;
 use App\Http\Controllers\LabCheckController;
+use App\Http\Controllers\ParticipantReportController;
 use App\Http\Controllers\ProjectRequestController;
 use App\Http\Controllers\RabClosingController;
 use App\Http\Controllers\RontgenCheckController;
@@ -72,6 +73,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/usg-abdomen-checks/{record}/print', [UsgAbdomenCheckController::class, 'print'])->name('usg.print');
 
     Route::get('/usg-mammae-checks/{record}/print', [UsgMammaeCheckController::class, 'print'])->name('usg-mammae.print');
+
+    Route::get('/participants/{participant}/print-summary', [ParticipantReportController::class, 'printSummary'])
+        ->name('participant.report.print');
 });
 
 

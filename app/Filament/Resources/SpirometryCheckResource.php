@@ -57,7 +57,9 @@ class SpirometryCheckResource extends Resource
                                     $set('usia', Carbon::parse($p->date_of_birth)->age);
                                     $set('jenis_kelamin', $p->gender);
                                 }
-                            })->required(),
+                            })
+                            ->required()
+                            ->disabled(filled(request('participant_id'))),
                         Forms\Components\TextInput::make('no_rm')->label('No. RM'),
                         Forms\Components\TextInput::make('tgl_lahir')->label('Tanggal Lahir')->readOnly(),
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),
