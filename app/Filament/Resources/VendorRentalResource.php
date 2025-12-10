@@ -18,6 +18,9 @@ class VendorRentalResource extends Resource
     protected static ?string $model = VendorRental::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Manajemen Aset';
+    protected static ?string $pluralModelLabel = 'Aset Vendor';
+
 
     public static function form(Form $form): Form
     {
