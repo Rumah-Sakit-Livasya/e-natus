@@ -32,9 +32,11 @@ class UserResource extends Resource
             TextInput::make('email')->email()->required()->maxLength(255),
             TextInput::make('password')
                 ->password()
-                ->required(fn($record) => !$record)
+                ->required(fn($record) => !$record) // Required only when creating
                 ->minLength(8)
-                ->dehydrateStateUsing(fn($state) => $state ? bcrypt($state) : null),
+                ->rule('nullable') // Allow empty when editing
+                ->dehydrated(fn($state) => filled($state)) // Only save if filled
+                ->dehydrateStateUsing(fn($state) => filled($state) ? bcrypt($state) : null),
             Select::make('roles')
                 ->multiple()
                 ->relationship('roles', 'name')
