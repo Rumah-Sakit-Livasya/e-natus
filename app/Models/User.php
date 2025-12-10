@@ -56,12 +56,9 @@ class User extends Authenticatable
         return $this->hasMany(ProjectRequest::class);
     }
 
-    public function notifications()
-    {
-        return $this->morphMany(\App\Models\Notification::class, 'notifiable');
-    }
 
     public function employee()
+
     {
         return $this->hasOne(Employee::class);
     }

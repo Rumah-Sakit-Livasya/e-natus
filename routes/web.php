@@ -91,3 +91,23 @@ Route::domain(config('filament.panels.dashboard.domain'))
         Route::get('/project-comparison/{record}', ProjectFinanceComparison::class)
             ->name('filament.admin.pages.project-finance-comparison'); // Beri nama yang unik
     });
+
+// Debug route - hapus setelah selesai debug
+Route::middleware(['web', 'auth'])->get('/debug/current-user-notifications', function () {
+    $user = auth()->user();
+    $notifications = $user->notifications()->latest()->get();
+    
+    return response()->json([
+        'user_id' => $user->id,
+        'user_name' => $user->name,
+        'total_notifications' => $user->notifications()->count(),
+        'unread_notifications' => $user->unreadNotifications()->count(),
+        'latest_notifications' => $notifications->map(fn($n) => [
+            'id' => $n->id,
+            'title' => $n->data['title'] ?? 'No title',
+            'message' => $n->data['message'] ?? 'No message',
+            'read_at' => $n->read_at,
+            'created_at' => $n->created_at->diffForHumans(),
+        ])->toArray()
+    ]);
+});

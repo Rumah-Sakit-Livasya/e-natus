@@ -22,9 +22,12 @@ class ProjectRequest extends Model
         'employee_ids' => 'array',
         'sdm_ids' => 'array',
         'asset_ids' => 'array',
+        'vendor_rental_ids' => 'array',
         'due_date' => 'date',
         'start_period' => 'date',
         'end_period' => 'date',
+        'approval_level_1_at' => 'datetime',
+        'approval_level_2_at' => 'datetime',
     ];
 
     protected static function booted()
@@ -38,12 +41,15 @@ class ProjectRequest extends Model
             if (empty($projectRequest->code)) {
                 $projectRequest->code = self::generateCode($projectRequest->name);
             }
+
+            // Set initial approval status to pending for level 1
+            $projectRequest->approval_level_1_status = 'pending';
         });
 
         // Event yang berjalan SETELAH record disimpan
         static::created(function ($projectRequest) {
-            // Ambil user dengan role super-admin dan owner
-            $users = User::role(['super-admin', 'owner'])->get();
+            // Kirim notifikasi ke user dengan permission 'approve_project_level_1'
+            $users = User::permission('approve_project_level_1')->get();
 
             // Kirim notifikasi SEKARANG (ID sudah ada dan valid)
             foreach ($users as $user) {
@@ -156,5 +162,60 @@ class ProjectRequest extends Model
             'id',
             'id'
         );
+    }
+
+    // =================== APPROVAL RELATIONSHIPS ===================
+    
+    /**
+     * User who approved Level 1
+     */
+    public function approvalLevel1By()
+    {
+        return $this->belongsTo(User::class, 'approval_level_1_by');
+    }
+
+    /**
+     * User who approved Level 2
+     */
+    public function approvalLevel2By()
+    {
+        return $this->belongsTo(User::class, 'approval_level_2_by');
+    }
+
+    // =================== APPROVAL HELPER METHODS ===================
+
+    /**
+     * Check if project is pending Level 1 approval
+     */
+    public function isPendingLevel1Approval(): bool
+    {
+        return $this->approval_level_1_status === 'pending';
+    }
+
+    /**
+     * Check if project is pending Level 2 approval
+     */
+    public function isPendingLevel2Approval(): bool
+    {
+        return $this->approval_level_1_status === 'approved' 
+            && $this->approval_level_2_status === 'pending';
+    }
+
+    /**
+     * Check if project is fully approved (both levels)
+     */
+    public function isFullyApproved(): bool
+    {
+        return $this->approval_level_1_status === 'approved' 
+            && $this->approval_level_2_status === 'approved';
+    }
+
+    /**
+     * Check if any level has been rejected
+     */
+    public function isRejected(): bool
+    {
+        return $this->approval_level_1_status === 'rejected' 
+            || $this->approval_level_2_status === 'rejected';
     }
 }

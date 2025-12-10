@@ -17,6 +17,8 @@ class Aset extends Model
         'asset_receipt_item_id',
         'lander_id',
         'custom_name',
+        'type',
+        'serial_number',
         'code',
         'condition',
         'brand',
@@ -33,6 +35,8 @@ class Aset extends Model
     {
         return [
             'custom_name',
+            'type',
+            'serial_number',
             'code',
             'condition',
             'brand',
