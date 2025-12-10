@@ -25,6 +25,7 @@ class StockOpnameCreated extends Notification
         $userName = $this->BmhpStockOpname->user?->name ?? 'Sistem';
 
         return new DatabaseMessage([
+            'format' => 'filament',
             'title' => 'Persetujuan Stock Opname',
             'message' => "{$userName} mengajukan stock opname untuk {$bmhpName}. Mohon ditinjau.",
             'url' => BmhpStockOpnameResource::getUrl('edit', ['record' => $this->BmhpStockOpname]),

@@ -5,12 +5,10 @@ namespace App\Notifications;
 use App\Filament\Resources\ProjectRequestResource;
 use App\Models\ProjectRequest;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\DatabaseMessage;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ProjectRequestCreated extends Notification
+class ProjectRequestLevel2Approval extends Notification
 {
     use Queueable;
 
@@ -29,18 +27,7 @@ class ProjectRequestCreated extends Notification
      */
     public function via($notifiable): array
     {
-        return ['database']; // atau tambahkan 'mail' jika ingin kirim email
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
+        return ['database'];
     }
 
     /**
@@ -48,18 +35,13 @@ class ProjectRequestCreated extends Notification
      */
     public function toDatabase($notifiable): DatabaseMessage
     {
-        $userName = $this->projectRequest->user?->name ?? 'Sistem';
+        $level1Approver = $this->projectRequest->approvalLevel1By?->name ?? 'Sistem';
 
         return new DatabaseMessage([
             'format' => 'filament',
-            'title' => 'Persetujuan Level 1 Diperlukan',
-            'message' => "Proyek '{$this->projectRequest->name}' oleh {$userName} membutuhkan persetujuan Level 1 Anda.",
-
-            // ==========================================================
-            // ▼▼▼ PERBAIKAN DI SINI ▼▼▼
-            // ==========================================================
+            'title' => 'Persetujuan Level 2 Diperlukan',
+            'message' => "Proyek '{$this->projectRequest->name}' telah disetujui Level 1 oleh {$level1Approver}. Persetujuan Level 2 Anda diperlukan.",
             'url' => ProjectRequestResource::getUrl('edit', ['record' => $this->projectRequest]),
-
             'is_approvable' => true,
             'record_model' => ProjectRequest::class,
             'record_id' => $this->projectRequest->id,

@@ -57,6 +57,16 @@ class AsetResource extends Resource
                 ->searchable()
                 ->sortable(),
 
+            TextColumn::make('type')
+                ->label('Tipe')
+                ->searchable()
+                ->sortable(),
+
+            TextColumn::make('serial_number')
+                ->label('Serial Number')
+                ->searchable()
+                ->sortable(),
+
             TextColumn::make('code')
                 ->label('Kode')
                 ->searchable()
@@ -204,6 +214,16 @@ class AsetResource extends Resource
             TextInput::make('custom_name')
                 ->label('Nama Aset')
                 ->required()
+                ->maxLength(50),
+
+            TextInput::make('type')
+                ->label('Tipe')
+                ->nullable()
+                ->maxLength(50),
+
+            TextInput::make('serial_number')
+                ->label('Serial Number')
+                ->nullable()
                 ->maxLength(50),
 
             // Hanya tampilkan field 'code' jika bukan edit

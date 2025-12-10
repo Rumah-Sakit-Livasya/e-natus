@@ -120,25 +120,41 @@
     </div>
 
     {{-- GRAND TOTAL --}}
+    @php
+        $grandTotalRAB =
+            $record->projectBmhp->sum('total') +
+            $record->rabOperasionalItems->sum('total') +
+            $record->rabFeeItems->sum('total');
+        $nilaiInvoice = $record->nilai_invoice ?? 0;
+        $keuntunganMargin = $nilaiInvoice - $grandTotalRAB;
+        $persentaseMargin = $nilaiInvoice > 0 ? ($keuntunganMargin / $nilaiInvoice) * 100 : 0;
+    @endphp
+
     <hr class="my-4">
     <div class="flex flex-col items-end pr-4 space-y-2">
         <div class="flex items-center text-base font-semibold text-gray-700">
             <span class="mr-4">Grand Total RAB Awal:</span>
             <span>
-                Rp
-                {{ number_format(
-                    $record->projectBmhp->sum('total') +
-                        $record->rabOperasionalItems->sum('total') +
-                        $record->rabFeeItems->sum('total'),
-                    0,
-                    ',',
-                    '.',
-                ) }}
+                Rp {{ number_format($grandTotalRAB, 0, ',', '.') }}
             </span>
         </div>
         <div class="flex items-center text-lg font-bold">
             <span class="mr-4">Nilai Invoice:</span>
-            <span>Rp {{ number_format($record->nilai_invoice ?? 0, 0, ',', '.') }}</span>
+            <span>Rp {{ number_format($nilaiInvoice, 0, ',', '.') }}</span>
+        </div>
+        <div class="flex items-center text-lg font-bold text-green-600">
+            <span class="mr-4">Margin:</span>
+            <span>
+                Rp {{ number_format($keuntunganMargin, 0, ',', '.') }}
+                <span
+                    class="ml-2 text-sm
+                    @if ($persentaseMargin < 0) text-red-600
+                    @elseif ($persentaseMargin > 0) text-green-600
+                    @else text-gray-600 @endif
+                ">
+                    ({{ number_format($persentaseMargin, 2, ',', '.') }}%)
+                </span>
+            </span>
         </div>
     </div>
 </div>
