@@ -91,7 +91,13 @@ class AsetResource extends Resource
                 ->label('Tarif')
                 ->searchable()
                 ->sortable()
-                ->money('IDR', true), // Atau sesuaikan formatnya
+                ->money('IDR', true),
+
+            TextColumn::make('harga_sewa')
+                ->label('Harga Sewa')
+                ->searchable()
+                ->sortable()
+                ->money('IDR', true),
 
             TextColumn::make('satuan')
                 ->label('Satuan')
@@ -261,6 +267,12 @@ class AsetResource extends Resource
                 ->label('Tarif')
                 ->numeric()
                 ->nullable(),
+
+            TextInput::make('harga_sewa')
+                ->label('Harga Sewa')
+                ->numeric()
+                ->nullable()
+                ->helperText('Harga sewa untuk project request'),
 
             TextInput::make('satuan')
                 ->label('Satuan')

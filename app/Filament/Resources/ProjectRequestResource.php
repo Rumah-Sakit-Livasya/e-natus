@@ -136,7 +136,7 @@ class ProjectRequestResource extends Resource
                     foreach ($selectedAssets as $asset) {
                         $parts = explode('/', $asset->code);
                         $index = end($parts);
-                        $description = "{$asset->custom_name} - {$asset->lander->code}$index";
+                        $description = "SEWA INTERNAL {$asset->custom_name} - {$asset->lander->code}$index";
 
                         // Check if this asset is already in the list to avoid duplicates
                         $exists = collect($currentItems)->contains(function ($item) use ($description) {
@@ -147,8 +147,9 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => 1,
-                                'harga_sewa' => $asset->tarif,
-                                'total' => $asset->tarif,
+                                'harga_sewa' => $asset->harga_sewa ?? 0, // Use harga_sewa instead of tarif
+                                'total' => $asset->harga_sewa ?? 0,
+                                'is_internal_rental' => true, // Flag to identify as internal rental
                             ];
                         }
                     }
@@ -312,15 +313,15 @@ class ProjectRequestResource extends Resource
                                 ->stripCharacters(',')
                                 ->dehydrateStateUsing(fn (?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
                                 ->afterStateUpdated(fn (Get $get, Set $set) => self::updateRowTotal($get, $set))
-                                ->disabled(fn (Get $get) => ($get('is_vendor_rental') ?? false) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
+                                ->disabled(fn (Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
                                 ->dehydrated()
                                 ->suffixAction(
                                     \Filament\Forms\Components\Actions\Action::make('requestPriceChange')
                                         ->label('Request Change')
                                         ->icon('heroicon-o-pencil')
                                         ->visible(function (Get $get, $state) {
-                                            // Show only if item is vendor rental and user doesn't have permission
-                                            return ($get('is_vendor_rental') ?? false) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']);
+                                            // Show if item is vendor rental OR internal rental and user doesn't have permission
+                                            return (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']);
                                         })
                                         ->form([
                                             \Filament\Forms\Components\TextInput::make('requested_price')
@@ -361,6 +362,9 @@ class ProjectRequestResource extends Resource
                                 ),
 
                             \Filament\Forms\Components\Hidden::make('is_vendor_rental')
+                                ->default(false),
+
+                            \Filament\Forms\Components\Hidden::make('is_internal_rental')
                                 ->default(false),
 
                             TextInput::make('total')
