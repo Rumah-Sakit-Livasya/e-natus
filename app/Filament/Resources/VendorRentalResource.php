@@ -20,6 +20,8 @@ class VendorRentalResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Manajemen Aset';
     protected static ?string $pluralModelLabel = 'Aset Vendor';
+    protected static ?string $navigationLabel = 'Aset Vendor';
+    protected static ?string $modelLabel = 'Aset Vendor';
 
 
     public static function form(Form $form): Form
