@@ -31,6 +31,8 @@ class PermissionRoleUserSeeder extends Seeder
 
             // Project Management
             'view projects',
+            'approve_project_level_1',
+            'approve_project_level_2',
         ];
 
         foreach ($permissions as $permission) {

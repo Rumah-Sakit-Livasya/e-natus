@@ -41,7 +41,7 @@ class DashboardPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->databaseNotifications()
-            ->databaseNotificationsPolling('5s')
+            ->databaseNotificationsPolling('30s')
             ->discoverResources(
                 in: app_path('Filament/Resources'),
                 for: 'App\\Filament\\Resources'
@@ -52,7 +52,6 @@ class DashboardPanelProvider extends PanelProvider
             )
             ->pages([
                 Pages\Dashboard::class,
-                \App\Filament\Pages\NotificationDebug::class,
             ])
             ->discoverWidgets(
                 in: app_path('Filament/Widgets'),

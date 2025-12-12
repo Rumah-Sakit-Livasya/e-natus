@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Notifications\NewProjectRequestNotification;
 use App\Notifications\ProjectRequestCreated;
-use App\Traits\HasNotifications;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ProjectRequest extends Model
 {
-    use SoftDeletes, HasNotifications;
+    use SoftDeletes;
     protected $table = 'project_requests';
     protected $guarded = ['id'];
 
@@ -48,12 +47,28 @@ class ProjectRequest extends Model
 
         // Event yang berjalan SETELAH record disimpan
         static::created(function ($projectRequest) {
-            // Kirim notifikasi ke user dengan permission 'approve_project_level_1'
-            $users = User::permission('approve_project_level_1')->get();
+            // Only send notification if this is a new request pending Level 1 approval
+            if ($projectRequest->approval_level_1_status === 'pending') {
+                // Kirim notifikasi ke user dengan permission 'approve_project_level_1'
+                $users = User::permission('approve_project_level_1')->get();
 
-            // Kirim notifikasi SEKARANG (ID sudah ada dan valid)
-            foreach ($users as $user) {
-                $user->notify(new ProjectRequestCreated($projectRequest));
+                // Kirim notifikasi SEKARANG (ID sudah ada dan valid)
+                foreach ($users as $user) {
+                    try {
+                        $user->notify(new ProjectRequestCreated($projectRequest));
+                        \Log::info('Notification sent', [
+                            'project_id' => $projectRequest->id,
+                            'user_id' => $user->id,
+                            'user_name' => $user->name
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send notification', [
+                            'project_id' => $projectRequest->id,
+                            'user_id' => $user->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
             }
         });
     }

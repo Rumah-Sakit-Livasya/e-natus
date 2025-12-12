@@ -19,6 +19,9 @@ class Kernel extends ConsoleKernel
 
         // TAMBAHKAN BARIS INI UNTUK MENJALANKAN PERINTAH NOTIFIKASI SETIAP HARI
         $schedule->command('project:send-due-date-reminders')->dailyAt('08:00');
+        
+        // Auto-cleanup notifikasi yang lebih dari 7 hari
+        $schedule->command('notifications:cleanup')->dailyAt('02:00');
     }
 
     /**

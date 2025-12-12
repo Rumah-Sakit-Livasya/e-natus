@@ -362,10 +362,12 @@ class ProjectRequestResource extends Resource
                                 ),
 
                             \Filament\Forms\Components\Hidden::make('is_vendor_rental')
-                                ->default(false),
+                                ->default(false)
+                                ->dehydrated(),
 
                             \Filament\Forms\Components\Hidden::make('is_internal_rental')
-                                ->default(false),
+                                ->default(false)
+                                ->dehydrated(),
 
                             TextInput::make('total')
                                 ->label('Total')
