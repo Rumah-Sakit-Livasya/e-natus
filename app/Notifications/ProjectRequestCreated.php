@@ -63,6 +63,7 @@ class ProjectRequestCreated extends Notification
             'is_approvable' => true,
             'record_model' => ProjectRequest::class,
             'record_id' => $this->projectRequest->id,
+            'approval_level' => 1, // Indicate this is Level 1 approval
         ]);
     }
 
