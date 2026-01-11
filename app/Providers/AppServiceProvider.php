@@ -9,10 +9,13 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+<<<<<<< HEAD
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Config;
 
+=======
+>>>>>>> 41a31ad1a8a01d6fb3f70df969516c7d431da7ea
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,12 +32,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+<<<<<<< HEAD
 	date_default_timezone_set(Config::get('app.timezone'));
    	Carbon::setLocale('id');
     	Carbon::setTestNow(); // reset kalau ada testing
     	Carbon::macro('inWIB', function () {
         	return $this->timezone('Asia/Jakarta');
     	});
+=======
+>>>>>>> 41a31ad1a8a01d6fb3f70df969516c7d431da7ea
         Filament::registerResources([
             UserResource::class,
             RoleResource::class,

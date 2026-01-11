@@ -65,7 +65,11 @@ return [
     |
     */
 
+<<<<<<< HEAD
     'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
+=======
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
+>>>>>>> 41a31ad1a8a01d6fb3f70df969516c7d431da7ea
 
     /*
     |--------------------------------------------------------------------------

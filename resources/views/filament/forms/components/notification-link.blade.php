@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 {{-- File:resources/views/filament/forms/components/notification-link.blade.php --}}
+=======
+{{-- File: resources/views/filament/forms/components/notification-link.blade.php --}}
+>>>>>>> 41a31ad1a8a01d6fb3f70df969516c7d431da7ea
 
 @php
     // Variabel $url dikirim dari method ->viewData() di resource PHP
