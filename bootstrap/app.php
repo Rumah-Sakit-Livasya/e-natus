@@ -11,10 +11,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+<<<<<<< HEAD
+        //
+=======
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
         $middleware->web(append: [
             'throttle:120,1',
         ]);
+>>>>>>> 41a31ad1a8a01d6fb3f70df969516c7d431da7ea
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
