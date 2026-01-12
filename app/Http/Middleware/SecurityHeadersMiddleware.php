@@ -32,12 +32,24 @@ class SecurityHeadersMiddleware
         // Referrer-Policy (GDPR)
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        // Content-Security-Policy
-        $csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;";
+        // Content-Security-Policy - Compatible with Filament & Laravel
+        $csp = implode('; ', [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src 'self' data: https://fonts.gstatic.com",
+            "img-src 'self' data: https: blob:",
+            "connect-src 'self'",
+            "frame-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "upgrade-insecure-requests"
+        ]);
         $response->headers->set('Content-Security-Policy', $csp);
 
-        // Permissions-Policy
-        $permissions = 'camera=(), microphone=(), geolocation=()';
+        // Permissions-Policy - Allow geolocation for attendance features
+        $permissions = 'camera=(), microphone=(), geolocation=(self)';
         $response->headers->set('Permissions-Policy', $permissions);
 
         return $response;

