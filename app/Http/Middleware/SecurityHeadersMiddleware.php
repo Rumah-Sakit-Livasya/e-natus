@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeadersMiddleware
@@ -67,29 +66,17 @@ class SecurityHeadersMiddleware
         $response->headers->set('Permissions-Policy', $permissions);
 
         // ============================================
-        // DYNAMIC RATE LIMITING HEADERS
+        // RATE LIMITING HEADERS
         // ============================================
 
-        // Get rate limit key for this request
-        $rateLimitKey = 'global:' . $request->ip();
+        // Set static rate limit headers (actual limiting handled by throttle middleware)
+        // Using static values to avoid cache access on every request
         $maxAttempts = 120;
         $decayMinutes = 1;
-
-        // Get current rate limit status
-        $remaining = RateLimiter::remaining($rateLimitKey, $maxAttempts);
-
-        // Calculate reset time (current time + decay period)
         $resetTime = time() + ($decayMinutes * 60);
 
-        // Set dynamic rate limit headers
         $response->headers->set('X-RateLimit-Limit', (string)$maxAttempts);
-        $response->headers->set('X-RateLimit-Remaining', (string)max(0, $remaining));
         $response->headers->set('X-RateLimit-Reset', (string)$resetTime);
-
-        // Add Retry-After header if rate limit exceeded
-        if ($remaining <= 0) {
-            $response->headers->set('Retry-After', (string)($decayMinutes * 60));
-        }
 
         // ============================================
         // ADDITIONAL SECURITY HEADERS
