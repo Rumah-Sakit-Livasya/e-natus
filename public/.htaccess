@@ -3,17 +3,61 @@
         Options -MultiViews -Indexes
     </IfModule>
 
-    # Security Headers
+    # ============================================
+    # SECURITY HEADERS - Server Level
+    # ============================================
+
+    # Hide Server Information (Defense in Depth)
     ServerSignature Off
     ServerTokens Prod
+
     <IfModule mod_headers.c>
+        # Remove server identification headers
         Header unset Server
         Header unset X-Powered-By
+        Header always unset X-Powered-By
+
+        # Core Security Headers (backup for middleware)
         Header always set X-Content-Type-Options "nosniff"
         Header always set X-XSS-Protection "1; mode=block"
+        Header always set X-Frame-Options "SAMEORIGIN"
+
+        # Additional Security Headers
+        Header always set X-Download-Options "noopen"
+        Header always set X-Permitted-Cross-Domain-Policies "none"
+
+        # Referrer Policy
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+        # Bot Protection - Discourage automated scraping
+        Header always set X-Robots-Tag "noindex, nofollow, noarchive" "expr=%{REQUEST_URI} =~ m#^/(api|admin|login)#"
+
+        # Cache Control for Sensitive Pages
+        Header always set Cache-Control "no-store, no-cache, must-revalidate, private" "expr=%{REQUEST_URI} =~ m#^/(login|admin|api)#"
+        Header always set Pragma "no-cache" "expr=%{REQUEST_URI} =~ m#^/(login|admin|api)#"
     </IfModule>
 
     RewriteEngine On
+
+    # ============================================
+    # BOT PROTECTION & RATE LIMITING HINTS
+    # ============================================
+
+    # Block common bad bots and scrapers
+    RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|SemrushBot|DotBot|MJ12bot|BLEXBot|PetalBot) [NC]
+    RewriteRule .* - [F,L]
+
+    # Block requests with no user agent
+    RewriteCond %{HTTP_USER_AGENT} ^$
+    RewriteRule .* - [F,L]
+
+    # Protect sensitive files
+    RewriteCond %{REQUEST_URI} (\.env|\.git|\.htaccess|composer\.json|composer\.lock|package\.json)$ [NC]
+    RewriteRule .* - [F,L]
+
+    # ============================================
+    # STANDARD LARAVEL ROUTING
+    # ============================================
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
