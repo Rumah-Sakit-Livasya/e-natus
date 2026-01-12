@@ -52,6 +52,14 @@ class SecurityHeadersMiddleware
         $permissions = 'camera=(), microphone=(), geolocation=(self)';
         $response->headers->set('Permissions-Policy', $permissions);
 
+        // Rate Limiting Headers (anti-scraping)
+        $response->headers->set('X-RateLimit-Limit', '120');
+        $response->headers->set('X-RateLimit-Remaining', '120');
+
+        // Additional Security Headers
+        $response->headers->set('X-Download-Options', 'noopen');
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+
         return $response;
     }
 }

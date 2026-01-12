@@ -5,8 +5,10 @@
 
     # Security Headers
     ServerSignature Off
+    ServerTokens Prod
     <IfModule mod_headers.c>
         Header unset Server
+        Header unset X-Powered-By
         Header always set X-Content-Type-Options "nosniff"
         Header always set X-XSS-Protection "1; mode=block"
     </IfModule>
