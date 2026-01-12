@@ -40,21 +40,40 @@ class SecurityHeadersMiddleware
         // CONTENT SECURITY POLICY
         // ============================================
 
-        // CSP - Balanced security with application compatibility
-        // Note: Uses 'unsafe-inline' and 'unsafe-eval' for compatibility with Filament/Laravel
-        $csp = implode('; ', [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-            "font-src 'self' data: https://fonts.gstatic.com",
-            "img-src 'self' data: https: blob:",
-            "connect-src 'self'",
-            "frame-src 'self'",
-            "object-src 'none'",
-            "base-uri 'self'",
-            "form-action 'self'",
-            "upgrade-insecure-requests"
-        ]);
+        // Path-specific CSP: Strict for public pages, relaxed for admin panel
+        $isAdminPath = $request->is('admin/*') || $request->is('dashboard/*') || $request->is('filament/*');
+
+        if ($isAdminPath) {
+            // Relaxed CSP for admin panel (Filament compatibility)
+            $csp = implode('; ', [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+                "font-src 'self' data: https://fonts.gstatic.com",
+                "img-src 'self' data: https: blob:",
+                "connect-src 'self'",
+                "frame-src 'self'",
+                "object-src 'none'",
+                "base-uri 'self'",
+                "form-action 'self'"
+            ]);
+        } else {
+            // Strict CSP for public pages (better security score)
+            $csp = implode('; ', [
+                "default-src 'self'",
+                "script-src 'self' https://cdn.jsdelivr.net",
+                "style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+                "font-src 'self' data: https://fonts.gstatic.com",
+                "img-src 'self' data: https:",
+                "connect-src 'self'",
+                "frame-src 'self'",
+                "object-src 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+                "upgrade-insecure-requests"
+            ]);
+        }
+
         $response->headers->set('Content-Security-Policy', $csp);
 
         // ============================================
