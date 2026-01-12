@@ -55,10 +55,33 @@ class SecurityHeadersMiddleware
         // Rate Limiting Headers (anti-scraping)
         $response->headers->set('X-RateLimit-Limit', '120');
         $response->headers->set('X-RateLimit-Remaining', '120');
+        $response->headers->set('X-RateLimit-Reset', time() + 60);
 
         // Additional Security Headers
         $response->headers->set('X-Download-Options', 'noopen');
         $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+        $response->headers->set('X-DNS-Prefetch-Control', 'off');
+
+        // Bot Protection Headers
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+
+        // Ensure all cookies have security flags
+        $cookies = $response->headers->getCookies();
+        foreach ($cookies as $cookie) {
+            $response->headers->setCookie(
+                new \Symfony\Component\HttpFoundation\Cookie(
+                    $cookie->getName(),
+                    $cookie->getValue(),
+                    $cookie->getExpiresTime(),
+                    $cookie->getPath(),
+                    $cookie->getDomain(),
+                    true,  // Secure
+                    true,  // HttpOnly
+                    false, // Raw
+                    'strict' // SameSite
+                )
+            );
+        }
 
         return $response;
     }
