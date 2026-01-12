@@ -28,12 +28,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-	date_default_timezone_set(Config::get('app.timezone'));
-   	Carbon::setLocale('id');
-    	Carbon::setTestNow(); // reset kalau ada testing
-    	Carbon::macro('inWIB', function () {
-        	return $this->timezone('Asia/Jakarta');
-    	});
+        date_default_timezone_set(Config::get('app.timezone'));
+        Carbon::setLocale('id');
+        Carbon::setTestNow(); // reset kalau ada testing
+        Carbon::macro('inWIB', function () {
+            return $this->timezone('Asia/Jakarta');
+        });
 
         Filament::registerResources([
             UserResource::class,

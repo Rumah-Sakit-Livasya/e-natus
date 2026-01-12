@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 User-agent: *
 Allow: /
 Crawl-delay:3
@@ -6,3 +7,5 @@ sitemap: https://natus.id/sitemap.xml
 =======
 sitemap: https://natus.id/sitemap.xml
 >>>>>>> 32ad7b3c10a82c885113535fbddcc04271663c17
+=======
+>>>>>>> 6a5b18bb76a6499eeb2bae4a122138b810296ce4

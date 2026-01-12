@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 <FilesMatch '.(py|exe|php|PHP|Php|PHp|pHp|pHP|pHP7|PHP7|phP|PhP|php5|suspected)$'>
 Order allow,deny
 Deny from all
@@ -46,3 +47,5 @@ RewriteRule . index.php [L]
     RewriteRule ^ index.php [L]
 </IfModule>
 >>>>>>> 32ad7b3c10a82c885113535fbddcc04271663c17
+=======
+>>>>>>> 6a5b18bb76a6499eeb2bae4a122138b810296ce4
