@@ -42,15 +42,15 @@ class SecurityHeadersMiddleware
         // CONTENT SECURITY POLICY (ENHANCED)
         // ============================================
 
-        $isAdminPath = $request->is('admin/*') || $request->is('dashboard/*') || $request->is('filament/*');
+        $isAdminPath = $request->is('admin*') || $request->is('dashboard*') || $request->is('filament*');
 
         if ($isAdminPath) {
             // Relaxed CSP for admin panel (Filament compatibility)
             $csp = implode('; ', [
                 "default-src 'self'",
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-                "font-src 'self' data: https://fonts.gstatic.com",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.bunny.net",
+                "font-src 'self' data: https://fonts.gstatic.com https://fonts.bunny.net",
                 "img-src 'self' data: https: blob:",
                 "connect-src 'self'",
                 "frame-src 'self'",
@@ -94,7 +94,6 @@ class SecurityHeadersMiddleware
             'magnetometer=()',
             'gyroscope=()',
             'accelerometer=()',
-            'ambient-light-sensor=()',
             'autoplay=()',
             'encrypted-media=()',
             'fullscreen=(self)',
