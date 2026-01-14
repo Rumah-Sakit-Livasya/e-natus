@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
         date_default_timezone_set(Config::get('app.timezone'));
         Carbon::setLocale('id');
         Carbon::setTestNow(); // reset kalau ada testing
-        if (config('app.env') === 'production') {
+        if (config('app.env') !== 'local') {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
