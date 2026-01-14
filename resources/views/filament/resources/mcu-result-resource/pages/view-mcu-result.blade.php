@@ -201,19 +201,46 @@
         }
 
         /* Lampiran dari Repeater */
-        .attachment-list {
-            list-style: none;
-            padding-left: 0;
+        .attachment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
             margin-top: 0.5rem;
         }
 
-        .attachment-list li {
-            margin-bottom: 0.25rem;
+        .attachment-item {
+            display: block;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s;
+            text-decoration: none !important;
+            background-color: var(--bg-color);
         }
 
-        .attachment-list a {
-            color: var(--prose-link-color);
-            text-decoration: underline;
+        .attachment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-color: var(--prose-link-color);
+        }
+
+        .attachment-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .attachment-item .file-name {
+            padding: 8px;
+            font-size: 8pt;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 1px solid var(--border-color-soft);
+            background-color: var(--border-color-soft);
+            text-align: center;
         }
 
         /* Aturan Cetak */
@@ -834,12 +861,32 @@
 
                     @if (!empty($item['lampiran']) && is_array($item['lampiran']))
                         <div class="sub-sub-section-title" style="margin-top: 0.5rem;">Lampiran:</div>
-                        <ul class="attachment-list">
+                        <div class="attachment-grid">
                             @foreach ($item['lampiran'] as $filePath)
-                                <li><a href="{{ Storage::url($filePath) }}"
-                                        target="_blank">{{ basename($filePath) }}</a></li>
+                                @php
+                                    $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                                    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']);
+                                @endphp
+                                <a href="{{ Storage::url($filePath) }}" target="_blank" class="attachment-item">
+                                    @if ($isImage)
+                                        <img src="{{ Storage::url($filePath) }}" alt="Lampiran" loading="lazy">
+                                    @else
+                                        <div
+                                            style="height: 150px; display: flex; align-items: center; justify-content: center; background: var(--border-color-soft); color: var(--text-color-soft); flex-direction: column;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="1.5" stroke="currentColor" style="width: 48px; height: 48px;">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                            </svg>
+                                            <span style="font-size: 8pt; margin-top: 4px;">{{ strtoupper($ext) }}</span>
+                                        </div>
+                                    @endif
+                                    <div class="file-name" title="{{ basename($filePath) }}">
+                                        {{ basename($filePath) }}
+                                    </div>
+                                </a>
                             @endforeach
-                        </ul>
+                        </div>
                     @endif
                 @endif
             @endforeach
