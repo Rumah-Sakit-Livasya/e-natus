@@ -27,7 +27,7 @@ class McuResultResource extends Resource
                 Forms\Components\Wizard::make([
                     Forms\Components\Wizard\Step::make('Informasi Dasar')
                         ->schema([
-                            Forms\Components\Select::make('project_request_id')->relationship('projectRequest', 'name')->searchable()->preload()->required()->label('Proyek MCU')->live(),
+                            Forms\Components\Select::make('project_request_id')->options(\App\Models\ProjectRequest::pluck('name', 'id'))->searchable()->preload()->required()->label('Proyek MCU')->live(),
                             Forms\Components\Select::make('participant_id')->required()->label('Peserta')->searchable()->options(function (Get $get) {
                                 $projectId = $get('project_request_id');
                                 if ($projectId) {

@@ -31,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
         date_default_timezone_set(Config::get('app.timezone'));
         Carbon::setLocale('id');
         Carbon::setTestNow(); // reset kalau ada testing
+        if (config('app.env') !== 'local') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         Carbon::macro('inWIB', function () {
             return $this->timezone('Asia/Jakarta');
         });
@@ -47,8 +51,10 @@ class AppServiceProvider extends ServiceProvider
             DB::listen(function ($query) {
                 Log::info(
                     $query->sql,
-                    $query->bindings,
-                    $query->time
+                    [
+                        'bindings' => $query->bindings,
+                        'time' => $query->time
+                    ]
                 );
             });
         }

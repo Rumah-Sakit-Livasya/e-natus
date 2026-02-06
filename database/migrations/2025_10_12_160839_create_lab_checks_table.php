@@ -19,86 +19,86 @@ return new class extends Migration
             $table->date('tanggal_pemeriksaan');
 
             // == HEMATOLOGI LENGKAP ==
-            $table->string('hemoglobin', 50)->nullable();
-            $table->string('leukosit', 50)->nullable();
-            $table->string('trombosit', 50)->nullable();
-            $table->string('hematokrit', 50)->nullable();
-            $table->string('eritrosit', 50)->nullable();
-            $table->string('mcv', 50)->nullable();
-            $table->string('mch', 50)->nullable();
-            $table->string('mchc', 50)->nullable();
-            $table->string('rdw', 50)->nullable();
+            $table->text('hemoglobin')->nullable();
+            $table->text('leukosit')->nullable();
+            $table->text('trombosit')->nullable();
+            $table->text('hematokrit')->nullable();
+            $table->text('eritrosit')->nullable();
+            $table->text('mcv')->nullable();
+            $table->text('mch')->nullable();
+            $table->text('mchc')->nullable();
+            $table->text('rdw')->nullable();
             // Hitung Jenis Leukosit
-            $table->string('eosinofil', 50)->nullable();
-            $table->string('basofil', 50)->nullable();
-            $table->string('netrofil_batang', 50)->nullable();
-            $table->string('netrofil_segmen', 50)->nullable();
-            $table->string('limfosit', 50)->nullable();
-            $table->string('monosit', 50)->nullable();
-            $table->string('led', 50)->nullable();
+            $table->text('eosinofil')->nullable();
+            $table->text('basofil')->nullable();
+            $table->text('netrofil_batang')->nullable();
+            $table->text('netrofil_segmen')->nullable();
+            $table->text('limfosit')->nullable();
+            $table->text('monosit')->nullable();
+            $table->text('led')->nullable();
 
             // == URINALISA ==
-            $table->string('urine_warna', 50)->nullable();
-            $table->string('urine_kejernihan', 50)->nullable();
-            $table->string('urine_berat_jenis', 50)->nullable();
-            $table->string('urine_ph', 50)->nullable();
-            $table->string('urine_protein', 50)->nullable();
-            $table->string('urine_glukosa', 50)->nullable();
-            $table->string('urine_keton', 50)->nullable();
-            $table->string('urine_darah', 50)->nullable();
-            $table->string('urine_bilirubin', 50)->nullable();
-            $table->string('urine_urobilinogen', 50)->nullable();
-            $table->string('urine_nitrit', 50)->nullable();
-            $table->string('urine_leukosit_esterase', 50)->nullable();
+            $table->text('urine_warna')->nullable();
+            $table->text('urine_kejernihan')->nullable();
+            $table->text('urine_berat_jenis')->nullable();
+            $table->text('urine_ph')->nullable();
+            $table->text('urine_protein')->nullable();
+            $table->text('urine_glukosa')->nullable();
+            $table->text('urine_keton')->nullable();
+            $table->text('urine_darah')->nullable();
+            $table->text('urine_bilirubin')->nullable();
+            $table->text('urine_urobilinogen')->nullable();
+            $table->text('urine_nitrit')->nullable();
+            $table->text('urine_leukosit_esterase')->nullable();
             // Sedimen
-            $table->string('sedimen_leukosit', 50)->nullable();
-            $table->string('sedimen_eritrosit', 50)->nullable();
-            $table->string('sedimen_silinder', 50)->nullable();
-            $table->string('sedimen_sel_epitel', 50)->nullable();
-            $table->string('sedimen_kristal', 50)->nullable();
-            $table->string('sedimen_bakteria', 50)->nullable();
-            $table->string('sedimen_lain_lain', 50)->nullable();
+            $table->text('sedimen_leukosit')->nullable();
+            $table->text('sedimen_eritrosit')->nullable();
+            $table->text('sedimen_silinder')->nullable();
+            $table->text('sedimen_sel_epitel')->nullable();
+            $table->text('sedimen_kristal')->nullable();
+            $table->text('sedimen_bakteria')->nullable();
+            $table->text('sedimen_lain_lain')->nullable();
 
             // == HALAMAN 2 ==
 
             // == KIMIA KLINIK ==
-            $table->string('glukosa_puasa', 50)->nullable();
-            $table->string('glukosa_2_jam_pp', 50)->nullable();
+            $table->text('glukosa_puasa')->nullable();
+            $table->text('glukosa_2_jam_pp')->nullable();
             // Fungsi Ginjal
-            $table->string('ureum', 50)->nullable();
-            $table->string('kreatinin', 50)->nullable();
-            $table->string('asam_urat', 50)->nullable();
-            $table->string('hbeag', 50)->nullable();
+            $table->text('ureum')->nullable();
+            $table->text('kreatinin')->nullable();
+            $table->text('asam_urat')->nullable();
+            $table->text('hbeag')->nullable();
             // Fungsi Hati
-            $table->string('sgot', 50)->nullable();
-            $table->string('sgpt', 50)->nullable();
-            $table->string('alkali_fosfatase', 50)->nullable();
-            $table->string('kolinesterase', 50)->nullable();
-            $table->string('bilirubin_total', 50)->nullable();
-            $table->string('bilirubin_direk', 50)->nullable();
-            $table->string('bilirubin_indirek', 50)->nullable();
+            $table->text('sgot')->nullable();
+            $table->text('sgpt')->nullable();
+            $table->text('alkali_fosfatase')->nullable();
+            $table->text('kolinesterase')->nullable();
+            $table->text('bilirubin_total')->nullable();
+            $table->text('bilirubin_direk')->nullable();
+            $table->text('bilirubin_indirek')->nullable();
             // Profil Lemak
-            $table->string('kolesterol_total', 50)->nullable();
-            $table->string('hdl', 50)->nullable();
-            $table->string('ldl', 50)->nullable();
-            $table->string('trigliserida', 50)->nullable();
-            $table->string('hba1c', 50)->nullable();
+            $table->text('kolesterol_total')->nullable();
+            $table->text('hdl')->nullable();
+            $table->text('ldl')->nullable();
+            $table->text('trigliserida')->nullable();
+            $table->text('hba1c')->nullable();
 
             // == SEROLOGI & IMUNOLOGI ==
-            $table->string('tpha', 50)->nullable();
-            $table->string('vdrl', 50)->nullable();
-            $table->string('hbsag', 50)->nullable();
-            $table->string('anti_hcv', 50)->nullable();
-            $table->string('anti_hbs', 50)->nullable();
+            $table->text('tpha')->nullable();
+            $table->text('vdrl')->nullable();
+            $table->text('hbsag')->nullable();
+            $table->text('anti_hcv')->nullable();
+            $table->text('anti_hbs')->nullable();
 
             // == SKRINING NARKOBA ==
-            $table->string('narkoba_amphetamine', 50)->nullable();
-            $table->string('narkoba_thc', 50)->nullable();
-            $table->string('narkoba_morphine', 50)->nullable();
-            $table->string('narkoba_benzodiazepine', 50)->nullable();
-            $table->string('narkoba_methamphetamine', 50)->nullable();
-            $table->string('narkoba_cocaine', 50)->nullable();
-            $table->string('alkohol_urin', 50)->nullable();
+            $table->text('narkoba_amphetamine')->nullable();
+            $table->text('narkoba_thc')->nullable();
+            $table->text('narkoba_morphine')->nullable();
+            $table->text('narkoba_benzodiazepine')->nullable();
+            $table->text('narkoba_methamphetamine')->nullable();
+            $table->text('narkoba_cocaine')->nullable();
+            $table->text('alkohol_urin')->nullable();
 
             // == FOOTER ==
             $table->string('penanggung_jawab')->nullable();
