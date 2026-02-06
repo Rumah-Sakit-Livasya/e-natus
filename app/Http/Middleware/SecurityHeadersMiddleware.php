@@ -48,11 +48,11 @@ class SecurityHeadersMiddleware
             // Relaxed CSP for admin panel (Filament compatibility)
             $csp = implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
                 "font-src 'self' data: https://fonts.gstatic.com",
                 "img-src 'self' data: https: blob:",
-                "connect-src 'self'",
+                "connect-src 'self' https://cloudflareinsights.com",
                 "frame-src 'self'",
                 "object-src 'none'",
                 "base-uri 'self'",
@@ -64,11 +64,11 @@ class SecurityHeadersMiddleware
             // Strict CSP for public pages
             $csp = implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' https://cdn.jsdelivr.net",
+                "script-src 'self' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
                 "style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net",
                 "font-src 'self' data: https://fonts.gstatic.com",
                 "img-src 'self' data: https:",
-                "connect-src 'self'",
+                "connect-src 'self' https://cloudflareinsights.com",
                 "frame-src 'none'",
                 "object-src 'none'",
                 "base-uri 'self'",
