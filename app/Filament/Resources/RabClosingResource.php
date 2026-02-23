@@ -20,6 +20,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ImageColumn;
 
 class RabClosingResource extends Resource
 {
@@ -268,6 +269,7 @@ class RabClosingResource extends Resource
                 TextColumn::make('total_anggaran_closing')->label('Total Biaya Closing')->numeric()->money('IDR')->sortable(),
                 TextColumn::make('margin_closing')->label('Margin')->numeric()->money('IDR')->sortable(),
                 TextColumn::make('status')->badge(),
+                ImageColumn::make('documentation')->label('Dokumentasi')->circular()->stacked()->limit(3)->defaultImageUrl(url('/placeholder.png')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

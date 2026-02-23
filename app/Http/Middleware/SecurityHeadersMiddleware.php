@@ -64,11 +64,7 @@ class SecurityHeadersMiddleware
             // Strict CSP for public pages
             $csp = implode('; ', [
                 "default-src 'self'",
-<<<<<<< HEAD
-                "script-src 'self' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
-=======
                 "script-src 'self' https://cdn.jsdelivr.net https://static.cloudflareinsights.com http://natus.id https://natus.id",
->>>>>>> 3ab83932570dfacee4af1e9017d155da618844f6
                 "style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net",
                 "font-src 'self' data: https://fonts.gstatic.com",
                 "img-src 'self' data: https:",
