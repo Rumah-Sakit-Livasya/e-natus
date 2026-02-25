@@ -20,13 +20,6 @@
                         </button>
                     @else
                         <div class="flex items-center space-x-2">
-                            <span class="text-gray-400 italic">
-                                Sedang Dipakai Pada Project:
-                                @php
-                                    $names = $asset->projectRequests()->pluck('name')->first();
-                                @endphp
-                                {{ $names }}
-                            </span>
                             <button wire:click="markAvailable({{ $asset->id }})"
                                 class="text-blue-600 hover:text-blue-800 flex items-center space-x-1" type="button"
                                 wire:loading.attr="disabled" wire:target="markAvailable({{ $asset->id }})">
