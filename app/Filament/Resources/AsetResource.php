@@ -19,6 +19,8 @@ use Filament\Tables\Columns\TextColumn;
 
 class AsetResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
+
     protected static ?string $model = Aset::class;
     protected static ?string $navigationIcon = 'heroicon-o-cube';
     protected static ?string $navigationLabel = 'Aset';
@@ -36,107 +38,123 @@ class AsetResource extends Resource
 
     public static function table(Tables\Table $table): Tables\Table
     {
-        return $table->columns([
-            TextColumn::make('template.name')
-                ->label('Template')
-                ->searchable()
-                ->sortable(),
+        return $table
+            ->columns([
+                TextColumn::make('template.name')
+                    ->label('Template')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('template.category.name')
-                ->label('Kategori')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('template.category.name')
+                    ->label('Kategori')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('lander.code')
-                ->label('Lander')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('lander.code')
+                    ->label('Lander')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('custom_name')
-                ->label('Nama Aset')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('custom_name')
+                    ->label('Nama Aset')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('type')
-                ->label('Tipe')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('type')
+                    ->label('Tipe')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('serial_number')
-                ->label('Serial Number')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('serial_number')
+                    ->label('Serial Number')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('code')
-                ->label('Kode')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('code')
+                    ->label('Kode')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('condition')
-                ->label('Kondisi')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('condition')
+                    ->label('Kondisi')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('brand')
-                ->label('Merk')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('brand')
+                    ->label('Merk')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('purchase_year')
-                ->label('Tahun')->date('Y')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('purchase_year')
+                    ->label('Tahun')->date('Y')
+                    ->searchable()
+                    ->sortable(),
 
-            TextColumn::make('tarif')
-                ->label('Tarif')
-                ->searchable()
-                ->sortable()
-                ->money('IDR', true),
+                TextColumn::make('tarif')
+                    ->label('Tarif')
+                    ->searchable()
+                    ->sortable()
+                    ->money('IDR', true),
 
-            TextColumn::make('harga_sewa')
-                ->label('Harga Sewa')
-                ->searchable()
-                ->sortable()
-                ->money('IDR', true),
+                TextColumn::make('harga_sewa')
+                    ->label('Harga Sewa')
+                    ->searchable()
+                    ->sortable()
+                    ->money('IDR', true),
 
-            TextColumn::make('satuan')
-                ->label('Satuan')
-                ->searchable()
-                ->sortable(),
+                TextColumn::make('satuan')
+                    ->label('Satuan')
+                    ->searchable()
+                    ->sortable(),
 
-            BadgeColumn::make('status')
-                ->label('Status')
-                ->formatStateUsing(fn(string $state) => match ($state) {
-                    'available'   => 'Tersedia',
-                    'unavailable' => 'Tidak Tersedia',
-                    default       => ucfirst($state),
-                })
-                ->color(fn(string $state) => match ($state) {
-                    'available'   => 'success',
-                    'unavailable' => 'danger',
-                    default       => 'gray',
-                })
-                ->description(
-                    fn($record) => $record->status === 'unavailable'
-                        ? "Dipakai di: " . $record->projectRequests()
-                        ->pluck('name')
-                        ->implode(', ')
-                        : null
-                )
-                ->sortable(),
+                BadgeColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn(string $state) => match ($state) {
+                        'available'   => 'Tersedia',
+                        'unavailable' => 'Tidak Tersedia',
+                        default       => ucfirst($state),
+                    })
+                    ->color(fn(string $state) => match ($state) {
+                        'available'   => 'success',
+                        'unavailable' => 'danger',
+                        default       => 'gray',
+                    })
+                    ->description(
+                        fn($record) => $record->status === 'unavailable'
+                            ? "Dipakai di: " . \App\Models\ProjectRequest::whereJsonContains('asset_ids', (int) $record->id)
+                            ->pluck('name')
+                            ->implode(', ')
+                            : null
+                    )
+                    ->sortable(),
 
-        ])
+            ])
             ->headerActions([
                 Tables\Actions\Action::make('print_all')
                     ->label('Cetak Aset')
                     ->icon('heroicon-o-printer')
                     ->url(route('print-assets'))
                     ->openUrlInNewTab(),
+                Tables\Actions\Action::make('print_barcodes')
+                    ->label('Cetak Barcode')
+                    ->icon('heroicon-o-viewfinder-circle')
+                    ->url(route('print-asset-barcodes'))
+                    ->openUrlInNewTab()
+                    ->color('success'),
             ])
             ->defaultSort('id', 'desc')
             ->actions([
                 Tables\Actions\EditAction::make()->icon('heroicon-o-pencil')->tooltip('Edit'),
                 Tables\Actions\DeleteAction::make()->icon('heroicon-o-trash')->tooltip('Hapus'),
+                Tables\Actions\Action::make('view_barcode')
+                    ->icon('heroicon-o-viewfinder-circle')
+                    ->tooltip('Lihat Barcode')
+                    ->label('Barcode')
+                    ->modalHeading('Barcode Aset')
+                    ->modalContent(fn($record) => view('filament.modals.asset-barcode', [
+                        'asset' => $record,
+                    ]))
+                    ->color('primary'),
                 Tables\Actions\Action::make('view_image')
                     ->icon('heroicon-o-eye')
                     ->tooltip('Lihat Gambar')
