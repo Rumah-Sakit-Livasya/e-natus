@@ -103,10 +103,20 @@ class BmhpPurchaseResource extends Resource
 
                         Forms\Components\Select::make('purchase_type')
                             ->label('Beli Per')
-                            ->options([
-                                'unit' => 'Kemasan (unit)',
-                                'pcs' => 'Pcs',
-                            ])
+                            ->options(function (Forms\Get $get) {
+                                $bmhpId = $get('bmhp_id');
+                                $satuan = 'Kemasan';
+                                if ($bmhpId) {
+                                    $bmhp = Bmhp::find($bmhpId);
+                                    if ($bmhp && $bmhp->satuan) {
+                                        $satuan = $bmhp->satuan;
+                                    }
+                                }
+                                return [
+                                    'unit' => $satuan . ' (unit)',
+                                    'pcs' => 'Pcs',
+                                ];
+                            })
                             ->default('pcs')
                             ->required()
                             ->reactive()
