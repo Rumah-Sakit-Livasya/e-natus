@@ -16,7 +16,6 @@ class BmhpTemplateExport implements FromView
                     'satuan' => 'Box',
                     'stok_awal' => 100,
                     'stok_sisa' => 85,
-                    'harga_satuan' => 50000,
                     'stok_minimum' => 10,
                 ],
                 [
@@ -24,7 +23,6 @@ class BmhpTemplateExport implements FromView
                     'satuan' => 'Botol',
                     'stok_awal' => 50,
                     'stok_sisa' => 30,
-                    'harga_satuan' => 25000,
                     'stok_minimum' => 5,
                 ],
                 [
@@ -32,7 +30,6 @@ class BmhpTemplateExport implements FromView
                     'satuan' => 'Box',
                     'stok_awal' => 200,
                     'stok_sisa' => 150,
-                    'harga_satuan' => 75000,
                     'stok_minimum' => 20,
                 ],
             ]

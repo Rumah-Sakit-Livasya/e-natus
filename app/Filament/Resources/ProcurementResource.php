@@ -23,12 +23,15 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProcurementResource extends Resource
 {
-    protected static ?string $model = Procurement::class;
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
 
+    protected static ?string $model = Procurement::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-    protected static ?string $navigationGroup = 'Procurement';
+    protected static ?string $navigationGroup = 'Pengadaan';
     protected static ?string $navigationLabel = 'Procurement';
     protected static ?string $pluralModelLabel = 'Procurement';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

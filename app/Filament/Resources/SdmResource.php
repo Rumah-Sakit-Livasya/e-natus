@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SdmResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\MasterDataCluster::class;
+
     protected static ?string $model = SDM::class;
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

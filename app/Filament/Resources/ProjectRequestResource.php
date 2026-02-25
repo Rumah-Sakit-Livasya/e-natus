@@ -32,7 +32,9 @@ use Livewire\Livewire;
 
 class ProjectRequestResource extends Resource
 {
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
 
     protected static ?string $model = ProjectRequest::class;
 
@@ -67,7 +69,7 @@ class ProjectRequestResource extends Resource
                     TextInput::make('phone')->label('Nomor Telepon')->tel(),
                     TextInput::make('email')->label('Email')->email(),
                 ])
-                ->createOptionUsing(fn (array $data) => Client::create([
+                ->createOptionUsing(fn(array $data) => Client::create([
                     'name' => $data['name'],
                     'pic' => $data['pic'],
                     'region_id' => $data['region_id'] ?? null,
@@ -91,7 +93,7 @@ class ProjectRequestResource extends Resource
                 ->createOptionForm([
                     TextInput::make('name')->label('Nama Pegawai')->required(),
                 ])
-                ->createOptionUsing(fn (array $data) => \App\Models\SDM::create([
+                ->createOptionUsing(fn(array $data) => \App\Models\SDM::create([
                     'name' => $data['name'],
                 ])->id),
 
@@ -105,7 +107,7 @@ class ProjectRequestResource extends Resource
                 ->createOptionForm([
                     TextInput::make('name')->label('Nama SDM')->required(),
                 ])
-                ->createOptionUsing(fn (array $data) => \App\Models\SDM::create([
+                ->createOptionUsing(fn(array $data) => \App\Models\SDM::create([
                     'name' => $data['name'],
                 ])->id),
 
@@ -119,12 +121,12 @@ class ProjectRequestResource extends Resource
                 ->multiple()
                 ->searchable()
                 ->preload()
-                ->options(fn () => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
+                ->options(fn() => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
                     $parts = explode('/', $asset->code);
                     $index = end($parts);
 
                     return [$asset->id => "{$asset->custom_name} - {$asset->lander->code}$index"];
-                })->filter(fn ($label) => ! is_null($label))->toArray())
+                })->filter(fn($label) => ! is_null($label))->toArray())
                 ->live()
                 ->afterStateUpdated(function (Get $get, Set $set, $state) {
                     $selectedAssets = Aset::whereIn('id', $state)->get();
@@ -228,7 +230,7 @@ class ProjectRequestResource extends Resource
                                 return 'Belum ada data';
                             }
 
-                            $status = match($record->approval_level_1_status) {
+                            $status = match ($record->approval_level_1_status) {
                                 'pending' => '⏳ Menunggu Persetujuan',
                                 'approved' => '✅ Disetujui',
                                 'rejected' => '❌ Ditolak',
@@ -249,7 +251,7 @@ class ProjectRequestResource extends Resource
                             ");
                         })
                         ->columnSpanFull(),
-                    
+
                     \Filament\Forms\Components\Placeholder::make('approval_level_2_display')
                         ->label('Persetujuan Level 2')
                         ->content(function ($record) {
@@ -257,7 +259,7 @@ class ProjectRequestResource extends Resource
                                 return 'Belum ada data';
                             }
 
-                            $status = match($record->approval_level_2_status) {
+                            $status = match ($record->approval_level_2_status) {
                                 'pending' => '⏳ Menunggu Persetujuan',
                                 'approved' => '✅ Disetujui',
                                 'rejected' => '❌ Ditolak',
@@ -281,7 +283,7 @@ class ProjectRequestResource extends Resource
                 ])
                 ->collapsible()
                 ->collapsed(false)
-                ->visible(fn ($record) => $record !== null),
+                ->visible(fn($record) => $record !== null),
             // =================== END APPROVAL STATUS DISPLAY ===================
 
             Section::make('Rencana Biaya Operasional')
@@ -302,7 +304,7 @@ class ProjectRequestResource extends Resource
                                 ->default(1)
                                 ->required()
                                 ->live(onBlur: true)
-                                ->afterStateUpdated(fn (Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('harga_sewa')
                                 ->label('Price')
@@ -311,9 +313,9 @@ class ProjectRequestResource extends Resource
                                 ->live(onBlur: true)
                                 ->mask(RawJs::make('$money($input)'))
                                 ->stripCharacters(',')
-                                ->dehydrateStateUsing(fn (?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
-                                ->afterStateUpdated(fn (Get $get, Set $set) => self::updateRowTotal($get, $set))
-                                ->disabled(fn (Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
+                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
+                                ->disabled(fn(Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
                                 ->dehydrated()
                                 ->suffixAction(
                                     \Filament\Forms\Components\Actions\Action::make('requestPriceChange')
@@ -337,7 +339,7 @@ class ProjectRequestResource extends Resource
                                         ->action(function (array $data, Get $get, $state, $livewire) {
                                             // Create price change request
                                             $rabItem = \App\Models\RabOperasionalItem::find($get('../../id'));
-                                            
+
                                             if ($rabItem) {
                                                 $request = \App\Models\PriceChangeRequest::create([
                                                     'rab_operasional_item_id' => $rabItem->id,
@@ -399,7 +401,7 @@ class ProjectRequestResource extends Resource
                                 ->default(1)
                                 ->required()
                                 ->live(onBlur: true)
-                                ->afterStateUpdated(fn (Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('harga_sewa')
                                 ->label('Price')
@@ -408,8 +410,8 @@ class ProjectRequestResource extends Resource
                                 ->live(onBlur: true)
                                 ->mask(RawJs::make('$money($input)'))
                                 ->stripCharacters(',')
-                                ->dehydrateStateUsing(fn (?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
-                                ->afterStateUpdated(fn (Get $get, Set $set) => self::updateRowTotal($get, $set)),
+                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('total')
                                 ->label('Total')
@@ -438,7 +440,7 @@ class ProjectRequestResource extends Resource
                         ->numeric()
                         ->default(1)
                         ->required()
-                        ->afterStateUpdated(fn (Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
+                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
                     TextInput::make('harga_satuan')
                         ->label('Harga Satuan')
@@ -447,8 +449,8 @@ class ProjectRequestResource extends Resource
                         ->live(onBlur: true)
                         ->mask(RawJs::make('$money($input)'))
                         ->stripCharacters(',')
-                        ->dehydrateStateUsing(fn (?string $state) => $state ? preg_replace('/[^\d]/', '', $state) : null)
-                        ->afterStateUpdated(fn (Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
+                        ->dehydrateStateUsing(fn(?string $state) => $state ? preg_replace('/[^\d]/', '', $state) : null)
+                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
                     TextInput::make('total')
                         ->label('Total')
@@ -464,7 +466,7 @@ class ProjectRequestResource extends Resource
                 ->required()
                 ->mask(RawJs::make('$money($input)'))
                 ->stripCharacters(',')
-                ->dehydrateStateUsing(fn (?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
+                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null),
 
             // =================== PERUBAHAN DIMULAI DI SINI ===================
             Toggle::make('with_ppn')
@@ -477,7 +479,7 @@ class ProjectRequestResource extends Resource
                 ->numeric()
                 ->default(11)
                 ->required()
-                ->visible(fn (Get $get) => $get('with_ppn')),
+                ->visible(fn(Get $get) => $get('with_ppn')),
             // =================== PERUBAHAN SELESAI DI SINI ===================
 
             DatePicker::make('due_date')->label('Jatuh Tempo')->required(),
@@ -538,7 +540,7 @@ class ProjectRequestResource extends Resource
                 TextColumn::make('jumlah')->label('Jumlah Peserta')->numeric(),
                 TextColumn::make('lokasi')->label('Lokasi'),
                 TextColumn::make('user.name')->label('Dibuat oleh')->sortable(),
-                TextColumn::make('status')->label('Status')->badge()->color(fn (string $state): string => match ($state) {
+                TextColumn::make('status')->label('Status')->badge()->color(fn(string $state): string => match ($state) {
                     'pending' => 'warning',
                     'approved' => 'success',
                     'rejected' => 'danger',
@@ -553,7 +555,7 @@ class ProjectRequestResource extends Resource
                     ->icon('heroicon-o-user-plus')
                     ->color('success')
                     ->url(
-                        fn (ProjectRequest $record): string => \App\Filament\Resources\ParticipantResource::getUrl('create', ['project_request_id' => $record->id])
+                        fn(ProjectRequest $record): string => \App\Filament\Resources\ParticipantResource::getUrl('create', ['project_request_id' => $record->id])
                     )
                     ->visible(function (ProjectRequest $record) {
                         $user = auth()?->user();
@@ -588,8 +590,8 @@ class ProjectRequestResource extends Resource
                     ->modalHeading('Daftar Aset')
                     ->modalSubheading('Berikut adalah aset yang terkait dengan project ini.')
                     ->modalButton('Tutup')
-                    ->action(fn () => null)
-                    ->modalContent(fn ($record) => new HtmlString(
+                    ->action(fn() => null)
+                    ->modalContent(fn($record) => new HtmlString(
                         Livewire::mount('project-asset-table', [
                             'assetIds' => $record->asset_ids ?? [],
                         ])
@@ -615,7 +617,7 @@ class ProjectRequestResource extends Resource
                             && $user->can('view rab awal');
                     })
                     ->modalContent(
-                        fn (ProjectRequest $record): View => view('filament.tables.actions.view-rab-awal-modal-content', ['record' => $record])
+                        fn(ProjectRequest $record): View => view('filament.tables.actions.view-rab-awal-modal-content', ['record' => $record])
                     ),
 
                 Action::make('approveLevel1')
@@ -728,7 +730,7 @@ class ProjectRequestResource extends Resource
                     })
                     ->action(function ($record, array $data) {
                         $user = auth()->user();
-                        
+
                         // Determine which level is rejecting
                         if ($record->isPendingLevel1Approval()) {
                             $record->update([
@@ -759,7 +761,7 @@ class ProjectRequestResource extends Resource
                     ->label('Print Invoice')
                     ->icon('heroicon-o-printer')
                     ->color('gray')
-                    ->url(fn (ProjectRequest $record): string => route('project-requests.invoice', $record))
+                    ->url(fn(ProjectRequest $record): string => route('project-requests.invoice', $record))
                     ->openUrlInNewTab()
                     ->visible(function (ProjectRequest $record): bool {
                         $user = auth()?->user();
@@ -772,13 +774,13 @@ class ProjectRequestResource extends Resource
 
                 Action::make('manageClosingRab')
                     ->label(
-                        fn (ProjectRequest $record): string => $record->rabClosing()->exists() ? 'Edit RAB Closing' : 'Buat RAB Closing'
+                        fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'Edit RAB Closing' : 'Buat RAB Closing'
                     )
                     ->icon(
-                        fn (ProjectRequest $record): string => $record->rabClosing()->exists() ? 'heroicon-o-pencil-square' : 'heroicon-o-document-check'
+                        fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'heroicon-o-pencil-square' : 'heroicon-o-document-check'
                     )
                     ->color(
-                        fn (ProjectRequest $record): string => $record->rabClosing()->exists() ? 'info' : 'warning'
+                        fn(ProjectRequest $record): string => $record->rabClosing()->exists() ? 'info' : 'warning'
                     )
                     ->visible(function (ProjectRequest $record): bool {
                         $user = auth()?->user();

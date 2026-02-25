@@ -26,6 +26,8 @@ class AudiometryCheckResource extends Resource
     protected static ?string $navigationGroup = 'Pemeriksaan'; // Sesuaikan grup menu
     protected static ?string $pluralModelLabel = 'Pemeriksaan Audiometri';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         return $form

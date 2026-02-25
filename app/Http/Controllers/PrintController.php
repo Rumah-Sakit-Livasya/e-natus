@@ -25,6 +25,13 @@ class PrintController extends Controller
         return view('print.assets', compact('assets'));
     }
 
+    public function printAssetBarcodes()
+    {
+        $assets = Aset::with('template.category', 'lander')->get();
+
+        return view('print.asset-barcodes', compact('assets'));
+    }
+
     public function printRealisasiRab(ProjectRequest $project)
     {
         $realisasi = $project->realisationRabItems()->with('rabItem')->get();

@@ -17,11 +17,15 @@ use Filament\Tables\Table;
 
 class ParticipantResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\MedicalCheckUpCluster::class;
+
     protected static ?string $model = Participant::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationGroup = 'Project';
-    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationGroup = 'Medical Check Up';
+    protected static ?string $label = 'Participant';
+    protected static ?string $pluralLabel = 'Participants';
+    protected static ?int $navigationSort = 1;
 
     // Tambahkan use jika belum ada:
 
@@ -199,7 +203,11 @@ class ParticipantResource extends Resource
                         ->label('USG Mammae')
                         ->icon('heroicon-o-sparkles')
                         ->url(fn(Participant $record): string => UsgMammaeCheckResource::getUrl('create', ['participant_id' => $record->id])),
-                ])->label('Pemeriksaan')->icon('heroicon-m-plus')->color('success'),
+                ])
+                    ->label('Pemeriksaan')
+                    ->icon('heroicon-m-plus')
+                    ->color('success')
+                    ->dropdown(true),
 
                 Tables\Actions\EditAction::make(),
                 // Tables\Actions\ViewAction::make(),

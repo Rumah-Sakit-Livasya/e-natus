@@ -19,14 +19,16 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class LanderResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
+
     protected static ?string $model = Lander::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationLabel = 'Lander';
-    protected static ?string $navigationGroup = 'Manajemen Aset';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $pluralModelLabel = 'Lander';
     protected static ?string $modelLabel = 'Lander';
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 92;
 
     public static function form(Form $form): Form
     {

@@ -42,7 +42,7 @@ class SecurityHeadersMiddleware
         // CONTENT SECURITY POLICY (ENHANCED)
         // ============================================
 
-        $isAdminPath = $request->is('admin*') || $request->is('dashboard*') || $request->is('filament*');
+        $isAdminPath = $request->is('admin*') || $request->is('dashboard*') || $request->is('filament*') || $request->is('print*');
 
         if ($isAdminPath) {
             // Relaxed CSP for admin panel (Filament compatibility)

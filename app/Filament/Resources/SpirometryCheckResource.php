@@ -24,6 +24,8 @@ class SpirometryCheckResource extends Resource
     protected static ?string $navigationGroup = 'Pemeriksaan';
     protected static ?string $pluralModelLabel = 'Pemeriksaan Spirometri';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     // Fungsi helper untuk kalkulasi agar tidak berulang
     private static function updateCalculations(Get $get, Set $set): void
     {

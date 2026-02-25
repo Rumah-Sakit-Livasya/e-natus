@@ -42,6 +42,10 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
+            ->discoverClusters(
+                in: app_path('Filament/Clusters'),
+                for: 'App\\Filament\\Clusters'
+            )
             ->discoverResources(
                 in: app_path('Filament/Resources'),
                 for: 'App\\Filament\\Resources'
@@ -52,6 +56,15 @@ class DashboardPanelProvider extends PanelProvider
             )
             ->pages([
                 Pages\Dashboard::class,
+            ])
+            ->navigationGroups([
+                'Project',
+                'Pengajuan',
+                'Absensi',
+                'Medical Check Up',
+                'Inventory',
+                'Master Data',
+                'User Management',
             ])
             ->discoverWidgets(
                 in: app_path('Filament/Widgets'),

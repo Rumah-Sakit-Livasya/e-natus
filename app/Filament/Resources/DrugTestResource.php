@@ -24,6 +24,9 @@ class DrugTestResource extends Resource
     protected static ?string $navigationGroup = 'Pemeriksaan';
     protected static ?string $pluralModelLabel = 'Tes Narkoba';
 
+    protected static bool $shouldRegisterNavigation = false;
+
+
     public static function form(Form $form): Form
     {
         $options = ['Negatif' => 'Negatif', 'Positif' => 'Positif'];

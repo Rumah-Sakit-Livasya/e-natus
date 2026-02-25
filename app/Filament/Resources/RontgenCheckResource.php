@@ -23,6 +23,8 @@ class RontgenCheckResource extends Resource
     protected static ?string $navigationGroup = 'Pemeriksaan';
     protected static ?string $pluralModelLabel = 'Pemeriksaan Rontgen';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         $defaultTemuan = "- Apex pulmo bilateral tidak ada infiltrate\n"

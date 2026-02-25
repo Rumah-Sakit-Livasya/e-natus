@@ -16,9 +16,12 @@ class ListProjectForAttendance extends Page implements HasTable
 {
     use InteractsWithTable;
 
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationGroup = 'Project';
+    protected static ?string $navigationGroup = 'Absensi';
     protected static ?string $navigationLabel = 'Absensi Proyek';
+    protected static ?int $navigationSort = 98;
     protected static string $view = 'filament.pages.list-project-for-attendance';
     protected static ?string $title = 'Pilih Proyek untuk Mengelola Absensi';
 

@@ -17,10 +17,13 @@ use Illuminate\Support\HtmlString;
 
 class PengajuanDanaResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
+
     protected static ?string $model = PengajuanDana::class;
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
-    protected static ?string $navigationGroup = 'Project';
+    protected static ?string $navigationGroup = 'Pengajuan';
     protected static ?string $pluralModelLabel = 'Pengajuan Dana';
+    protected static ?int $navigationSort = 50;
 
     public static function form(Form $form): Form
     {

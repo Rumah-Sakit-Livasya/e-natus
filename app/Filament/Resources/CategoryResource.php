@@ -19,12 +19,15 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CategoryResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
+
     protected static ?string $model = Category::class;
     protected static ?string $navigationIcon = 'heroicon-o-tag';
     protected static ?string $navigationLabel = 'Kategori';
     protected static ?string $modelLabel = 'Kategori';
     protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $pluralModelLabel = 'Kategori';
+    protected static ?int $navigationSort = 90;
 
     public static function form(Forms\Form $form): Forms\Form
     {

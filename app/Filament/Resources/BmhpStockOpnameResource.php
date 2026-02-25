@@ -23,11 +23,15 @@ use Filament\Tables\Actions\Action;
 
 class BmhpStockOpnameResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\BmhpCluster::class;
+
     protected static ?string $model = BmhpStockOpname::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'Riwayat Stock Opname';
     protected static ?string $pluralModelLabel = 'Riwayat Stock Opname';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

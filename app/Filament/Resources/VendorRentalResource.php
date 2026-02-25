@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class VendorRentalResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
+
     protected static ?string $model = VendorRental::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';

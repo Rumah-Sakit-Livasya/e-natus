@@ -22,7 +22,6 @@ class BmhpImport implements ToModel, WithHeadingRow, WithValidation
             'satuan' => $row['satuan'] ?? null,
             'stok_awal' => $row['stok_awal'] ?? $row['stok_awal'] ?? 0,
             'stok_sisa' => $row['stok_sisa'] ?? $row['stok_sisa'] ?? 0,
-            'harga_satuan' => $row['harga_satuan'] ?? $row['harga_satuan'] ?? 0,
             'min_stok' => $row['stok_minimum'] ?? $row['min_stok'] ?? 0,
         ]);
     }
@@ -35,7 +34,6 @@ class BmhpImport implements ToModel, WithHeadingRow, WithValidation
             'satuan' => 'nullable|string|max:50',
             'stok_awal' => 'nullable|integer|min:0',
             'stok_sisa' => 'nullable|integer|min:0',
-            'harga_satuan' => 'nullable|numeric|min:0',
             'stok_minimum' => 'nullable|integer|min:0',
             'min_stok' => 'sometimes|nullable|integer|min:0',
         ];
@@ -49,7 +47,6 @@ class BmhpImport implements ToModel, WithHeadingRow, WithValidation
             'satuan.max' => 'Satuan maksimal 50 karakter',
             'stok_awal.min' => 'Stok awal tidak boleh negatif',
             'stok_sisa.min' => 'Stok sisa tidak boleh negatif',
-            'harga_satuan.min' => 'Harga satuan tidak boleh negatif',
             'stok_minimum.min' => 'Stok minimum tidak boleh negatif',
         ];
     }

@@ -16,12 +16,15 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class RealisationResource extends Resource
 {
-    protected static ?string $model = Realisation::class;
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
 
+    protected static ?string $model = Realisation::class;
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $navigationGroup = 'Procurement';
+    protected static ?string $navigationGroup = 'Pengadaan';
     protected static ?string $navigationLabel = 'List Realisasi';
     protected static ?string $pluralModelLabel = 'List Realisasi';
+
+    protected static ?int $navigationSort = 2;
 
     public static ?int $filterProcurementId = null;
 

@@ -24,6 +24,10 @@ use Filament\Tables\Columns\ImageColumn;
 
 class RabClosingResource extends Resource
 {
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
+
     protected static ?string $model = RabClosing::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box-arrow-down';
     protected static ?string $navigationGroup = 'Project';

@@ -19,12 +19,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AsetReceiptResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\AsetCluster::class;
+
     protected static ?string $model = AsetReceipt::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
-    protected static ?string $navigationGroup = 'Manajemen Aset';
+    protected static ?string $navigationGroup = 'Pengadaan';
     protected static ?string $label = 'Serah Terima Aset';
     protected static ?string $pluralLabel = 'Serah Terima Aset';
+
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

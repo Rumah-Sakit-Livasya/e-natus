@@ -18,6 +18,8 @@ use Spatie\Permission\Models\Role;
 
 class RoleResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\UserManagementCluster::class;
+
     protected static ?string $model = Role::class;
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'Roles';

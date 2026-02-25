@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class RegionResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\MasterDataCluster::class;
+
     protected static ?string $model = Region::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-map';

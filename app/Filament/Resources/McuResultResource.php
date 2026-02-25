@@ -14,11 +14,15 @@ use Filament\Tables\Table;
 
 class McuResultResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\MedicalCheckUpCluster::class;
+
     protected static ?string $model = McuResult::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Project';
+    protected static ?string $navigationGroup = 'Medical Check Up';
     protected static ?string $label = 'MCU Result';
     protected static ?string $pluralLabel = 'MCU Results';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

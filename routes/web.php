@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/print-rab/{project}', [PrintController::class, 'printRAB'])->name('print-rab');
     Route::get('/print-assets', [PrintController::class, 'printAssets'])->name('print-assets');
+    Route::get('/print-asset-barcodes', [PrintController::class, 'printAssetBarcodes'])->name('print-asset-barcodes');
     Route::get('/print-realisasi-rab/{project}', [PrintController::class, 'printRealisasiRab'])->name('print-realisasi-rab');
     Route::get('/project-requests/{project}/realisasi-rab/create', [ProjectRealisationController::class, 'create'])
         ->name('project.realisasi-rab.create');
@@ -96,7 +97,7 @@ Route::domain(config('filament.panels.dashboard.domain'))
 Route::middleware(['web', 'auth'])->get('/debug/current-user-notifications', function () {
     $user = auth()->user();
     $notifications = $user->notifications()->latest()->get();
-    
+
     return response()->json([
         'user_id' => $user->id,
         'user_name' => $user->name,

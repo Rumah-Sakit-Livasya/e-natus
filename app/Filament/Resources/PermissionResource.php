@@ -17,6 +17,8 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\UserManagementCluster::class;
+
     protected static ?string $model = Permission::class;
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
     protected static ?string $navigationLabel = 'Permissions';

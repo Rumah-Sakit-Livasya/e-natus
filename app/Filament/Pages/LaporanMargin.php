@@ -17,15 +17,15 @@ class LaporanMargin extends Page implements HasTable
 {
     use InteractsWithTable;
 
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
-
     protected static string $view = 'filament.pages.laporan-margin';
-
-    protected static ?string $navigationGroup = 'Laporan';
-
+    protected static ?string $navigationGroup = 'Project';
     protected static ?string $navigationLabel = 'Laporan Margin';
-
     protected static ?string $title = 'Laporan Margin Keuntungan';
+
+    protected static ?int $navigationSort = 3;
 
     public static function canViewAny(): bool
     {
@@ -70,8 +70,8 @@ class LaporanMargin extends Page implements HasTable
                     ->money('IDR')
                     ->state(function (ProjectRequest $record): float {
                         return $record->projectBmhp->sum('total') +
-                               $record->rabOperasionalItems->sum('total') +
-                               $record->rabFeeItems->sum('total');
+                            $record->rabOperasionalItems->sum('total') +
+                            $record->rabFeeItems->sum('total');
                     }),
 
                 TextColumn::make('margin')
@@ -79,12 +79,12 @@ class LaporanMargin extends Page implements HasTable
                     ->money('IDR')
                     ->state(function (ProjectRequest $record): float {
                         $totalBiaya = $record->projectBmhp->sum('total') +
-                                      $record->rabOperasionalItems->sum('total') +
-                                      $record->rabFeeItems->sum('total');
+                            $record->rabOperasionalItems->sum('total') +
+                            $record->rabFeeItems->sum('total');
 
                         return ($record->nilai_invoice ?? 0) - $totalBiaya;
                     })
-                    ->color(fn (string $state): string => (float) $state >= 0 ? 'success' : 'danger'),
+                    ->color(fn(string $state): string => (float) $state >= 0 ? 'success' : 'danger'),
 
                 TextColumn::make('margin_percentage')
                     ->label('% Margin')
@@ -95,18 +95,18 @@ class LaporanMargin extends Page implements HasTable
                         }
 
                         $totalBiaya = $record->projectBmhp->sum('total') +
-                                      $record->rabOperasionalItems->sum('total') +
-                                      $record->rabFeeItems->sum('total');
+                            $record->rabOperasionalItems->sum('total') +
+                            $record->rabFeeItems->sum('total');
                         $margin = $invoice - $totalBiaya;
 
-                        return number_format(($margin / $invoice) * 100, 2).'%';
+                        return number_format(($margin / $invoice) * 100, 2) . '%';
                     })
-                    ->color(fn (string $state): string => (float) $state >= 0 ? 'success' : 'danger'),
+                    ->color(fn(string $state): string => (float) $state >= 0 ? 'success' : 'danger'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 \Filament\Tables\Filters\Filter::make('start_period')->form([\Filament\Forms\Components\DatePicker::make('from')->label('Dari Tanggal'), \Filament\Forms\Components\DatePicker::make('until')->label('Sampai Tanggal')])->query(function (Builder $query, array $data): Builder {
-                    return $query->when($data['from'], fn (Builder $query, $date): Builder => $query->whereDate('start_period', '>=', $date))->when($data['until'], fn (Builder $query, $date): Builder => $query->whereDate('start_period', '<=', $date));
+                    return $query->when($data['from'], fn(Builder $query, $date): Builder => $query->whereDate('start_period', '>=', $date))->when($data['until'], fn(Builder $query, $date): Builder => $query->whereDate('start_period', '<=', $date));
                 }),
                 \Filament\Tables\Filters\SelectFilter::make('client_id')
                     ->label('Klien')
@@ -126,17 +126,17 @@ class LaporanMargin extends Page implements HasTable
                     ->exports([
                         ExcelExport::make()
                             ->fromTable()
-                            ->withFilename('Laporan_Margin_'.date('Y-m-d'))
+                            ->withFilename('Laporan_Margin_' . date('Y-m-d'))
                             ->withColumns([
                                 Column::make('name')->heading('Nama Proyek'),
                                 Column::make('client.name')->heading('Klien'),
                                 Column::make('nilai_invoice')->heading('Nilai Invoice'),
                                 Column::make('total_biaya')
                                     ->heading('Total Biaya')
-                                    ->formatStateUsing(fn ($record) => $record->projectBmhp->sum('total') + $record->rabOperasionalItems->sum('total') + $record->rabFeeItems->sum('total')),
+                                    ->formatStateUsing(fn($record) => $record->projectBmhp->sum('total') + $record->rabOperasionalItems->sum('total') + $record->rabFeeItems->sum('total')),
                                 Column::make('margin')
                                     ->heading('Margin')
-                                    ->formatStateUsing(fn ($record) => ($record->nilai_invoice ?? 0) - ($record->projectBmhp->sum('total') + $record->rabOperasionalItems->sum('total') + $record->rabFeeItems->sum('total'))),
+                                    ->formatStateUsing(fn($record) => ($record->nilai_invoice ?? 0) - ($record->projectBmhp->sum('total') + $record->rabOperasionalItems->sum('total') + $record->rabFeeItems->sum('total'))),
                             ]),
                     ]),
             ]);

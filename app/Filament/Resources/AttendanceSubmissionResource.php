@@ -18,11 +18,14 @@ use Filament\Notifications\Notification; // <-- Import Notifikasi
 
 class AttendanceSubmissionResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
+
     protected static ?string $model = AttendanceSubmission::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-arrow-up';
-    protected static ?string $navigationGroup = 'Project';
+    protected static ?string $navigationGroup = 'Absensi';
     protected static ?string $navigationLabel = 'Pengajuan Absensi Susulan';
     protected static ?string $pluralModelLabel = 'Pengajuan Absensi Susulan';
+    protected static ?int $navigationSort = 99;
 
     public static function form(Form $form): Form
     {

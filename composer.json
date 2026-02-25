@@ -15,6 +15,7 @@
         "filament/tables": "*",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
+        "milon/barcode": "^11.0",
         "pxlrbt/filament-excel": "^2.4",
         "spatie/laravel-permission": "^6.19"
     },

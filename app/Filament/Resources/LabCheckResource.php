@@ -27,6 +27,8 @@ class LabCheckResource extends Resource
     protected static ?string $navigationGroup = 'Pemeriksaan';
     protected static ?string $pluralModelLabel = 'Pemeriksaan Lab';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         return $form

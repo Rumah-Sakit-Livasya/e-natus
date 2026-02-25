@@ -14,15 +14,14 @@ use Filament\Tables\Table;
 
 class PriceChangeRequestResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\ProjectCluster::class;
+
     protected static ?string $model = PriceChangeRequest::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
-
-    protected static ?string $navigationGroup = 'Approvals';
-
+    protected static ?string $navigationGroup = 'Pengajuan';
     protected static ?string $navigationLabel = 'Price Change Requests';
-
     protected static ?string $pluralModelLabel = 'Price Change Requests';
+    protected static ?int $navigationSort = 51;
 
     public static function form(Form $form): Form
     {
@@ -76,7 +75,7 @@ class PriceChangeRequestResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
@@ -101,7 +100,7 @@ class PriceChangeRequestResource extends Resource
                     ->label('Approve')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn (PriceChangeRequest $record) => $record->status === 'pending' && auth()->user()->hasAnyRole(['super-admin', 'owner']))
+                    ->visible(fn(PriceChangeRequest $record) => $record->status === 'pending' && auth()->user()->hasAnyRole(['super-admin', 'owner']))
                     ->form([
                         Forms\Components\Textarea::make('review_notes')
                             ->label('Notes (Optional)')
@@ -138,7 +137,7 @@ class PriceChangeRequestResource extends Resource
                     ->label('Reject')
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
-                    ->visible(fn (PriceChangeRequest $record) => $record->status === 'pending' && auth()->user()->hasAnyRole(['super-admin', 'owner']))
+                    ->visible(fn(PriceChangeRequest $record) => $record->status === 'pending' && auth()->user()->hasAnyRole(['super-admin', 'owner']))
                     ->form([
                         Forms\Components\Textarea::make('review_notes')
                             ->label('Rejection Reason')

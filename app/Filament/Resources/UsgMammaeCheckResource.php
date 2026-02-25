@@ -23,6 +23,8 @@ class UsgMammaeCheckResource extends Resource
     protected static ?string $navigationGroup = 'Pemeriksaan';
     protected static ?string $pluralModelLabel = 'Pemeriksaan USG Mammae';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         $defaultTemuan = "- Tampak parenkim mammae dominan glandular\n"

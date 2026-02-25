@@ -4,13 +4,16 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BmhpResource\Pages;
 use App\Models\Bmhp;
+use Filament\Forms;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Columns\Column;
@@ -18,10 +21,17 @@ use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class BmhpResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\BmhpCluster::class;
+
+    protected static ?string $slug = 'bhp';
+
+    protected static ?string $modelLabel = 'Barang Habis Pakai';
     protected static ?string $model = Bmhp::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Inventory';
-    protected static ?string $navigationLabel = 'BMHP';
+    protected static ?string $navigationLabel = 'BHP';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -37,6 +47,7 @@ class BmhpResource extends Resource
                         ->toArray();
                 })
                 ->searchable()
+                ->reactive()
                 ->createOptionForm([
                     TextInput::make('name')
                         ->label('Nama Satuan')
@@ -55,7 +66,6 @@ class BmhpResource extends Resource
                             'satuan' => $newSatuan,
                             'stok_awal' => 0,
                             'stok_sisa' => 0,
-                            'harga_satuan' => 0,
                             'min_stok' => 0,
                         ]);
                     }
@@ -64,7 +74,22 @@ class BmhpResource extends Resource
                 })
                 ->preload()
                 ->helperText('Pilih satuan yang ada atau buat baru'),
-            TextInput::make('harga_satuan')->numeric()->label('Harga Satuan')->prefix('Rp'),
+            Checkbox::make('has_multiple_pcs')
+                ->label('Satuan ini mengandung beberapa pcs')
+                ->reactive()
+                ->helperText('Centang jika satu satuan mengandung lebih dari 1 pcs (misal: 1 box = 10 pcs)'),
+            TextInput::make('pcs_per_unit')
+                ->numeric()
+                ->label('Isi per Satuan (pcs)')
+                ->minValue(1)
+                ->default(null)
+                ->visible(function (callable $get): bool {
+                    return (bool) ($get('has_multiple_pcs') ?? false);
+                })
+                ->required(function (callable $get): bool {
+                    return (bool) ($get('has_multiple_pcs') ?? false);
+                })
+                ->helperText('Jika satuan ini mengandung beberapa pcs, isi berapa pcs dalam satu satuan.'),
             TextInput::make('stok_awal')->numeric()->label('Stok Awal')->default(0),
             TextInput::make('stok_sisa')
                 ->numeric()
@@ -86,37 +111,73 @@ class BmhpResource extends Resource
             ->columns([
                 TextColumn::make('name')->label('Nama')->searchable(),
                 TextColumn::make('satuan')->label('Satuan'),
+                TextColumn::make('pcs_per_unit')->label('Isi (pcs)')->sortable(),
                 TextColumn::make('stok_awal')->label('Stok Awal')->sortable(),
                 TextColumn::make('stok_sisa')->label('Stok Sisa')->sortable()
                     ->color(function ($state, Bmhp $record): string {
+                        if ($state <= 0) {
+                            return 'danger'; // Merah jika stok habis
+                        }
                         if ($record->min_stok > 0 && $state <= $record->min_stok) {
-                            return 'danger'; // Merah jika di bawah atau sama dengan stok min
+                            return 'warning'; // Kuning jika di bawah atau sama dengan stok min
                         }
                         return 'success'; // Hijau jika aman
                     }),
-                TextColumn::make('harga_satuan')->money('idr', true)->label('Harga'),
+                TextColumn::make('stock_status')
+                    ->label('Status')
+                    ->badge()
+                    ->getStateUsing(function (Bmhp $record): string {
+                        if ((int) $record->stok_sisa <= 0) {
+                            return 'HABIS';
+                        }
+
+                        if ((int) $record->min_stok > 0 && (int) $record->stok_sisa <= (int) $record->min_stok) {
+                            return 'MENIPIS';
+                        }
+
+                        return 'AMAN';
+                    })
+                    ->color(function (string $state): string {
+                        return match ($state) {
+                            'HABIS' => 'danger',
+                            'MENIPIS' => 'warning',
+                            default => 'success',
+                        };
+                    }),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('stock_status')
+                    ->label('Filter Status')
+                    ->options([
+                        'aman' => 'Aman',
+                        'menipis' => 'Menipis',
+                        'habis' => 'Habis',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+                        if (!$value) {
+                            return $query;
+                        }
+
+                        return match ($value) {
+                            'habis' => $query->where('stok_sisa', '<=', 0),
+                            'menipis' => $query->where('stok_sisa', '>', 0)->where('min_stok', '>', 0)->whereColumn('stok_sisa', '<=', 'min_stok'),
+                            default => $query->where(function (Builder $q) {
+                                $q->where('stok_sisa', '>', 0)
+                                    ->where(function (Builder $q2) {
+                                        $q2->where('min_stok', '<=', 0)
+                                            ->orWhereColumn('stok_sisa', '>', 'min_stok');
+                                    });
+                            }),
+                        };
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                ExportAction::make('export_excel')
-                    ->label('Export Excel')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->exports([
-                        ExcelExport::make('bmhp')
-                            ->fromModel()
-                            ->withColumns([
-                                Column::make('name')->heading('Nama BMHP'),
-                                Column::make('satuan')->heading('Satuan'),
-                                Column::make('stok_awal')->heading('Stok Awal'),
-                                Column::make('stok_sisa')->heading('Stok Sisa'),
-                                Column::make('harga_satuan')->heading('Harga Satuan'),
-                                Column::make('min_stok')->heading('Stok Minimum'),
-                            ])
-                    ]),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                // Tables\Actions\DeleteBulkAction::make(),
                 ExportBulkAction::make('export_selected')
                     ->label('Export Selected')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -126,9 +187,9 @@ class BmhpResource extends Resource
                             ->withColumns([
                                 Column::make('name')->heading('Nama BMHP'),
                                 Column::make('satuan')->heading('Satuan'),
+                                Column::make('pcs_per_unit')->heading('Isi per Kemasan (pcs)'),
                                 Column::make('stok_awal')->heading('Stok Awal'),
                                 Column::make('stok_sisa')->heading('Stok Sisa'),
-                                Column::make('harga_satuan')->heading('Harga Satuan'),
                                 Column::make('min_stok')->heading('Stok Minimum'),
                             ])
                     ])

@@ -15,9 +15,9 @@ class Bmhp extends Model
     protected $fillable = [
         'name',
         'satuan',
+        'pcs_per_unit',
         'stok_awal',
         'stok_sisa',
-        'harga_satuan',
         'min_stok',
     ];
 

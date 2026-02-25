@@ -16,10 +16,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupplierReceiptResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\MasterDataCluster::class;
+
     protected static ?string $model = Supplier::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
-    protected static ?string $navigationGroup = 'Manajemen Aset';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $label = 'Supplier';
     protected static ?string $pluralLabel = 'Supplier';
 

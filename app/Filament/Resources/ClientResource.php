@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClientResource extends Resource
 {
+    protected static ?string $cluster = \App\Filament\Clusters\MasterDataCluster::class;
+
     protected static ?string $model = Client::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
