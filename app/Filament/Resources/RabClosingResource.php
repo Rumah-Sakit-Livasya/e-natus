@@ -101,30 +101,25 @@ class RabClosingResource extends Resource
                 ]),
 
             Section::make('BMHP (Bahan Medis Habis Pakai)')
+                ->description('Data ini diisi oleh bagian Logistik di menu BHP Sisa Project.')
                 ->schema([
                     Repeater::make('bmhpItems')
-                        ->relationship('bmhpItems') // Aktifkan relasi agar data BMHP muncul
+                        ->relationship('bmhpItems')
                         ->label('Item BMHP')
                         ->schema([
-                            TextInput::make('name')->label('Deskripsi')->required()->columnSpan(2),
-                            TextInput::make('total')->label('Total')->numeric()->prefix('Rp')->required()->columnSpan(1),
+                            TextInput::make('name')->label('Deskripsi')->readOnly()->columnSpan(2),
+                            TextInput::make('jumlah_sisa')->label('Sisa')->numeric()->readOnly()->columnSpan(1),
+                            TextInput::make('total')->label('Total Biaya')->numeric()->prefix('Rp')->readOnly()->columnSpan(1),
                             FileUpload::make('attachments')
                                 ->label('Struk')
                                 ->multiple()
-                                ->reorderable()
-                                ->appendFiles()
-                                ->disk('public')
-                                ->directory('rab-attachments/bmhp')
-                                ->storeFileNamesIn('original_filename')
-                                ->columnSpan(2),
+                                ->disabled() // Bukti diunggah di logistik atau tetap di sini? Asumsi read only jika input di menu lain
+                                ->columnSpan(1),
                         ])
-                        ->deleteAction(
-                            fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
-                        )
-                        ->columns(5)
+                        ->addable(false)
+                        ->deletable(false)
                         ->reorderable(false)
-                        ->addActionLabel('Tambah Item BMHP')
-                        ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
+                        ->columns(5),
                 ]),
 
             // Kalkulasi Total Utama
