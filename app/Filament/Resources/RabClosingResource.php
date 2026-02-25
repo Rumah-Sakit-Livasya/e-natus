@@ -107,9 +107,6 @@ class RabClosingResource extends Resource
                         ->label('Item BMHP')
                         ->schema([
                             TextInput::make('name')->label('Deskripsi')->required()->columnSpan(2),
-                            // TextInput::make('satuan')->label('Satuan')->columnSpan(1),
-                            // TextInput::make('jumlah_rencana')->label('Jumlah')->numeric()->columnSpan(1),
-                            // TextInput::make('harga_satuan')->label('Harga Satuan')->numeric()->prefix('Rp')->columnSpan(1),
                             TextInput::make('total')->label('Total')->numeric()->prefix('Rp')->required()->columnSpan(1),
                             FileUpload::make('attachments')
                                 ->label('Struk')

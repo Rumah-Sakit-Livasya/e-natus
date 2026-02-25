@@ -26,10 +26,13 @@ class BmhpResource extends Resource
     protected static ?string $slug = 'bhp';
 
     protected static ?string $modelLabel = 'Barang Habis Pakai';
+    protected static ?string $pluralModelLabel = 'Barang Habis Pakai';
     protected static ?string $model = Bmhp::class;
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
     protected static ?string $navigationGroup = 'Inventory';
     protected static ?string $navigationLabel = 'BHP';
+
+
 
     protected static ?int $navigationSort = 1;
 

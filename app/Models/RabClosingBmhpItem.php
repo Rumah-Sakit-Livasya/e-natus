@@ -19,6 +19,7 @@ class RabClosingBmhpItem extends Model
         'name',          // Nama BMHP
         'satuan',
         'jumlah_rencana',
+        'jumlah_sisa',
         'harga_satuan',
         'total',
     ];
