@@ -27,18 +27,21 @@ class LaporanMargin extends Page implements HasTable
 
     protected static ?int $navigationSort = 3;
 
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
         $user = auth()->user();
-        if (! $user) {
-            return false;
-        }
+        if (!$user) return false;
 
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true;
         }
 
         return $user->can('view laporan margin');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public function table(Table $table): Table
