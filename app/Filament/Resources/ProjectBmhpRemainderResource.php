@@ -40,6 +40,7 @@ class ProjectBmhpRemainderResource extends Resource
                             ->searchable()
                             ->required()
                             ->live()
+                            ->native(false)
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
                                 if ($state) {
                                     $closing = RabClosing::find($state);
@@ -62,6 +63,7 @@ class ProjectBmhpRemainderResource extends Resource
                             ->options(Bmhp::pluck('name', 'id'))
                             ->searchable()
                             ->live()
+                            ->native(false)
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
                                 if ($state) {
                                     $bmhp = Bmhp::find($state);

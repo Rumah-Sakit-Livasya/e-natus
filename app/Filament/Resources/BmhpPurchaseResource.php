@@ -42,6 +42,7 @@ class BmhpPurchaseResource extends Resource
                     ->relationship('supplier', 'name')
                     ->searchable()
                     ->preload()
+                    ->native(false)
                     ->createOptionForm([
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Supplier')
@@ -82,6 +83,7 @@ class BmhpPurchaseResource extends Resource
                             ->preload()
                             ->required()
                             ->reactive()
+                            ->native(false)
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 $bmhp = $state ? Bmhp::find($state) : null;
                                 $set('pcs_per_unit_snapshot', $bmhp?->pcs_per_unit);
@@ -120,6 +122,7 @@ class BmhpPurchaseResource extends Resource
                             ->default('pcs')
                             ->required()
                             ->reactive()
+                            ->native(false)
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 $qty = (int) ($get('qty') ?? 0);
                                 $purchaseType = (string) ($state ?? 'pcs');

@@ -43,7 +43,11 @@ class RabClosingResource extends Resource
                         ->label('Proyek')
                         ->content(fn(?RabClosing $record): string => $record?->projectRequest->name ?? '-'),
                     DatePicker::make('closing_date')->required()->label('Tanggal Closing'),
-                    Select::make('status')->options(['draft' => 'Draft', 'final' => 'Final'])->disabled()->required(),
+                    Select::make('status')
+                        ->options(['draft' => 'Draft', 'final' => 'Final'])
+                        ->disabled()
+                        ->required()
+                        ->native(false),
                 ])->columns(3),
 
             Section::make('Operasional MCU')

@@ -198,6 +198,7 @@ class AsetResource extends Resource
                 ->options(\App\Models\Template::pluck('name', 'id')->toArray())
                 ->searchable()
                 ->required()
+                ->native(false)
                 ->createOptionForm([
                     TextInput::make('name')
                         ->label('Nama Template')
@@ -233,7 +234,8 @@ class AsetResource extends Resource
 
             Select::make('lander_id')
                 ->label('Lander')
-                ->options(\App\Models\Lander::pluck('name', 'id')),
+                ->options(\App\Models\Lander::pluck('name', 'id'))
+                ->native(false),
 
             TextInput::make('custom_name')
                 ->label('Nama Aset')
@@ -312,7 +314,8 @@ class AsetResource extends Resource
                 ->default('available')
                 ->disabled() // jika tidak boleh diubah
                 ->dehydrated() // pastikan tetap disimpan meskipun disabled
-                ->label('Status'),
+                ->label('Status')
+                ->native(false),
         ]);
 
         return $fields;

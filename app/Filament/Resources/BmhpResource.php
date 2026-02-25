@@ -76,6 +76,7 @@ class BmhpResource extends Resource
                     return $newSatuan;
                 })
                 ->preload()
+                ->native(false)
                 ->helperText('Pilih satuan yang ada atau buat baru'),
             Checkbox::make('has_multiple_pcs')
                 ->label('Satuan ini mengandung beberapa pcs')
@@ -156,6 +157,7 @@ class BmhpResource extends Resource
                         'menipis' => 'Menipis',
                         'habis' => 'Habis',
                     ])
+                    ->native(false)
                     ->query(function (Builder $query, array $data): Builder {
                         $value = $data['value'] ?? null;
                         if (!$value) {

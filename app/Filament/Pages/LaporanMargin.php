@@ -121,7 +121,8 @@ class LaporanMargin extends Page implements HasTable
                         'pending' => 'Pending',
                         'approved' => 'Disetujui',
                         'done' => 'Selesai',
-                    ]),
+                    ])
+                    ->native(false),
             ])
             ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
             ->headerActions([
