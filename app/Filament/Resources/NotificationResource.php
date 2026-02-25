@@ -24,11 +24,8 @@ use Illuminate\Support\Facades\DB;
 
 class NotificationResource extends Resource
 {
-    protected static ?string $cluster = \App\Filament\Clusters\UserManagementCluster::class;
-
     public static ?string $model = DatabaseNotification::class;
     public static ?string $navigationIcon = 'heroicon-o-bell-alert';
-    public static ?string $navigationGroup = 'User Management';
     public static ?string $navigationLabel = 'Semua Notifikasi';
     public static ?string $pluralModelLabel = 'Semua Notifikasi';
 
