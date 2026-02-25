@@ -18,16 +18,21 @@ class LaporanPemeriksaan extends Page
     protected static ?string $navigationLabel = 'Laporan per Pemeriksaan';
     protected static ?int $navigationSort = 3;
 
-    // Hanya user yang memiliki permission 'view hasil mcu' yang dapat melihat halaman ini
-    public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
         $user = auth()->user();
+        if (!$user) return false;
 
-        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true;
         }
 
-        return $user && $user->can('view hasil mcu');
+        return $user->can('view laporan pemeriksaan');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     // Metode ini akan menampilkan widget tabel kita
