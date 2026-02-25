@@ -19,13 +19,21 @@
                             <x-heroicon-s-check-circle class="w-6 h-6" />
                         </button>
                     @else
-                        <span class="text-gray-400 italic">
-                            Sedang Dipakai Pada Project:
-                            @php
-                                $names = $asset->projectRequests()->pluck('name')->first();
-                            @endphp
-                            {{ $names }}
-                        </span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-gray-400 italic">
+                                Sedang Dipakai Pada Project:
+                                @php
+                                    $names = $asset->projectRequests()->pluck('name')->first();
+                                @endphp
+                                {{ $names }}
+                            </span>
+                            <button wire:click="markAvailable({{ $asset->id }})"
+                                class="text-blue-600 hover:text-blue-800 flex items-center space-x-1" type="button"
+                                wire:loading.attr="disabled" wire:target="markAvailable({{ $asset->id }})">
+                                <x-heroicon-s-backspace class="w-5 h-5" />
+                                <span class="text-xs font-semibold">Kembalikan Aset</span>
+                            </button>
+                        </div>
                     @endif
                 </td>
             </tr>

@@ -24,7 +24,19 @@ class ProjectAssetTable extends Component
             $asset->save();
 
             // Refresh aset list after update
-            $this->assetIds = $this->assetIds; // trigger re-render, sebenarnya Livewire otomatis re-render
+            $this->assetIds = $this->assetIds;
+        }
+    }
+
+    public function markAvailable($assetId)
+    {
+        $asset = Aset::find($assetId);
+        if ($asset && $asset->status !== 'available') {
+            $asset->status = 'available';
+            $asset->save();
+
+            // Refresh aset list after update
+            $this->assetIds = $this->assetIds;
         }
     }
 }

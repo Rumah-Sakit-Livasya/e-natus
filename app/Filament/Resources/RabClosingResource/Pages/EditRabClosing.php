@@ -41,8 +41,17 @@ class EditRabClosing extends EditRecord
                 ->modalSubheading('Apakah Anda yakin ingin menyelesaikan RAB ini? Setelah difinalisasi, data tidak bisa diubah lagi.')
                 ->modalButton('Ya, Finalisasi')
                 ->action(function () {
-                    $this->record->update(['status' => 'final']);
-                    Notification::make()->title('RAB berhasil difinalisasi')->success()->send();
+                    DB::transaction(function () {
+                        $this->record->update(['status' => 'final']);
+
+                        // Kembalikan aset menjadi available
+                        $assetIds = $this->record->projectRequest->asset_ids ?? [];
+                        if (!empty($assetIds)) {
+                            \App\Models\Aset::whereIn('id', $assetIds)->update(['status' => 'available']);
+                        }
+                    });
+
+                    Notification::make()->title('RAB berhasil difinalisasi dan aset telah dikembalikan')->success()->send();
                     return redirect(RabClosingResource::getUrl('edit', ['record' => $this->record]));
                 })->visible(fn(): bool => $this->record->status === 'draft'),
             Actions\DeleteAction::make(),
