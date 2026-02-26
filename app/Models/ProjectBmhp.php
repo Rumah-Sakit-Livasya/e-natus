@@ -13,6 +13,9 @@ class ProjectBmhp extends Model
 
     protected $fillable = [
         'bmhp_id',
+        'purchase_type',
+        'qty',
+        'pcs_per_unit_snapshot',
         'satuan',
         'jumlah_rencana',
         'harga_satuan',

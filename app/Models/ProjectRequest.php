@@ -41,8 +41,14 @@ class ProjectRequest extends Model
                 $projectRequest->code = self::generateCode($projectRequest->name);
             }
 
-            // Set initial approval status to pending for level 1
-            $projectRequest->approval_level_1_status = 'pending';
+            // Set initial approval status based on settings
+            if (! \App\Models\GeneralSetting::isProjectL1Required()) {
+                $projectRequest->approval_level_1_status = 'approved';
+                $projectRequest->approval_level_1_at = now();
+                $projectRequest->approval_level_1_by = Auth::id();
+            } else {
+                $projectRequest->approval_level_1_status = 'pending';
+            }
         });
 
         // Event yang berjalan SETELAH record disimpan
@@ -69,6 +75,18 @@ class ProjectRequest extends Model
                         ]);
                     }
                 }
+            }
+        });
+
+        // Event yang berjalan SETELAH record diupdate
+        static::updated(function ($projectRequest) {
+            // Check if project just became fully approved
+            if ($projectRequest->isFullyApproved() && !$projectRequest->bmhp_stock_deducted) {
+                $projectRequest->deductBmhpStock();
+                \Log::info('Stock automatically deducted on approval', [
+                    'project_id' => $projectRequest->id,
+                    'project_name' => $projectRequest->name
+                ]);
             }
         });
     }
@@ -180,7 +198,7 @@ class ProjectRequest extends Model
     }
 
     // =================== APPROVAL RELATIONSHIPS ===================
-    
+
     /**
      * User who approved Level 1
      */
@@ -212,7 +230,7 @@ class ProjectRequest extends Model
      */
     public function isPendingLevel2Approval(): bool
     {
-        return $this->approval_level_1_status === 'approved' 
+        return $this->approval_level_1_status === 'approved'
             && $this->approval_level_2_status === 'pending';
     }
 
@@ -221,7 +239,7 @@ class ProjectRequest extends Model
      */
     public function isFullyApproved(): bool
     {
-        return $this->approval_level_1_status === 'approved' 
+        return $this->approval_level_1_status === 'approved'
             && $this->approval_level_2_status === 'approved';
     }
 
@@ -230,7 +248,38 @@ class ProjectRequest extends Model
      */
     public function isRejected(): bool
     {
-        return $this->approval_level_1_status === 'rejected' 
+        return $this->approval_level_1_status === 'rejected'
             || $this->approval_level_2_status === 'rejected';
+    }
+
+    /**
+     * Deduct BMHP stock and mark as deducted
+     */
+    public function deductBmhpStock()
+    {
+        if ($this->bmhp_stock_deducted) {
+            return;
+        }
+
+        foreach ($this->projectBmhp as $item) {
+            if ($item->bmhp) {
+                // Decrement stok_sisa by total pieces (jumlah_rencana)
+                $item->bmhp->decrement('stok_sisa', $item->jumlah_rencana);
+
+                \Illuminate\Support\Facades\Log::info("Stock Deducted (Centralized): Project Request Approved for {$this->name}. BMHP {$item->bmhp->name} deducted {$item->jumlah_rencana} Pcs.");
+            }
+        }
+
+        $this->update(['bmhp_stock_deducted' => true]);
+    }
+
+    /**
+     * Mark used assets as unavailable
+     */
+    public function markAssetsUnavailable()
+    {
+        if (!empty($this->asset_ids)) {
+            \App\Models\Aset::whereIn('id', $this->asset_ids)->update(['status' => 'unavailable']);
+        }
     }
 }

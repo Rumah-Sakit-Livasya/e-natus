@@ -167,7 +167,15 @@ class PengajuanDanaResource extends Resource
                 Tables\Actions\Action::make('setujui')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(PengajuanDana $record) => $record->status === StatusPengajuanEnum::DIAJUKAN)
+                    ->visible(function (PengajuanDana $record) {
+                        if ($record->status !== StatusPengajuanEnum::DIAJUKAN) return false;
+
+                        if (\App\Models\GeneralSetting::isPengajuanDanaApprovalRequired()) {
+                            return auth()->user()->can('approve pengajuan_dana'); // Adjust permission name if needed
+                        }
+
+                        return true;
+                    })
                     ->action(function (PengajuanDana $record) {
                         $record->update([
                             'status' => StatusPengajuanEnum::DISETUJUI,

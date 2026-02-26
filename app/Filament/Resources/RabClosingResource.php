@@ -43,11 +43,7 @@ class RabClosingResource extends Resource
                         ->label('Proyek')
                         ->content(fn(?RabClosing $record): string => $record?->projectRequest->name ?? '-'),
                     DatePicker::make('closing_date')->required()->label('Tanggal Closing'),
-                    Select::make('status')
-                        ->options(['draft' => 'Draft', 'final' => 'Final'])
-                        ->disabled()
-                        ->required()
-                        ->native(false),
+                    Select::make('status')->options(['draft' => 'Draft', 'final' => 'Final'])->disabled()->required(),
                 ])->columns(3),
 
             Section::make('Operasional MCU')
@@ -105,25 +101,91 @@ class RabClosingResource extends Resource
                 ]),
 
             Section::make('BMHP (Bahan Medis Habis Pakai)')
-                ->description('Data ini diisi oleh bagian Logistik di menu BHP Sisa Project.')
                 ->schema([
                     Repeater::make('bmhpItems')
-                        ->relationship('bmhpItems')
+                        ->relationship('bmhpItems') // Aktifkan relasi agar data BMHP muncul
                         ->label('Item BMHP')
                         ->schema([
-                            TextInput::make('name')->label('Deskripsi')->readOnly()->columnSpan(2),
-                            TextInput::make('jumlah_sisa')->label('Sisa')->numeric()->readOnly()->columnSpan(1),
-                            TextInput::make('total')->label('Total Biaya')->numeric()->prefix('Rp')->readOnly()->columnSpan(1),
-                            FileUpload::make('attachments')
-                                ->label('Struk')
-                                ->multiple()
-                                ->disabled() // Bukti diunggah di logistik atau tetap di sini? Asumsi read only jika input di menu lain
-                                ->columnSpan(1),
+                            Section::make('Data Planning (Referensi)')
+                                ->description('Rencana anggaran dan quantity awal.')
+                                ->icon('heroicon-o-document-text')
+                                ->compact()
+                                ->schema([
+                                    Forms\Components\Grid::make(5)->schema([
+                                        TextInput::make('name')->label('Item/Deskripsi')->readOnly(),
+                                        TextInput::make('satuan')->label('Satuan Master')->readOnly(),
+                                        TextInput::make('jumlah_rencana')->label('Rencana (Pcs)')->numeric()->readOnly(),
+                                        TextInput::make('pcs_per_unit_snapshot')->label('Isi (Pcs)')->numeric()->readOnly(),
+                                        TextInput::make('harga_satuan')->label('Harga Satuan')->numeric()->prefix('Rp')->readOnly(),
+                                    ]),
+                                ])->columnSpanFull(),
+
+                            Section::make('Aktual Pengembalian / Sisa')
+                                ->description('Jumlah barang yang kembali (tidak habis terpakai).')
+                                ->icon('heroicon-o-arrow-uturn-left')
+                                ->compact()
+                                ->schema([
+                                    Forms\Components\Grid::make(3)->schema([
+                                        Select::make('sisa_purchase_type')
+                                            ->label('Sisa Per')
+                                            ->options(function (Get $get) {
+                                                $satuan = $get('satuan') ?: 'Unit';
+                                                return [
+                                                    'unit' => "$satuan (unit)",
+                                                    'pcs' => 'Pcs',
+                                                ];
+                                            })
+                                            ->default('pcs')
+                                            ->required()
+                                            ->live()
+                                            ->native(false)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateJumlahSisa($get, $set)),
+                                        TextInput::make('sisa_qty')
+                                            ->label('Jumlah Sisa')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->required()
+                                            ->live()
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateJumlahSisa($get, $set)),
+
+                                        TextInput::make('jumlah_sisa')
+                                            ->label('Total Pcs Sisa')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->readOnly()
+                                            ->helperText('Otomatis: Sisa Qty x Isi (Cek Master).'),
+                                    ]),
+                                ])->columnSpanFull(),
+
+                            Section::make('Hasil Akhir & Dokumentasi')
+                                ->compact()
+                                ->schema([
+                                    Forms\Components\Grid::make(4)->schema([
+                                        TextInput::make('total')
+                                            ->label('Total Biaya Terpakai')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(fn(Get $get): float => ((float)($get('jumlah_rencana') ?? 0)) * ((float)($get('harga_satuan') ?? 0)))
+                                            ->columnSpan(1)
+                                            ->extraInputAttributes(['class' => 'font-bold text-primary-600 dark:text-primary-400']),
+
+                                        FileUpload::make('attachments')
+                                            ->label('Struk / Bukti Nota')
+                                            ->multiple()
+                                            ->reorderable()
+                                            ->appendFiles()
+                                            ->disk('public')
+                                            ->directory('rab-attachments/bmhp')
+                                            ->storeFileNamesIn('original_filename')
+                                            ->columnSpan(3),
+                                    ]),
+                                ])->columnSpanFull(),
+
+                            Forms\Components\Hidden::make('pcs_per_unit_snapshot')->default(1),
                         ])
                         ->addable(false)
                         ->deletable(false)
-                        ->reorderable(false)
-                        ->columns(5),
+                        ->reorderable(false),
                 ]),
 
             // Kalkulasi Total Utama
@@ -257,6 +319,49 @@ class RabClosingResource extends Resource
         $set('margin_closing', $margin);
         $set('pengeluaran_operasional_closing', $totalOperasional);
         $set('sisa_dana_operasional', $sisaDana);
+    }
+
+    public static function updateJumlahSisa(Get $get, Set $set): void
+    {
+        $sisaQty = (float) ($get('sisa_qty') ?? 0);
+        $purchaseType = (string) ($get('sisa_purchase_type') ?? 'pcs');
+        $pcsPerUnit = (int) ($get('pcs_per_unit_snapshot') ?? 1);
+
+        // Calculate total pieces for remaining (jumlah_sisa)
+        $totalPcsSisa = 0;
+        if ($purchaseType === 'pcs') {
+            $totalPcsSisa = $sisaQty;
+        } else {
+            $multiplier = $pcsPerUnit > 0 ? $pcsPerUnit : 1;
+            $totalPcsSisa = $sisaQty * $multiplier;
+        }
+        $set('jumlah_sisa', $totalPcsSisa);
+    }
+
+    public static function updateBmhpRowCalculations(Get $get, Set $set): void
+    {
+        // This function is kept for compatibility but no longer performs automatic calculations
+        // The total field is now manually editable and should match the initial planning cost
+        self::updateJumlahSisa($get, $set);
+
+        // Update Global Totals
+        $operasionalItems = $get('../../operasionalItems') ?? [];
+        $feePetugasItems = $get('../../feePetugasItems') ?? [];
+        $bmhpItems = $get('../../bmhpItems') ?? [];
+
+        $totalOperasional = array_reduce($operasionalItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['price'] ?? 0), 0);
+        $totalFee = array_reduce($feePetugasItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['price'] ?? 0), 0);
+        $totalBmhp = array_reduce($bmhpItems, fn($carry, $item) => $carry + self::cleanMoneyValue($item['total'] ?? 0), 0);
+
+        $totalBiayaClosing = $totalOperasional + $totalFee + $totalBmhp;
+        $set('../../total_anggaran_closing', $totalBiayaClosing);
+        $set('../../pengeluaran_operasional_closing', $totalOperasional);
+
+        $nilaiInvoice = self::cleanMoneyValue($get('../../nilai_invoice_closing'));
+        $set('../../margin_closing', $nilaiInvoice - $totalBiayaClosing);
+
+        $danaTransfer = self::cleanMoneyValue($get('../../dana_operasional_transfer'));
+        $set('../../sisa_dana_operasional', $danaTransfer - $totalOperasional);
     }
 
     public static function table(Table $table): Table

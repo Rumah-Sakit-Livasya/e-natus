@@ -33,7 +33,7 @@ class EditBmhpPurchase extends EditRecord
             $bmhpId = $item['bmhp_id'] ?? null;
             $purchaseType = (string) ($item['purchase_type'] ?? 'pcs');
             $qty = (int) ($item['qty'] ?? 0);
-            $harga = (int) ($item['harga'] ?? 0);
+            $harga = (float) ($item['harga'] ?? 0);
 
             $bmhp = $bmhpId ? Bmhp::find($bmhpId) : null;
             if (!$bmhp) {
@@ -53,7 +53,7 @@ class EditBmhpPurchase extends EditRecord
                 ? $qty
                 : ($qty * $pcsPerUnit);
 
-            $subtotal = $harga * $qty;
+            $subtotal = $harga;
 
             $this->record->items()->create([
                 'bmhp_id' => $bmhp->id,

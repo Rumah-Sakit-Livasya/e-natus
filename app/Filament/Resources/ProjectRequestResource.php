@@ -4,12 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectRequestResource\Pages;
 use App\Filament\Resources\ProjectRequestResource\RelationManagers;
+use App\Models\GeneralSetting;
 use App\Models\Aset;
 use App\Models\Client;
 use App\Models\ProjectRequest;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -433,17 +435,70 @@ class ProjectRequestResource extends Resource
                         ->label('BMHP')
                         ->searchable()
                         ->options(\App\Models\Bmhp::pluck('name', 'id')->toArray())
-                        ->required(),
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            $bmhp = \App\Models\Bmhp::find($state);
+                            if ($bmhp) {
+                                $set('pcs_per_unit_snapshot', $bmhp->pcs_per_unit);
+                                $set('satuan', $bmhp->satuan);
+                            }
+                        })
+                        ->helperText(function (Get $get) {
+                            $bmhpId = $get('bmhp_id');
+                            if (! $bmhpId) {
+                                return 'Pilih BMHP untuk melihat stok...';
+                            }
+                            $bmhp = \App\Models\Bmhp::with('projectBmhp')->find($bmhpId);
+                            if (! $bmhp) {
+                                return 'Data tidak ditemukan';
+                            }
 
-                    TextInput::make('jumlah_rencana')
+                            $stokSisa = (int) ($bmhp->stok_sisa ?? 0);
+                            $pcsPerUnit = (int) ($bmhp->pcs_per_unit ?? 1);
+
+                            if ($pcsPerUnit <= 1) {
+                                return new HtmlString("Stok Tersedia: <strong class='text-primary-600'>{$stokSisa}</strong> {$bmhp->satuan}");
+                            }
+
+                            $units = floor($stokSisa / $pcsPerUnit);
+                            $pcs = $stokSisa % $pcsPerUnit;
+
+                            $displayText = "Stok Tersedia: <strong class='text-primary-600'>{$units}</strong> {$bmhp->satuan}";
+                            if ($pcs > 0) {
+                                $displayText .= " + <strong class='text-primary-600'>{$pcs}</strong> pcs";
+                            }
+                            $displayText .= " (Total: {$stokSisa} pcs)";
+
+                            return new HtmlString($displayText);
+                        }),
+
+                    Select::make('purchase_type')
+                        ->label('Satuan')
+                        ->options(function (Get $get) {
+                            $satuan = $get('satuan') ?: 'Unit';
+
+                            return [
+                                'unit' => "$satuan (unit)",
+                                'pcs' => 'Pcs',
+                            ];
+                        })
+                        ->default('pcs')
+                        ->required()
+                        ->live()
+                        ->native(false)
+                        ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
+
+                    TextInput::make('qty')
                         ->label('Jumlah')
                         ->numeric()
                         ->default(1)
                         ->required()
+                        ->live()
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
                     TextInput::make('harga_satuan')
-                        ->label('Harga Satuan')
+                        ->label('Price')
                         ->numeric()
                         ->required()
                         ->live(onBlur: true)
@@ -455,9 +510,27 @@ class ProjectRequestResource extends Resource
                     TextInput::make('total')
                         ->label('Total')
                         ->disabled()
-                        ->dehydrated(), // simpan langsung ke kolom total
+                        ->dehydrated()
+                        ->mask(RawJs::make('$money($input)'))
+                        ->stripCharacters(',')
+                        ->dehydrateStateUsing(fn(?string $state) => $state ? preg_replace('/[^\d]/', '', $state) : null),
+
+                    TextInput::make('pcs_per_unit_snapshot')
+                        ->label('Isi per Unit (Pcs)')
+                        ->numeric()
+                        ->readOnly()
+                        ->default(1)
+                        ->dehydrated(true)
+                        ->helperText('Diambil otomatis dari master.'),
+                    \Filament\Forms\Components\Hidden::make('satuan')
+                        ->dehydrated(true)
+                        ->dehydrateStateUsing(fn($state) => $state ?? ''),
+                    \Filament\Forms\Components\Hidden::make('jumlah_rencana')
+                        ->default(0)
+                        ->dehydrated(true)
+                        ->dehydrateStateUsing(fn($state) => (int) ($state ?? 0)), // total_pcs
                 ])
-                ->columns(4)
+                ->columns(5)
                 ->columnSpanFull()
                 ->createItemButtonLabel('Tambah BMHP'),
 
@@ -594,8 +667,35 @@ class ProjectRequestResource extends Resource
                     ->modalContent(fn($record) => new HtmlString(
                         Livewire::mount('project-asset-table', [
                             'assetIds' => $record->asset_ids ?? [],
+                            'projectRequestId' => $record->id,
                         ])
                     )),
+
+                // Action::make('returnAssets')
+                //     ->label('Kembalikan Aset')
+                //     ->icon('heroicon-o-arrow-path')
+                //     ->color('warning')
+                //     ->requiresConfirmation()
+                //     ->modalHeading('Kembalikan Semua Aset Proyek')
+                //     ->modalSubheading('Apakah Anda yakin ingin mengembalikan semua aset proyek ini ke status Tersedia?')
+                //     ->action(function (ProjectRequest $record) {
+                //         $assetIds = $record->asset_ids ?? [];
+                //         if (!empty($assetIds)) {
+                //             \App\Models\Aset::whereIn('id', $assetIds)->update(['status' => 'available']);
+                //         }
+                //         \Filament\Notifications\Notification::make()
+                //             ->title('Berhasil')
+                //             ->body('Semua aset proyek telah dikembalikan ke status Tersedia.')
+                //             ->success()
+                //             ->send();
+                //     })
+                //     ->visible(function (ProjectRequest $record) {
+                //         $assetIds = $record->asset_ids ?? [];
+                //         if (empty($assetIds)) return false;
+                //         return \App\Models\Aset::whereIn('id', $assetIds)
+                //             ->where('status', 'unavailable')
+                //             ->exists();
+                //     }),
 
                 Action::make('viewRabAwal')
                     ->label('Lihat RAB Awal')
@@ -639,6 +739,11 @@ class ProjectRequestResource extends Resource
                             return false;
                         }
 
+                        // Approval logic: Only show if L1 is required
+                        if (! GeneralSetting::isProjectL1Required()) {
+                            return false;
+                        }
+
                         return $record->isPendingLevel1Approval() && $user->can('approve_project_level_1');
                     })
                     ->action(function ($record, array $data) {
@@ -647,20 +752,35 @@ class ProjectRequestResource extends Resource
                             'approval_level_1_by' => auth()->id(),
                             'approval_level_1_at' => now(),
                             'approval_level_1_notes' => $data['notes'] ?? null,
-                            'approval_level_2_status' => 'pending', // Set level 2 to pending
                         ]);
 
-                        // Kirim notifikasi ke user dengan permission 'approve_project_level_2'
-                        $level2Approvers = \App\Models\User::permission('approve_project_level_2')->get();
-                        foreach ($level2Approvers as $approver) {
-                            $approver->notify(new \App\Notifications\ProjectRequestLevel2Approval($record));
-                        }
+                        if (! GeneralSetting::isProjectL2Required()) {
+                            // Skip L2 and approve directly
+                            $record->update(['status' => 'approved']);
+                            $record->markAssetsUnavailable();
+                            $record->deductBmhpStock();
 
-                        Notification::make()
-                            ->title('Berhasil')
-                            ->body('Project request telah disetujui Level 1. Menunggu persetujuan Level 2.')
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Berhasil')
+                                ->body('Project request telah disetujui (L1 dilakukan, L2 dilewati).')
+                                ->success()
+                                ->send();
+                        } else {
+                            $record->update([
+                                'approval_level_2_status' => 'pending', // Set level 2 to pending
+                            ]);
+                            // Kirim notifikasi ke user dengan permission 'approve_project_level_2'
+                            $level2Approvers = \App\Models\User::permission('approve_project_level_2')->get();
+                            foreach ($level2Approvers as $approver) {
+                                $approver->notify(new \App\Notifications\ProjectRequestLevel2Approval($record));
+                            }
+
+                            Notification::make()
+                                ->title('Berhasil')
+                                ->body('Project request telah disetujui Level 1. Menunggu persetujuan Level 2.')
+                                ->success()
+                                ->send();
+                        }
                     }),
 
                 Action::make('approveLevel2')
@@ -682,6 +802,11 @@ class ProjectRequestResource extends Resource
                             return false;
                         }
 
+                        // Approval logic: Only show if L2 is required
+                        if (! GeneralSetting::isProjectL2Required()) {
+                            return false;
+                        }
+
                         return $record->isPendingLevel2Approval() && $user->can('approve_project_level_2');
                     })
                     ->action(function ($record, array $data) {
@@ -690,15 +815,67 @@ class ProjectRequestResource extends Resource
                             'approval_level_2_by' => auth()->id(),
                             'approval_level_2_at' => now(),
                             'approval_level_2_notes' => $data['notes'] ?? null,
-                            'status' => 'approved', // Change overall status to approved
+                            'status' => 'approved',
                         ]);
 
-                        // Set assets to unavailable
-                        \App\Models\Aset::whereIn('id', $record->asset_ids ?? [])->update(['status' => 'unavailable']);
+                        // Use centralized helpers
+                        $record->markAssetsUnavailable();
+                        $record->deductBmhpStock();
 
                         Notification::make()
                             ->title('Berhasil')
-                            ->body('Project request telah disetujui sepenuhnya (Level 1 & 2). Status berubah menjadi Approved.')
+                            ->body('Project request telah disetujui sepenuhnya (Level 2). Status berubah menjadi Approved.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('directApprove')
+                    ->label('Konfirmasi Proyek')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Aktifkan Proyek')
+                    ->modalSubheading('Apakah Anda yakin ingin mengaktifkan proyek ini secara langsung? Stok akan dipotong otomatis.')
+                    ->modalButton('Ya, Konfirmasi')
+                    ->visible(function ($record) {
+                        $user = auth()?->user();
+                        if (! $user) {
+                            return false;
+                        }
+
+                        $l1Required = GeneralSetting::isProjectL1Required();
+                        $l2Required = GeneralSetting::isProjectL2Required();
+
+                        // Show if (Pending L1 AND L1 is OFF AND L2 is OFF)
+                        if ($record->isPendingLevel1Approval() && !$l1Required && !$l2Required) {
+                            return $user->can('approve_project_level_2');
+                        }
+
+                        // Show if (Pending L2 AND L2 is OFF)
+                        if ($record->isPendingLevel2Approval() && !$l2Required) {
+                            return $user->can('approve_project_level_2');
+                        }
+
+                        return false;
+                    })
+                    ->action(function ($record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'approval_level_1_status' => 'approved',
+                            'approval_level_1_at' => now(),
+                            'approval_level_1_by' => auth()->id(),
+                            'approval_level_2_status' => 'approved',
+                            'approval_level_2_at' => now(),
+                            'approval_level_2_by' => auth()->id(),
+                        ]);
+
+                        // Use centralized helpers
+                        $record->markAssetsUnavailable();
+                        $record->deductBmhpStock();
+
+                        Notification::make()
+                            ->title('Berhasil')
+                            ->body('Proyek telah aktif. Stok telah dipotong.')
                             ->success()
                             ->send();
                     }),
@@ -723,10 +900,24 @@ class ProjectRequestResource extends Resource
                             return false;
                         }
 
-                        // Show if pending Level 1 and user has Level 1 permission
-                        // OR pending Level 2 and user has Level 2 permission
-                        return ($record->isPendingLevel1Approval() && $user->can('approve_project_level_1'))
-                            || ($record->isPendingLevel2Approval() && $user->can('approve_project_level_2'));
+                        // If multi-level is required
+                        $l1Required = GeneralSetting::isProjectL1Required();
+                        $l2Required = GeneralSetting::isProjectL2Required();
+
+                        if ($l1Required && $record->isPendingLevel1Approval()) {
+                            return $user->can('approve_project_level_1');
+                        }
+
+                        if ($l2Required && $record->isPendingLevel2Approval()) {
+                            return $user->can('approve_project_level_2');
+                        }
+
+                        // If direct flow (one or both are OFF)
+                        if (!$l1Required || !$l2Required) {
+                            return $record->status === 'pending' && $user->can('approve_project_level_2');
+                        }
+
+                        return false;
                     })
                     ->action(function ($record, array $data) {
                         $user = auth()->user();
@@ -755,6 +946,39 @@ class ProjectRequestResource extends Resource
                             ->body('Project request telah ditolak.')
                             ->danger()
                             ->send();
+                    }),
+
+                Action::make('manualDeductStock')
+                    ->label('Potong Stok Manual')
+                    ->icon('heroicon-o-scissors')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Potong Stok BMHP Manual')
+                    ->modalSubheading('Ini akan memotong stok BMHP untuk proyek yang sudah disetujui.')
+                    ->visible(function (ProjectRequest $record): bool {
+                        $user = auth()?->user();
+                        if (! $user) {
+                            return false;
+                        }
+
+                        return $record->isFullyApproved() && !$record->bmhp_stock_deducted && $user->isSuperAdmin();
+                    })
+                    ->action(function (ProjectRequest $record) {
+                        try {
+                            $record->deductBmhpStock();
+
+                            Notification::make()
+                                ->title('Berhasil')
+                                ->body('Stok BMHP telah dipotong manual.')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error')
+                                ->body('Gagal memotong stok: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
 
                 Action::make('printInvoice')
@@ -791,10 +1015,6 @@ class ProjectRequestResource extends Resource
                         return $record->status === 'approved' && $user->can('rab manage');
                     })
                     ->action(function (ProjectRequest $record) {
-                        if ($rabClosing = $record->rabClosing) {
-                            return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
-                        }
-
                         try {
                             DB::beginTransaction();
 
@@ -804,43 +1024,75 @@ class ProjectRequestResource extends Resource
                             $totalAnggaranAwal = $totalOperasional + $totalFee + $totalBmhp;
                             $jumlahPesertaAwal = $record->jumlah;
 
-                            $rabClosing = $record->rabClosing()->create([
-                                'closing_date' => now(),
-                                'status' => 'draft',
-                                'total_anggaran' => $totalAnggaranAwal,
-                                'jumlah_peserta_awal' => $jumlahPesertaAwal,
-                            ]);
-
-                            foreach ($record->rabOperasionalItems as $itemAwal) {
-                                $rabClosing->operasionalItems()->create([
-                                    'description' => $itemAwal->description,
-                                    'price' => $itemAwal->total,
+                            $rabClosing = $record->rabClosing;
+                            if (! $rabClosing) {
+                                $rabClosing = $record->rabClosing()->create([
+                                    'closing_date' => now(),
+                                    'status' => 'draft',
+                                    'total_anggaran' => $totalAnggaranAwal,
+                                    'jumlah_peserta_awal' => $jumlahPesertaAwal,
                                 ]);
-                            }
-                            foreach ($record->rabFeeItems as $itemAwal) {
-                                $rabClosing->feePetugasItems()->create([
-                                    'description' => $itemAwal->description,
-                                    'price' => $itemAwal->total,
+                            } elseif ($rabClosing->status === 'draft') {
+                                // Update header info
+                                $rabClosing->update([
+                                    'total_anggaran' => $totalAnggaranAwal,
+                                    'jumlah_peserta_awal' => $jumlahPesertaAwal,
                                 ]);
                             }
 
-                            foreach ($record->projectBmhp as $itemBmhp) {
-                                $rabClosing->bmhpItems()->create([
-                                    'bmhp_id' => $itemBmhp->bmhp_id,
-                                    'name' => optional($itemBmhp->bmhp)->name,
-                                    'satuan' => optional($itemBmhp->bmhp)->satuan,
-                                    'jumlah_rencana' => $itemBmhp->jumlah_rencana,
-                                    'harga_satuan' => $itemBmhp->harga_satuan,
-                                    'total' => $itemBmhp->total,
-                                ]);
+                            // Sync Items (Only if draft)
+                            if ($rabClosing->status === 'draft') {
+                                // 1. Operasional Items (Append missing)
+                                foreach ($record->rabOperasionalItems as $itemAwal) {
+                                    $exists = $rabClosing->operasionalItems()->where('description', $itemAwal->description)->exists();
+                                    if (! $exists) {
+                                        $rabClosing->operasionalItems()->create([
+                                            'description' => $itemAwal->description,
+                                            'price' => $itemAwal->total,
+                                        ]);
+                                    }
+                                }
+
+                                // 2. Fee Items (Append missing)
+                                foreach ($record->rabFeeItems as $itemAwal) {
+                                    $exists = $rabClosing->feePetugasItems()->where('description', $itemAwal->description)->exists();
+                                    if (! $exists) {
+                                        $rabClosing->feePetugasItems()->create([
+                                            'description' => $itemAwal->description,
+                                            'price' => $itemAwal->total,
+                                        ]);
+                                    }
+                                }
+
+                                // 3. BMHP Items (Sync/Overwrite since it's read-only reference or logistics input)
+                                foreach ($record->projectBmhp as $itemBmhp) {
+                                    $exists = $rabClosing->bmhpItems()->where('bmhp_id', $itemBmhp->bmhp_id)->exists();
+                                    if (! $exists) {
+                                        $rabClosing->bmhpItems()->create([
+                                            'bmhp_id' => $itemBmhp->bmhp_id,
+                                            'name' => $itemBmhp->bmhp->name ?? 'Unknown',
+                                            'satuan' => $itemBmhp->bmhp->satuan ?? '-',
+                                            'jumlah_rencana' => $itemBmhp->jumlah_rencana,
+                                            'harga_satuan' => $itemBmhp->harga_satuan,
+                                            'total' => $itemBmhp->total, // Initial used total equals planned total (sisa = 0)
+                                            'pcs_per_unit_snapshot' => $itemBmhp->pcs_per_unit_snapshot ?? 1,
+                                        ]);
+                                    } else {
+                                        // Update planned info but recalculate used total based on existing sisa
+                                        $existingItem = $rabClosing->bmhpItems()->where('bmhp_id', $itemBmhp->bmhp_id)->first();
+                                        $newTotal = ($itemBmhp->jumlah_rencana - $existingItem->jumlah_sisa) * $itemBmhp->harga_satuan;
+
+                                        $existingItem->update([
+                                            'jumlah_rencana' => $itemBmhp->jumlah_rencana,
+                                            'harga_satuan' => $itemBmhp->harga_satuan,
+                                            'total' => $newTotal,
+                                            'pcs_per_unit_snapshot' => $itemBmhp->pcs_per_unit_snapshot ?? 1,
+                                        ]);
+                                    }
+                                }
                             }
 
                             DB::commit();
-                            Notification::make()
-                                ->title('Berhasil')
-                                ->body('Draft RAB Closing berhasil dibuat.')
-                                ->success()
-                                ->send();
 
                             return redirect()->to(RabClosingResource::getUrl('edit', ['record' => $rabClosing->id]));
                         } catch (\Exception $e) {
@@ -876,9 +1128,23 @@ class ProjectRequestResource extends Resource
 
     protected static function updateBmhpRowTotal(Get $get, Set $set): void
     {
-        $jumlah = (int) ($get('jumlah_rencana') ?? 0);
-        $harga = self::cleanMoneyValue($get('harga_satuan')); // gunakan cleanMoneyValue
-        $set('total', $jumlah * $harga);
+        $qty = (int) ($get('qty') ?? 0);
+        $purchaseType = (string) ($get('purchase_type') ?? 'pcs');
+        $pcsPerUnit = (int) ($get('pcs_per_unit_snapshot') ?? 0);
+        $harga = self::cleanMoneyValue($get('harga_satuan'));
+
+        // Calculate total pcs for database record (jumlah_rencana)
+        $totalPcs = 0;
+        if ($purchaseType === 'pcs') {
+            $totalPcs = $qty;
+        } else {
+            $multiplier = $pcsPerUnit > 0 ? $pcsPerUnit : 1;
+            $totalPcs = $qty * $multiplier;
+        }
+        $set('jumlah_rencana', $totalPcs);
+
+        // Subtotal calculation (qty * price)
+        $set('total', $qty * $harga);
     }
 
     /**

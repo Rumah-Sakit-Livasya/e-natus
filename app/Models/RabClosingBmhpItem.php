@@ -18,6 +18,9 @@ class RabClosingBmhpItem extends Model
         'bmhp_id',
         'name',          // Nama BMHP
         'satuan',
+        'sisa_purchase_type',
+        'sisa_qty',
+        'pcs_per_unit_snapshot',
         'jumlah_rencana',
         'jumlah_sisa',
         'harga_satuan',

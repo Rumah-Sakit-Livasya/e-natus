@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\BmhpPurchaseResource\Pages;
+use App\Models\GeneralSetting;
 use App\Models\Bmhp;
 use App\Models\BmhpPurchase;
 use App\Models\Supplier;
@@ -12,6 +13,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -100,7 +102,6 @@ class BmhpPurchaseResource extends Resource
                                 }
 
                                 $set('total_pcs', $totalPcs);
-                                $set('subtotal', ((int) ($get('harga') ?? 0)));
                             }),
 
                         Forms\Components\Select::make('purchase_type')
@@ -136,7 +137,6 @@ class BmhpPurchaseResource extends Resource
                                 }
 
                                 $set('total_pcs', $totalPcs);
-                                $set('subtotal', ((int) ($get('harga') ?? 0)));
                             }),
 
                         Forms\Components\TextInput::make('qty')
@@ -159,7 +159,6 @@ class BmhpPurchaseResource extends Resource
                                 }
 
                                 $set('total_pcs', $totalPcs);
-                                $set('subtotal', ((int) ($get('harga') ?? 0)));
                             }),
 
                         Forms\Components\TextInput::make('pcs_per_unit_snapshot')
@@ -179,14 +178,12 @@ class BmhpPurchaseResource extends Resource
 
                         Forms\Components\TextInput::make('harga')
                             ->label('Harga Beli')
-                            ->numeric()
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input)'))
+                            ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : 0)
                             ->minValue(0)
                             ->default(0)
                             ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $set('subtotal', (int) ($state ?? 0));
-                            })
                             ->helperText('Total harga untuk item ini'),
                     ])
                     ->columns(6)
@@ -214,8 +211,8 @@ class BmhpPurchaseResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('total_harga')
                     ->label('Harga Beli')
-                    ->money('IDR')
-                    ->getStateUsing(function (BmhpPurchase $record): int {
+                    ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->getStateUsing(function (BmhpPurchase $record): float {
                         return $record->items->sum('harga');
                     })
                     ->sortable(),
@@ -225,11 +222,20 @@ class BmhpPurchaseResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('approve')
-                    ->label('Approve')
+                    ->label(fn() => GeneralSetting::isBmhpPurchaseApprovalRequired() ? 'Approve' : 'Selesaikan Pembelian')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn(BmhpPurchase $record): bool => $record->status === 'pending')
+                    ->visible(function (BmhpPurchase $record) {
+                        if ($record->status !== 'pending') return false;
+
+                        if (GeneralSetting::isBmhpPurchaseApprovalRequired()) {
+                            return auth()->user()->can('approve bmhp');
+                        }
+
+                        // If approval not required, anyone who can view property can probably settle it
+                        return true;
+                    })
                     ->action(function (BmhpPurchase $record) {
                         DB::transaction(function () use ($record) {
                             $record->refresh();

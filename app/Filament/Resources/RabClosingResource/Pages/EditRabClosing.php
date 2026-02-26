@@ -32,26 +32,113 @@ class EditRabClosing extends EditRecord
                 ->label('Print Preview')
                 ->icon('heroicon-o-printer')
                 ->button(),
+            Actions\Action::make('sync_planning')
+                ->label('Sync dari Planning')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('Sinkronisasi Data dari Planning')
+                ->modalDescription('Ini akan mengambil data BMHP, Operasional, dan Fee terbaru dari Project Request. Data yang sudah ada akan diperbarui, dan yang kurang akan ditambahkan.')
+                ->action(function () {
+                    $record = $this->record;
+                    $projectRequest = $record->projectRequest;
+
+                    if (! $projectRequest) {
+                        return;
+                    }
+
+                    DB::transaction(function () use ($record, $projectRequest) {
+                        $totalOperasional = $projectRequest->rabOperasionalItems()->sum('total');
+                        $totalFee = $projectRequest->rabFeeItems()->sum('total');
+                        $totalBmhp = $projectRequest->projectBmhp()->sum('total');
+                        $totalAnggaranAwal = $totalOperasional + $totalFee + $totalBmhp;
+                        $jumlahPesertaAwal = $projectRequest->jumlah;
+
+                        $record->update([
+                            'total_anggaran' => $totalAnggaranAwal,
+                            'jumlah_peserta_awal' => $jumlahPesertaAwal,
+                        ]);
+
+                        // 1. Operasional Items (Append missing)
+                        foreach ($projectRequest->rabOperasionalItems as $itemAwal) {
+                            $exists = $record->operasionalItems()->where('description', $itemAwal->description)->exists();
+                            if (! $exists) {
+                                $record->operasionalItems()->create([
+                                    'description' => $itemAwal->description,
+                                    'price' => $itemAwal->total,
+                                ]);
+                            }
+                        }
+
+                        // 2. Fee Items (Append missing)
+                        foreach ($projectRequest->feePetugasItems ?? [] as $itemAwal) {
+                            // Fee items relation name in ProjectRequest might be rabFeeItems
+                        }
+                        // Reuse same logic as in ProjectRequestResource action
+                        foreach ($projectRequest->rabFeeItems as $itemAwal) {
+                            $exists = $record->feePetugasItems()->where('description', $itemAwal->description)->exists();
+                            if (! $exists) {
+                                $record->feePetugasItems()->create([
+                                    'description' => $itemAwal->description,
+                                    'price' => $itemAwal->total,
+                                ]);
+                            }
+                        }
+
+                        // 3. BMHP Items (Sync)
+                        foreach ($projectRequest->projectBmhp as $itemBmhp) {
+                            $exists = $record->bmhpItems()->where('bmhp_id', $itemBmhp->bmhp_id)->exists();
+                            if (! $exists) {
+                                $record->bmhpItems()->create([
+                                    'bmhp_id' => $itemBmhp->bmhp_id,
+                                    'name' => $itemBmhp->bmhp->name ?? 'Unknown',
+                                    'satuan' => $itemBmhp->bmhp->satuan ?? '-',
+                                    'jumlah_rencana' => $itemBmhp->jumlah_rencana,
+                                    'harga_satuan' => $itemBmhp->harga_satuan,
+                                    'total' => $itemBmhp->total, // Initial used total equals planned total (sisa = 0)
+                                    'pcs_per_unit_snapshot' => $itemBmhp->pcs_per_unit_snapshot ?? 1,
+                                ]);
+                            } else {
+                                // Update planned info but recalculate used total based on existing sisa
+                                $existingItem = $record->bmhpItems()->where('bmhp_id', $itemBmhp->bmhp_id)->first();
+                                $newTotal = ($itemBmhp->jumlah_rencana - $existingItem->jumlah_sisa) * $itemBmhp->harga_satuan;
+
+                                $existingItem->update([
+                                    'jumlah_rencana' => $itemBmhp->jumlah_rencana,
+                                    'harga_satuan' => $itemBmhp->harga_satuan,
+                                    'total' => $newTotal,
+                                    'pcs_per_unit_snapshot' => $itemBmhp->pcs_per_unit_snapshot ?? 1,
+                                ]);
+                            }
+                        }
+                    });
+
+                    Notification::make()->title('Data berhasil disinkronkan')->success()->send();
+                    return redirect(RabClosingResource::getUrl('edit', ['record' => $record]));
+                })->visible(fn(): bool => $this->record->status === 'draft'),
             Actions\Action::make('finalize')
                 ->label('Finalisasi RAB')
                 ->color('success')
                 ->icon('heroicon-o-check-badge')
                 ->requiresConfirmation()
                 ->modalHeading('Finalisasi RAB Closing')
-                ->modalSubheading('Apakah Anda yakin ingin menyelesaikan RAB ini? Setelah difinalisasi, data tidak bisa diubah lagi.')
-                ->modalButton('Ya, Finalisasi')
+                ->modalDescription('Apakah Anda yakin ingin menyelesaikan RAB ini? Setelah difinalisasi, data tidak bisa diubah lagi.')
                 ->action(function () {
                     DB::transaction(function () {
-                        $this->record->update(['status' => 'final']);
+                        // 1. Return BMHP stock for items that have sisa
+                        foreach ($this->record->bmhpItems as $item) {
+                            if ($item->bmhp && $item->jumlah_sisa > 0) {
+                                $item->bmhp->increment('stok_sisa', $item->jumlah_sisa);
 
-                        // Kembalikan aset menjadi available
-                        $assetIds = $this->record->projectRequest->asset_ids ?? [];
-                        if (!empty($assetIds)) {
-                            \App\Models\Aset::whereIn('id', $assetIds)->update(['status' => 'available']);
+                                \Illuminate\Support\Facades\Log::info("Stock Returned: RAB Finalized for {$this->record->projectRequest->name}. BMHP {$item->bmhp->name} returned {$item->jumlah_sisa} Pcs.");
+                            }
                         }
+
+                        // 2. Finalize status
+                        $this->record->update(['status' => 'final']);
                     });
 
-                    Notification::make()->title('RAB berhasil difinalisasi dan aset telah dikembalikan')->success()->send();
+                    Notification::make()->title('RAB berhasil difinalisasi & Stok sisa telah dikembalikan ke gudang.')->success()->send();
                     return redirect(RabClosingResource::getUrl('edit', ['record' => $this->record]));
                 })->visible(fn(): bool => $this->record->status === 'draft'),
             Actions\DeleteAction::make(),
