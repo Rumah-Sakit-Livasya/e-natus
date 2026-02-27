@@ -16,6 +16,7 @@ use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Str;
 
 class AsetResource extends Resource
 {
@@ -42,6 +43,7 @@ class AsetResource extends Resource
             ->columns([
                 TextColumn::make('template.name')
                     ->label('Template')
+                    ->formatStateUsing(fn(?string $state): ?string => filled($state) ? Str::upper($state) : $state)
                     ->searchable()
                     ->sortable(),
 
@@ -57,6 +59,7 @@ class AsetResource extends Resource
 
                 TextColumn::make('custom_name')
                     ->label('Nama Aset')
+                    ->formatStateUsing(fn(?string $state): ?string => filled($state) ? Str::upper($state) : $state)
                     ->searchable()
                     ->sortable(),
 
@@ -72,6 +75,26 @@ class AsetResource extends Resource
 
                 TextColumn::make('code')
                     ->label('Kode')
+                    ->formatStateUsing(function (?string $state): ?string {
+                        if (blank($state)) {
+                            return $state;
+                        }
+
+                        $parts = explode('/', $state);
+
+                        // Backward compatibility:
+                        // old format: LANDER/CATEGORY/TEMPLATE/NNN -> LANDER/TEMPLATE/NNN
+                        if (count($parts) >= 4) {
+                            $state = "{$parts[0]}/{$parts[count($parts) - 2]}/{$parts[count($parts) - 1]}";
+                        }
+
+                        $normalizedParts = array_map(
+                            fn($part) => strtoupper((string) preg_replace('/\s+/', '-', trim((string) $part))),
+                            explode('/', $state)
+                        );
+
+                        return implode('/', $normalizedParts);
+                    })
                     ->searchable()
                     ->sortable(),
 

@@ -7,6 +7,7 @@ use App\Filament\Resources\ProjectRequestResource\RelationManagers;
 use App\Models\GeneralSetting;
 use App\Models\Aset;
 use App\Models\Client;
+use App\Models\Employee;
 use App\Models\ProjectRequest;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
@@ -30,6 +31,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 class ProjectRequestResource extends Resource
@@ -83,7 +85,6 @@ class ProjectRequestResource extends Resource
 
             Select::make('employee_ids')
                 ->label('PIC')
-                ->multiple()
                 ->searchable()
                 ->preload()
                 ->options(
@@ -91,6 +92,13 @@ class ProjectRequestResource extends Resource
                         ->pluck('users.name', 'employees.id')
                         ->toArray()
                 )
+                ->afterStateHydrated(function (Select $component, $state): void {
+                    // Backward compatibility: old records may store PIC as array/json.
+                    if (is_array($state)) {
+                        $component->state($state[0] ?? null);
+                    }
+                })
+                ->dehydrateStateUsing(fn($state) => is_array($state) ? ($state[0] ?? null) : $state)
                 ->required()
                 ->createOptionForm([
                     TextInput::make('name')->label('Nama Pegawai')->required(),
@@ -100,18 +108,21 @@ class ProjectRequestResource extends Resource
                 ])->id),
 
             Select::make('sdm_ids')
-                ->label('SDM')
+                ->label('Pegawai Ditugaskan')
+                ->helperText('Pilih satu atau lebih pegawai yang ditugaskan di project ini.')
                 ->multiple()
                 ->searchable()
                 ->preload()
-                ->options(\App\Models\SDM::pluck('name', 'id')->toArray())
-                ->required()
-                ->createOptionForm([
-                    TextInput::make('name')->label('Nama SDM')->required(),
-                ])
-                ->createOptionUsing(fn(array $data) => \App\Models\SDM::create([
-                    'name' => $data['name'],
-                ])->id),
+                ->live()
+                ->options(
+                    Employee::join('users', 'employees.user_id', '=', 'users.id')
+                        ->pluck('users.name', 'employees.id')
+                        ->toArray()
+                )
+                ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                    self::syncAssignedStaffFeeItems($get, $set, $state);
+                })
+                ->required(),
 
             TextInput::make('jumlah')->label('Jumlah Peserta')->numeric()->required(),
             TextInput::make('lokasi')->label('Lokasi')->required(),
@@ -124,10 +135,10 @@ class ProjectRequestResource extends Resource
                 ->searchable()
                 ->preload()
                 ->options(fn() => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
-                    $parts = explode('/', $asset->code);
-                    $index = end($parts);
+                    $assetName = Str::upper((string) $asset->custom_name);
+                    $assetCode = self::normalizeAssetCode((string) $asset->code);
 
-                    return [$asset->id => "{$asset->custom_name} - {$asset->lander->code}$index"];
+                    return [$asset->id => "{$assetName} - {$assetCode}"];
                 })->filter(fn($label) => ! is_null($label))->toArray())
                 ->live()
                 ->afterStateUpdated(function (Get $get, Set $set, $state) {
@@ -138,9 +149,9 @@ class ProjectRequestResource extends Resource
                     // Or simply append new assets if they aren't already there.
 
                     foreach ($selectedAssets as $asset) {
-                        $parts = explode('/', $asset->code);
-                        $index = end($parts);
-                        $description = "SEWA INTERNAL {$asset->custom_name} - {$asset->lander->code}$index";
+                        $assetName = Str::upper((string) $asset->custom_name);
+                        $assetCode = self::normalizeAssetCode((string) $asset->code);
+                        $description = "SEWA INTERNAL {$assetName} - {$assetCode}";
 
                         // Check if this asset is already in the list to avoid duplicates
                         $exists = collect($currentItems)->contains(function ($item) use ($description) {
@@ -151,8 +162,8 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => 1,
-                                'harga_sewa' => $asset->harga_sewa ?? 0, // Use harga_sewa instead of tarif
-                                'total' => $asset->harga_sewa ?? 0,
+                                'harga_sewa' => number_format((float) ($asset->harga_sewa ?? 0), 0, '.', ','), // Use harga_sewa instead of tarif
+                                'total' => number_format((float) ($asset->harga_sewa ?? 0), 0, '.', ','),
                                 'is_internal_rental' => true, // Flag to identify as internal rental
                             ];
                         }
@@ -168,7 +179,7 @@ class ProjectRequestResource extends Resource
                     $aset = Aset::create($data);
                     Notification::make()
                         ->title('Aset berhasil ditambahkan')
-                        ->body("Aset \"{$aset->custom_name}\" telah dibuat.")
+                        ->body('Aset "' . Str::upper((string) $aset->custom_name) . '" telah dibuat.')
                         ->success()
                         ->send();
 
@@ -198,8 +209,8 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => $rental->qty,
-                                'harga_sewa' => $rental->price,
-                                'total' => $rental->qty * $rental->price,
+                                'harga_sewa' => number_format((float) $rental->price, 0, '.', ','),
+                                'total' => number_format((float) ($rental->qty * $rental->price), 0, '.', ','),
                                 'is_vendor_rental' => true,
                             ];
                         }
@@ -294,6 +305,7 @@ class ProjectRequestResource extends Resource
                     Repeater::make('rabOperasionalItems')
                         ->relationship()
                         ->label(false)
+                        ->defaultItems(0)
                         ->schema([
                             TextInput::make('description')
                                 ->label('Deskripsi')
@@ -311,6 +323,7 @@ class ProjectRequestResource extends Resource
                             TextInput::make('harga_sewa')
                                 ->label('Price')
                                 ->numeric()
+                                ->prefix('Rp')
                                 ->required()
                                 ->live(onBlur: true)
                                 ->mask(RawJs::make('$money($input)'))
@@ -331,6 +344,9 @@ class ProjectRequestResource extends Resource
                                             \Filament\Forms\Components\TextInput::make('requested_price')
                                                 ->label('Requested Price')
                                                 ->numeric()
+                                                ->mask(RawJs::make('$money($input)'))
+                                                ->stripCharacters(',')
+                                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
                                                 ->required()
                                                 ->prefix('Rp'),
                                             \Filament\Forms\Components\Textarea::make('reason')
@@ -376,26 +392,35 @@ class ProjectRequestResource extends Resource
                             TextInput::make('total')
                                 ->label('Total')
                                 ->prefix('Rp')
-                                ->numeric(0, ',', '.')
                                 ->disabled()
                                 ->dehydrated()
+                                ->mask(RawJs::make('$money($input)'))
+                                ->stripCharacters(',')
+                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
                                 ->required(),
                         ])
                         ->columns(4)
                         ->createItemButtonLabel('Tambah Item Operasional'),
                 ]),
 
-            Section::make('Rencana Biaya Fee')
+            Section::make('Petugas Ditugaskan')
+                ->description('Input fee petugas internal dari "Pegawai Ditugaskan", dan bisa tambah manual untuk pegawai eksternal.')
                 ->collapsible()
                 ->schema([
                     Repeater::make('rabFeeItems')
                         ->relationship()
                         ->label(false)
+                        ->defaultItems(0)
+                        ->reorderable(false)
+                        ->createItemButtonLabel('Tambah Pegawai External')
                         ->schema([
+                            \Filament\Forms\Components\Hidden::make('assigned_employee_id')
+                                ->dehydrated(false),
+
                             TextInput::make('description')
-                                ->label('Deskripsi')
+                                ->label('Nama Petugas')
                                 ->required()
-                                ->placeholder('Misalnya: Fee Dokter GP'),
+                                ->placeholder('Misalnya: Dr. A (External)'),
 
                             TextInput::make('qty_aset')
                                 ->label('Jumlah')
@@ -406,8 +431,9 @@ class ProjectRequestResource extends Resource
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('harga_sewa')
-                                ->label('Price')
+                                ->label('Fee')
                                 ->numeric()
+                                ->prefix('Rp')
                                 ->required()
                                 ->live(onBlur: true)
                                 ->mask(RawJs::make('$money($input)'))
@@ -418,18 +444,20 @@ class ProjectRequestResource extends Resource
                             TextInput::make('total')
                                 ->label('Total')
                                 ->prefix('Rp')
-                                ->numeric(0, ',', '.')
                                 ->disabled()
                                 ->dehydrated()
+                                ->mask(RawJs::make('$money($input)'))
+                                ->stripCharacters(',')
+                                ->dehydrateStateUsing(fn(?string $state): ?string => $state ? preg_replace('/[^\d]/', '', $state) : null)
                                 ->required(),
                         ])
-                        ->columns(4)
-                        ->createItemButtonLabel('Tambah Item Fee'),
+                        ->columns(4),
                 ]),
 
             Repeater::make('bmhp')
                 ->relationship('projectBmhp') // gunakan relasi yang benar
                 ->label('BMHP yang digunakan')
+                ->defaultItems(0)
                 ->schema([
                     Select::make('bmhp_id')
                         ->label('BMHP')
@@ -500,6 +528,7 @@ class ProjectRequestResource extends Resource
                     TextInput::make('harga_satuan')
                         ->label('Price')
                         ->numeric()
+                        ->prefix('Rp')
                         ->required()
                         ->live(onBlur: true)
                         ->mask(RawJs::make('$money($input)'))
@@ -509,6 +538,7 @@ class ProjectRequestResource extends Resource
 
                     TextInput::make('total')
                         ->label('Total')
+                        ->prefix('Rp')
                         ->disabled()
                         ->dehydrated()
                         ->mask(RawJs::make('$money($input)'))
@@ -536,6 +566,7 @@ class ProjectRequestResource extends Resource
 
             TextInput::make('nilai_invoice')
                 ->label('Nilai Invoice')
+                ->prefix('Rp')
                 ->required()
                 ->mask(RawJs::make('$money($input)'))
                 ->stripCharacters(',')
@@ -580,7 +611,7 @@ class ProjectRequestResource extends Resource
                 TextColumn::make('name')->label('Nama Proyek')->searchable()->sortable(),
                 TextColumn::make('client.name')->label('Klien')->sortable(),
                 TextColumn::make('pic')->label('PIC'),
-                TextColumn::make('employee_ids')->label('Employee')->formatStateUsing(function ($state) {
+                TextColumn::make('employee_ids')->label('PIC')->formatStateUsing(function ($state) {
                     if (empty($state)) {
                         return '-';
                     }
@@ -599,14 +630,22 @@ class ProjectRequestResource extends Resource
 
                     return implode(', ', $names);
                 }),
-                TextColumn::make('sdm_ids')->label('SDM')->formatStateUsing(function ($state) {
-                    if (! $state) {
+                TextColumn::make('sdm_ids')->label('Pegawai Ditugaskan')->formatStateUsing(function ($state) {
+                    if (empty($state)) {
                         return '-';
                     }
-                    if (is_string($state)) {
-                        $state = array_map('intval', explode(',', $state));
+                    if (! is_array($state)) {
+                        $decoded = json_decode($state, true);
+                        $state = is_array($decoded) ? $decoded : array_map('intval', explode(',', (string) $state));
                     }
-                    $names = \App\Models\SDM::whereIn('id', $state)->pluck('name')->toArray();
+                    $state = array_filter($state);
+                    if (empty($state)) {
+                        return '-';
+                    }
+                    $names = \App\Models\Employee::whereIn('employees.id', $state)
+                        ->join('users', 'employees.user_id', '=', 'users.id')
+                        ->pluck('users.name')
+                        ->toArray();
 
                     return implode(', ', $names);
                 }),
@@ -670,6 +709,58 @@ class ProjectRequestResource extends Resource
                             'projectRequestId' => $record->id,
                         ])
                     )),
+
+                Action::make('viewAssignedEmployees')
+                    ->icon('heroicon-o-users')
+                    ->tooltip('Lihat Pegawai Ditugaskan')
+                    ->label('Pegawai')
+                    ->color('info')
+                    ->modalHeading('Daftar Pegawai Ditugaskan')
+                    ->modalSubheading('Berikut adalah pegawai yang ditugaskan pada project ini.')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('4xl')
+                    ->action(fn() => null)
+                    ->modalContent(function (ProjectRequest $record): View {
+                        $employeeIds = $record->sdm_ids ?? [];
+
+                        if (is_string($employeeIds)) {
+                            $decoded = json_decode($employeeIds, true);
+                            $employeeIds = is_array($decoded)
+                                ? $decoded
+                                : array_map('intval', explode(',', (string) $employeeIds));
+                        }
+
+                        $employeeIds = collect($employeeIds)
+                            ->filter(fn($id) => filled($id))
+                            ->map(fn($id) => (int) $id)
+                            ->unique()
+                            ->values()
+                            ->all();
+
+                        $employees = empty($employeeIds)
+                            ? collect()
+                            : \App\Models\Employee::with('user')
+                            ->whereIn('id', $employeeIds)
+                            ->get()
+                            ->sortBy(fn($employee) => $employee->user?->name ?? '');
+
+                        return view('filament.modals.project-employees', [
+                            'employees' => $employees,
+                        ]);
+                    })
+                    ->visible(function (ProjectRequest $record): bool {
+                        $employeeIds = $record->sdm_ids ?? [];
+
+                        if (is_string($employeeIds)) {
+                            $decoded = json_decode($employeeIds, true);
+                            $employeeIds = is_array($decoded)
+                                ? $decoded
+                                : array_filter(explode(',', (string) $employeeIds));
+                        }
+
+                        return ! empty($employeeIds);
+                    }),
 
                 // Action::make('returnAssets')
                 //     ->label('Kembalikan Aset')
@@ -1110,6 +1201,95 @@ class ProjectRequestResource extends Resource
             ]);
     }
 
+    protected static function syncAssignedStaffFeeItems(Get $get, Set $set, mixed $state): void
+    {
+        $selectedIds = collect(is_array($state) ? $state : [])
+            ->filter(fn($id) => filled($id))
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $existingItems = collect($get('rabFeeItems') ?? []);
+        if ($selectedIds->isEmpty()) {
+            // Jika tidak ada pegawai internal dipilih, pertahankan hanya item manual (external).
+            $manualOnly = $existingItems
+                ->filter(fn($item) => ! filled($item['assigned_employee_id'] ?? null))
+                ->values()
+                ->all();
+            $set('rabFeeItems', $manualOnly);
+
+            return;
+        }
+
+        $staffNames = Employee::query()
+            ->whereIn('employees.id', $selectedIds->all())
+            ->join('users', 'employees.user_id', '=', 'users.id')
+            ->pluck('users.name', 'employees.id')
+            ->toArray();
+        $staffNameValues = collect($staffNames)->values()->all();
+
+        // 1) Ambil item linked yang sudah punya marker assigned_employee_id.
+        $existingByStaffId = $existingItems
+            ->filter(fn($item) => filled($item['assigned_employee_id'] ?? null))
+            ->keyBy(fn($item) => (int) $item['assigned_employee_id']);
+
+        // 2) Fallback untuk data lama tanpa marker: cocokkan berdasarkan description == nama staff.
+        $unassignedRows = $existingItems
+            ->filter(fn($item) => ! filled($item['assigned_employee_id'] ?? null))
+            ->values();
+        foreach ($selectedIds as $staffId) {
+            if ($existingByStaffId->has($staffId)) {
+                continue;
+            }
+
+            $name = $staffNames[$staffId] ?? null;
+            if (! filled($name)) {
+                continue;
+            }
+
+            $matchIndex = $unassignedRows->search(function ($row) use ($name) {
+                return isset($row['description']) && trim((string) $row['description']) === $name;
+            });
+
+            if ($matchIndex !== false) {
+                $existingByStaffId->put($staffId, $unassignedRows[$matchIndex]);
+                $unassignedRows->forget($matchIndex);
+                $unassignedRows = $unassignedRows->values();
+            }
+        }
+
+        // 3) Baris manual external: row tanpa assigned_employee_id dan description bukan nama staff internal terpilih.
+        $manualItems = $existingItems
+            ->filter(function ($item) use ($staffNameValues) {
+                if (filled($item['assigned_employee_id'] ?? null)) {
+                    return false;
+                }
+
+                $desc = trim((string) ($item['description'] ?? ''));
+
+                return $desc === '' || ! in_array($desc, $staffNameValues, true);
+            })
+            ->values();
+
+        // 4) Sync linked items sesuai pilihan pegawai internal.
+        $linkedItems = $selectedIds->map(function (int $staffId) use ($existingByStaffId, $staffNames) {
+            $existing = $existingByStaffId->get($staffId, []);
+            $qty = max((int) ($existing['qty_aset'] ?? 1), 1);
+            $hargaRaw = $existing['harga_sewa'] ?? null;
+            $harga = self::cleanMoneyValue($hargaRaw);
+
+            return [
+                'assigned_employee_id' => $staffId,
+                'description' => $staffNames[$staffId] ?? "Pegawai #{$staffId}",
+                'qty_aset' => $qty,
+                'harga_sewa' => $hargaRaw,
+                'total' => number_format($qty * $harga, 0, '.', ','),
+            ];
+        });
+
+        $set('rabFeeItems', $linkedItems->concat($manualItems)->values()->all());
+    }
+
     protected static function cleanMoneyValue(?string $value): int|float
     {
         if ($value === null || $value === '') {
@@ -1123,7 +1303,7 @@ class ProjectRequestResource extends Resource
     {
         $qty = (int) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
-        $set('total', $qty * $harga);
+        $set('total', number_format($qty * $harga, 0, '.', ','));
     }
 
     protected static function updateBmhpRowTotal(Get $get, Set $set): void
@@ -1144,7 +1324,27 @@ class ProjectRequestResource extends Resource
         $set('jumlah_rencana', $totalPcs);
 
         // Subtotal calculation (qty * price)
-        $set('total', $qty * $harga);
+        $set('total', number_format($qty * $harga, 0, '.', ','));
+    }
+
+    protected static function normalizeAssetCode(?string $code): string
+    {
+        if (! filled($code)) {
+            return '-';
+        }
+
+        $parts = explode('/', (string) $code);
+
+        if (count($parts) >= 4) {
+            $code = "{$parts[0]}/{$parts[count($parts) - 2]}/{$parts[count($parts) - 1]}";
+        }
+
+        $normalizedParts = array_map(
+            fn($part) => Str::upper((string) preg_replace('/\s+/', '-', trim((string) $part))),
+            explode('/', (string) $code)
+        );
+
+        return implode('/', $normalizedParts);
     }
 
     /**

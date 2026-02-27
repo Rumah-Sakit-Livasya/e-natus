@@ -8,8 +8,8 @@
     # ============================================
 
     # Hide Server Information (Defense in Depth)
-    ServerSignature Off
-    ServerTokens Prod
+    # ServerSignature Off
+    # ServerTokens Prod
 
     <IfModule mod_headers.c>
         # Remove server identification headers (Apache/Nginx/LiteSpeed)
@@ -76,4 +76,5 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+
 </IfModule>

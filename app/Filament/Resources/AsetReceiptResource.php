@@ -16,6 +16,7 @@ use Filament\Forms\Components\{
     DatePicker
 };
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class AsetReceiptResource extends Resource
 {
@@ -117,14 +118,15 @@ class AsetReceiptResource extends Resource
                     Select::make('template_id')
                         ->label('Template')
                         ->relationship('template', 'name')
+                        ->getOptionLabelFromRecordUsing(fn($record) => Str::upper((string) $record->name))
                         ->searchable()
                         ->preload()
                         ->required()
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set) {
                             if ($state && $template = \App\Models\Template::find($state)) {
-                                $set('custom_name', $template->name);
-                                $set('code', $template->code);
+                                $set('custom_name', Str::upper((string) $template->name));
+                                $set('code', Str::upper((string) preg_replace('/\s+/', '-', trim((string) $template->code))));
                             }
                         })
                         ->createOptionForm([
@@ -148,6 +150,7 @@ class AsetReceiptResource extends Resource
 
                     TextInput::make('custom_name')
                         ->label('Nama Aset')
+                        ->dehydrateStateUsing(fn($state) => Str::upper((string) $state))
                         ->required(),
 
                     TextInput::make('brand')

@@ -46,12 +46,13 @@ class AsetImporter extends Importer
             : 1;
 
         $indexPadded = str_pad($indexInt, 3, '0', STR_PAD_LEFT);
+        $landerCode = strtoupper((string) preg_replace('/\s+/', '-', trim((string) $lander->code)));
+        $templateCode = strtoupper((string) preg_replace('/\s+/', '-', trim((string) $template->code)));
 
         $generatedCode = sprintf(
-            '%s/%s/%s/%s',
-            strtoupper($lander->code),
-            strtoupper($template->category->code),
-            strtoupper($template->code),
+            '%s/%s/%s',
+            $landerCode,
+            $templateCode,
             $indexPadded
         );
 

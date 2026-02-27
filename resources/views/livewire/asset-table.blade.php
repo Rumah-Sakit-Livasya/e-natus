@@ -8,9 +8,23 @@
     </thead>
     <tbody class="divide-y divide-gray-100">
         @forelse ($assets as $asset)
+            @php
+                $parts = explode('/', (string) $asset->code);
+                $normalizedCode = (string) $asset->code;
+                if (count($parts) >= 4) {
+                    $normalizedCode = "{$parts[0]}/{$parts[count($parts) - 2]}/{$parts[count($parts) - 1]}";
+                }
+                $normalizedCode = implode(
+                    '/',
+                    array_map(
+                        fn($part) => \Illuminate\Support\Str::upper((string) preg_replace('/\s+/', '-', trim((string) $part))),
+                        explode('/', $normalizedCode),
+                    ),
+                );
+            @endphp
             <tr>
-                <td class="px-4 py-2">{{ $asset->custom_name }}</td>
-                <td class="px-4 py-2">{{ $asset->code }}</td>
+                <td class="px-4 py-2">{{ \Illuminate\Support\Str::upper((string) $asset->custom_name) }}</td>
+                <td class="px-4 py-2">{{ $normalizedCode }}</td>
                 <td class="px-4 py-2">
                     @if ($asset->status !== 'unavailable')
                         <button wire:click="markUnavailable({{ $asset->id }})"

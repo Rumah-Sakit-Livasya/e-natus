@@ -99,11 +99,11 @@ class EmployeeAttendanceReport extends Page implements HasForms
 
             // 1. Cari SEMUA proyek di mana karyawan ditugaskan pada hari ini
             $assignedProjects = ProjectRequest::where('status', 'approved')
-                // ==========================================================
-                // ===== INI ADALAH PERBAIKANNYA ==========================
-                // ===== Ubah pencarian menjadi string agar lebih andal =====
-                ->whereJsonContains('sdm_ids', (string)$employee->id)
-                // ==========================================================
+                ->where(function ($query) use ($employee) {
+                    $query
+                        ->whereJsonContains('sdm_ids', $employee->id)
+                        ->orWhereJsonContains('sdm_ids', (string) $employee->id);
+                })
                 ->where('start_period', '<=', $date)
                 ->where('end_period', '>=', $date)
                 ->get();

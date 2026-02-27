@@ -110,22 +110,36 @@ class Aset extends Model
 
     protected static function generateUniqueCode(Aset $model): string
     {
-        $landerCode   = $model->lander?->code ?? 'LDR';
-        $categoryCode = $model->template?->category?->code ?? 'CAT';
-        $templateCode = $model->template?->code ?? 'TMP';
+        $landerCode = self::normalizeCodeSegment($model->lander?->code, 'LDR');
+        $templateCode = self::normalizeCodeSegment($model->template?->code, 'TMP');
 
-        $lastCode = static::where('code', 'like', "{$landerCode}/{$categoryCode}/{$templateCode}/%")
-            ->latest('id')
-            ->value('code');
+        $lastNumber = static::query()
+            ->where('template_id', $model->template_id)
+            ->where('lander_id', $model->lander_id)
+            ->when($model->exists, fn($query) => $query->whereKeyNot($model->getKey()))
+            ->pluck('code')
+            ->map(function (?string $code): int {
+                if (! $code) {
+                    return 0;
+                }
 
-        $lastNumber = 0;
-        if ($lastCode && preg_match('/\/(\d+)$/', $lastCode, $matches)) {
-            $lastNumber = (int) $matches[1];
-        }
+                $parts = explode('/', $code);
+                $last = end($parts);
+
+                return ctype_digit((string) $last) ? (int) $last : 0;
+            })
+            ->max() ?? 0;
 
         $nextNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
 
-        return "{$landerCode}/{$categoryCode}/{$templateCode}/{$nextNumber}";
+        return "{$landerCode}/{$templateCode}/{$nextNumber}";
+    }
+
+    protected static function normalizeCodeSegment(?string $value, string $fallback): string
+    {
+        $normalized = preg_replace('/\s+/', '-', trim((string) $value));
+
+        return strtoupper($normalized ?: $fallback);
     }
 
     protected static function generateNextIndex(?int $templateId): int

@@ -20,6 +20,7 @@ class ProjectRequest extends Model
     protected $casts = [
         'employee_ids' => 'array',
         'sdm_ids' => 'array',
+        'external_workers' => 'array',
         'asset_ids' => 'array',
         'vendor_rental_ids' => 'array',
         'due_date' => 'date',
@@ -128,8 +129,7 @@ class ProjectRequest extends Model
         // Ambil array ID dari kolom sdm_ids
         $employeeIds = $this->sdm_ids ?? [];
 
-        // Lakukan query ke model Employee (atau SDM) yang ID-nya ada di array tersebut.
-        // Ganti \App\Models\Employee::class jika nama model Anda berbeda (misal: SDM::class)
+        // Lakukan query ke model Employee yang ID-nya ada di array tersebut.
         return \App\Models\Employee::whereIn('id', $employeeIds);
     }
 
