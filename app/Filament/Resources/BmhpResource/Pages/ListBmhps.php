@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\BmhpImport;
 use App\Exports\BmhpTemplateExport;
 use Filament\Notifications\Notification;
+use Illuminate\Support\HtmlString;
 
 class ListBmhps extends ListRecords
 {
@@ -21,9 +22,23 @@ class ListBmhps extends ListRecords
         return [
             Actions\CreateAction::make(),
             Actions\Action::make('download_template')
-                ->label('Download Template')
-                ->icon('heroicon-o-document-arrow-down')
+                ->label('Export Excel')
+                ->icon('heroicon-o-arrow-up-tray')
                 ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Export Data BMHP')
+                ->modalDescription(new HtmlString(
+                    "<div style='text-align:left'>"
+                        . "<p style='margin-bottom:8px'>File export bisa dipakai untuk <strong>edit</strong> dan <strong>create</strong> data:</p>"
+                        . "<ol style='margin:0;padding-left:18px'>"
+                        . "<li><strong>Edit data existing:</strong> jangan ubah kolom <code>ID</code>, cukup ubah kolom lainnya.</li>"
+                        . "<li><strong>Tambah data baru:</strong> isi baris baru dan kosongkan kolom <code>ID</code>.</li>"
+                        . "<li><strong>Simpan file</strong>, lalu import kembali lewat tombol <strong>Import Excel</strong>.</li>"
+                        . "</ol>"
+                        . "</div>"
+                ))
+                ->modalSubmitActionLabel('Lanjut Export')
+                ->modalCancelActionLabel('Batal')
                 ->action(function () {
                     try {
                         $filename = 'bmhp_template_' . date('Y-m-d_H-i-s') . '.xlsx';
@@ -42,7 +57,7 @@ class ListBmhps extends ListRecords
                 }),
             Actions\Action::make('import_excel')
                 ->label('Import Excel')
-                ->icon('heroicon-o-arrow-up-tray')
+                ->icon('heroicon-o-arrow-down-tray')
                 ->form([
                     FileUpload::make('file')
                         ->label('File Excel')
