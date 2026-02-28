@@ -66,16 +66,16 @@ class BmhpImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'id' => 'sometimes|nullable|integer|exists:bmhp,id',
-            'nama_bmhp' => 'nullable|string|max:255|required_without:name',
-            'name' => 'sometimes|nullable|string|max:255|required_without:nama_bmhp',
-            'satuan' => 'nullable|string|max:50',
-            'pcs_per_unit' => 'sometimes|nullable|integer|min:1',
-            'isi_per_satuan_pcs' => 'sometimes|nullable|integer|min:1',
-            'stok_awal' => 'nullable|integer|min:0',
-            'stok_sisa' => 'nullable|integer|min:0',
-            'stok_minimum' => 'nullable|integer|min:0',
-            'min_stok' => 'sometimes|nullable|integer|min:0',
+            'id' => ['nullable', 'integer', 'exists:bmhp,id'],
+            'nama_bmhp' => ['nullable', 'string', 'max:255', 'required_without:name'],
+            'name' => ['nullable', 'string', 'max:255', 'required_without:nama_bmhp'],
+            'satuan' => ['nullable', 'string', 'max:50'],
+            'pcs_per_unit' => ['nullable', 'integer', 'min:1'],
+            'isi_per_satuan_pcs' => ['nullable', 'integer', 'min:1'],
+            'stok_awal' => ['nullable', 'integer', 'min:0'],
+            'stok_sisa' => ['nullable', 'integer', 'min:0'],
+            'stok_minimum' => ['nullable', 'integer', 'min:0'],
+            'min_stok' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -83,7 +83,9 @@ class BmhpImport implements ToModel, WithHeadingRow, WithValidation
     {
         return [
             'nama_bmhp.required' => 'Nama BMHP wajib diisi',
+            'nama_bmhp.required_without' => 'Nama BMHP wajib diisi jika kolom name kosong',
             'nama_bmhp.max' => 'Nama BMHP maksimal 255 karakter',
+            'name.required_without' => 'Kolom name wajib diisi jika kolom nama_bmhp kosong',
             'id.exists' => 'ID BMHP tidak ditemukan di sistem',
             'satuan.max' => 'Satuan maksimal 50 karakter',
             'pcs_per_unit.min' => 'Isi per satuan (pcs) minimal 1',

@@ -8,6 +8,7 @@ use App\Models\Template;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
+use Illuminate\Validation\ValidationException;
 
 class AsetImporter extends Importer
 {
@@ -16,59 +17,87 @@ class AsetImporter extends Importer
     public static function getColumns(): array
     {
         return [
-            ImportColumn::make('template_name')->label('Nama Template'),
-            ImportColumn::make('lander_name')->label('Nama Lander'),
-            ImportColumn::make('custom_name')->label('Nama Aset'),
-            ImportColumn::make('condition')->label('Kondisi'),
-            ImportColumn::make('brand')->label('Merk'),
-            ImportColumn::make('purchase_year')->label('Tahun Pembelian'),
-            ImportColumn::make('tarif')->label('Tarif'),
-            ImportColumn::make('satuan')->label('Satuan'),
-            ImportColumn::make('index')->label('Index'),
-            ImportColumn::make('status')->label('Status'),
+            ImportColumn::make('id')
+                ->label('ID')
+                ->integer()
+                ->rules(['nullable', 'integer', 'exists:aset,id']),
+            ImportColumn::make('template_name')
+                ->label('Nama Template')
+                ->rules(['nullable', 'string', 'max:255', 'exists:templates,name'])
+                ->requiredMappingForNewRecordsOnly(),
+            ImportColumn::make('lander_name')
+                ->label('Nama Lander')
+                ->rules(['nullable', 'string', 'max:255', 'exists:landers,name'])
+                ->requiredMappingForNewRecordsOnly(),
+            ImportColumn::make('custom_name')
+                ->label('Nama Aset')
+                ->rules(['nullable', 'string', 'max:255'])
+                ->requiredMappingForNewRecordsOnly(),
+            ImportColumn::make('type')
+                ->label('Tipe')
+                ->rules(['nullable', 'string', 'max:255']),
+            ImportColumn::make('serial_number')
+                ->label('Serial Number')
+                ->rules(['nullable', 'string', 'max:255']),
+            ImportColumn::make('code')
+                ->label('Kode')
+                ->rules(['nullable', 'string', 'max:255']),
+            ImportColumn::make('condition')
+                ->label('Kondisi')
+                ->rules(['nullable', 'string', 'max:255'])
+                ->requiredMappingForNewRecordsOnly(),
+            ImportColumn::make('brand')
+                ->label('Merk')
+                ->rules(['nullable', 'string', 'max:255']),
+            ImportColumn::make('purchase_year')
+                ->label('Tahun Pembelian')
+                ->integer()
+                ->rules(['nullable', 'integer', 'min:1900', 'max:2100'])
+                ->requiredMappingForNewRecordsOnly(),
+            ImportColumn::make('tarif')
+                ->label('Tarif')
+                ->numeric()
+                ->rules(['nullable', 'numeric', 'min:0']),
+            ImportColumn::make('harga_sewa')
+                ->label('Harga Sewa')
+                ->numeric()
+                ->rules(['nullable', 'numeric', 'min:0']),
+            ImportColumn::make('satuan')
+                ->label('Satuan')
+                ->rules(['nullable', 'string', 'max:50']),
+            ImportColumn::make('index')
+                ->label('Index')
+                ->integer()
+                ->rules(['nullable', 'integer', 'min:1']),
+            ImportColumn::make('status')
+                ->label('Status')
+                ->rules(['nullable', 'in:available,unavailable']),
         ];
     }
 
     public function resolveRecord(): ?Aset
     {
-        info('Importing: ', $this->data);
+        $id = $this->toIntOrNull($this->data['id'] ?? null);
+        $code = $this->normalizeString($this->data['code'] ?? null);
 
-        $template = Template::with('category')->where('name', $this->data['template_name'])->first();
-        $lander = Lander::where('name', $this->data['lander_name'])->first();
-
-        if (! $template || ! $lander) {
-            return null;
+        $record = null;
+        if ($id) {
+            $record = Aset::withTrashed()->find($id);
         }
 
-        // Validasi index, pakai 1 jika kosong atau bukan angka
-        $indexInt = isset($this->data['index']) && is_numeric($this->data['index']) && $this->data['index'] > 0
-            ? (int) $this->data['index']
-            : 1;
+        if (! $record && filled($code)) {
+            $record = Aset::withTrashed()->where('code', $code)->first();
+        }
 
-        $indexPadded = str_pad($indexInt, 3, '0', STR_PAD_LEFT);
-        $landerCode = strtoupper((string) preg_replace('/\s+/', '-', trim((string) $lander->code)));
-        $templateCode = strtoupper((string) preg_replace('/\s+/', '-', trim((string) $template->code)));
+        if ($record) {
+            if (method_exists($record, 'trashed') && $record->trashed()) {
+                $record->restore();
+            }
 
-        $generatedCode = sprintf(
-            '%s/%s/%s',
-            $landerCode,
-            $templateCode,
-            $indexPadded
-        );
+            return $record;
+        }
 
-        return new Aset([
-            'template_id'   => $template->id,
-            'lander_id'   => $lander->id,
-            'custom_name'   => $this->data['custom_name'] ?? null,
-            'code'          => $generatedCode,
-            'condition'     => $this->data['condition'] ?? null,
-            'brand'         => $this->data['brand'] ?? null,
-            'purchase_year' => $this->data['purchase_year'] ?? null,
-            'tarif'         => $this->data['tarif'] ?? null,
-            'satuan'        => $this->data['satuan'] ?? null,
-            'index'         => $indexInt,
-            'status'        => $this->data['status'] ?? 'available',
-        ]);
+        return new Aset();
     }
 
     public static function getCompletedNotificationBody(Import $import): string
@@ -80,46 +109,141 @@ class AsetImporter extends Importer
         return $body;
     }
 
-    public function storeRecord(): ?Aset
+    public function fillRecord(): void
     {
-        $record = $this->resolveRecord();
+        $templateName = $this->normalizeString($this->data['template_name'] ?? null);
+        $landerName = $this->normalizeString($this->data['lander_name'] ?? null);
 
-        if (! $record) {
+        $template = filled($templateName)
+            ? Template::query()->where('name', $templateName)->first()
+            : null;
+        $lander = filled($landerName)
+            ? Lander::query()->where('name', $landerName)->first()
+            : null;
+
+        if (! $this->record->exists) {
+            $missing = [];
+            if (! $template) {
+                $missing['template_name'] = 'Nama Template wajib diisi untuk data baru dan harus valid.';
+            }
+            if (! $lander) {
+                $missing['lander_name'] = 'Nama Lander wajib diisi untuk data baru dan harus valid.';
+            }
+            if (! filled($this->normalizeString($this->data['custom_name'] ?? null))) {
+                $missing['custom_name'] = 'Nama Aset wajib diisi untuk data baru.';
+            }
+            if (! filled($this->normalizeString($this->data['condition'] ?? null))) {
+                $missing['condition'] = 'Kondisi wajib diisi untuk data baru.';
+            }
+            if (! filled($this->data['purchase_year'] ?? null)) {
+                $missing['purchase_year'] = 'Tahun Pembelian wajib diisi untuk data baru.';
+            }
+
+            if (! empty($missing)) {
+                throw ValidationException::withMessages($missing);
+            }
+        }
+
+        if (filled($templateName) && ! $template) {
+            throw ValidationException::withMessages([
+                'template_name' => "Template '{$templateName}' tidak ditemukan.",
+            ]);
+        }
+
+        if (filled($landerName) && ! $lander) {
+            throw ValidationException::withMessages([
+                'lander_name' => "Lander '{$landerName}' tidak ditemukan.",
+            ]);
+        }
+
+        if ($template) {
+            $this->record->template_id = $template->id;
+        }
+        if ($lander) {
+            $this->record->lander_id = $lander->id;
+        }
+
+        $this->fillWhenPresent('custom_name');
+        $this->fillWhenPresent('type');
+        $this->fillWhenPresent('serial_number');
+        $this->fillWhenPresent('condition');
+        $this->fillWhenPresent('brand');
+        $this->fillWhenPresent('purchase_year', fn($value) => (int) $value);
+        $this->fillWhenPresent('tarif', fn($value) => $this->toNumericOrNull($value));
+        $this->fillWhenPresent('harga_sewa', fn($value) => $this->toNumericOrNull($value));
+        $this->fillWhenPresent('satuan');
+        $this->fillWhenPresent('index', fn($value) => (int) $value);
+
+        $code = $this->normalizeString($this->data['code'] ?? null);
+        if (filled($code)) {
+            $this->record->code = strtoupper($code);
+        }
+
+        $status = $this->normalizeString($this->data['status'] ?? null);
+        if (filled($status)) {
+            $status = strtolower($status);
+            if (in_array($status, ['available', 'unavailable'], true)) {
+                $this->record->status = $status;
+            }
+        } elseif (! $this->record->exists) {
+            $this->record->status = 'available';
+        }
+    }
+
+    protected function fillWhenPresent(string $attribute, ?callable $transform = null): void
+    {
+        if (! array_key_exists($attribute, $this->data)) {
+            return;
+        }
+
+        $value = $this->data[$attribute];
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        $this->record->{$attribute} = $transform ? $transform($value) : $value;
+    }
+
+    protected function normalizeString(mixed $value): ?string
+    {
+        if ($value === null) {
             return null;
         }
 
-        $record->save();
+        $normalized = trim((string) $value);
 
-        return $record;
+        return $normalized === '' ? null : $normalized;
     }
 
-    public static function shouldTransformRecordBeforeFill(): bool
+    protected function toIntOrNull(mixed $value): ?int
     {
-        return false;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        return (int) $value;
     }
 
-    public static function shouldPersistRecord(): bool
+    protected function toNumericOrNull(mixed $value): int|float|null
     {
-        return false;
-    }
+        if ($value === null || $value === '') {
+            return null;
+        }
 
-    public function transformData(array $data): array
-    {
-        // Hapus kolom yang bukan milik model Aset
-        return collect($data)->only([
-            'custom_name',
-            'condition',
-            'brand',
-            'purchase_year',
-            'tarif',
-            'satuan',
-            'status',
-            'index'
-        ])->toArray();
-    }
+        if (is_numeric($value)) {
+            return $value + 0;
+        }
 
-    public function fillRecord(): void
-    {
-        // Kosongkan agar Filament tidak mengisi kolom seperti 'template_name'
+        $normalized = preg_replace('/[^0-9.\-]/', '', (string) $value);
+
+        if ($normalized === '' || ! is_numeric($normalized)) {
+            return null;
+        }
+
+        return $normalized + 0;
     }
 }
