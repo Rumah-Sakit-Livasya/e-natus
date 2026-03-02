@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class NotificationResource extends Resource
 {
@@ -68,6 +69,53 @@ class NotificationResource extends Resource
                                 return new \Illuminate\Support\HtmlString("<ul class='space-y-1'>{$listItems}</ul>");
                             })
                             ->visible(fn(DatabaseNotification $record): bool => !empty($record->data['purchased_items'])),
+                        Placeholder::make('Nota Pembelian')
+                            ->content(function (DatabaseNotification $record) {
+                                $notaUrl = $record->data['nota_pembelian_url'] ?? null;
+                                $notaPath = $record->data['nota_pembelian'] ?? null;
+
+                                // Backward compatibility for old notifications
+                                if (!$notaUrl && !$notaPath && ($record->data['record_model'] ?? null) === BmhpPurchase::class) {
+                                    $purchase = BmhpPurchase::withTrashed()->find($record->data['record_id'] ?? null);
+                                    $notaPath = $purchase?->nota_pembelian;
+                                    $notaUrl = $notaPath ? Storage::disk('public')->url($notaPath) : null;
+                                }
+
+                                if (!$notaUrl && $notaPath) {
+                                    $notaUrl = url('storage/' . ltrim((string) $notaPath, '/'));
+                                }
+
+                                if (!$notaUrl) {
+                                    return '-';
+                                }
+
+                                $extension = strtolower((string) pathinfo((string) ($notaPath ?: $notaUrl), PATHINFO_EXTENSION));
+                                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true);
+                                $isPdf = $extension === 'pdf';
+
+                                if ($isImage) {
+                                    return new \Illuminate\Support\HtmlString(
+                                        "<div class='space-y-2'><img src='{$notaUrl}' alt='Nota Pembelian' class='rounded-lg border border-gray-300/30 max-w-full md:max-w-xl' /><a href='{$notaUrl}' target='_blank' class='text-primary-600 hover:underline'>Buka file penuh</a></div>"
+                                    );
+                                }
+
+                                if ($isPdf) {
+                                    return new \Illuminate\Support\HtmlString(
+                                        "<div class='space-y-2'><object data='{$notaUrl}' type='application/pdf' class='w-full h-96 rounded-lg border border-gray-300/30'><embed src='{$notaUrl}' type='application/pdf' class='w-full h-96 rounded-lg border border-gray-300/30'/></object><a href='{$notaUrl}' target='_blank' class='text-primary-600 hover:underline'>Buka file PDF penuh</a></div>"
+                                    );
+                                }
+
+                                return new \Illuminate\Support\HtmlString(
+                                    "<a href='{$notaUrl}' target='_blank' class='text-primary-600 hover:underline'>Lihat / Download Nota</a>"
+                                );
+                            })
+                            ->visible(function (DatabaseNotification $record): bool {
+                                if (!empty($record->data['nota_pembelian_url']) || !empty($record->data['nota_pembelian'])) {
+                                    return true;
+                                }
+
+                                return ($record->data['record_model'] ?? null) === BmhpPurchase::class;
+                            }),
                         Placeholder::make('Waktu Diterima')->content(fn(DatabaseNotification $record): string => $record->created_at->isoFormat('dddd, D MMMM YYYY - HH:mm')),
                         Placeholder::make('Link')
                             ->content(function (DatabaseNotification $record) {

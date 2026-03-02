@@ -31,4 +31,9 @@ class Bmhp extends Model
     {
         return $this->hasMany(BmhpStockOpname::class);
     }
+
+    public function officeUsages(): HasMany
+    {
+        return $this->hasMany(BmhpOfficeUsage::class);
+    }
 }

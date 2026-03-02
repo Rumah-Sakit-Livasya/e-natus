@@ -28,8 +28,8 @@ class BmhpStockOpnameResource extends Resource
     protected static ?string $model = BmhpStockOpname::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationGroup = 'Inventory';
-    protected static ?string $navigationLabel = 'Riwayat Stock Opname';
-    protected static ?string $pluralModelLabel = 'Riwayat Stock Opname';
+    protected static ?string $navigationLabel = 'Stock Opname';
+    protected static ?string $pluralModelLabel = 'Stock Opname';
 
     protected static ?int $navigationSort = 4;
 

@@ -7,6 +7,7 @@ use App\Models\BmhpPurchase;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\DatabaseMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class BmhpPurchaseCreated extends Notification
 {
@@ -40,12 +41,16 @@ class BmhpPurchaseCreated extends Notification
             })
             ->values()
             ->all();
+        $notaPath = $this->purchase->nota_pembelian;
+        $notaUrl = $notaPath ? Storage::disk('public')->url($notaPath) : null;
 
         return new DatabaseMessage([
             'format' => 'filament',
             'title' => 'Persetujuan Pembelian BHP',
             'message' => "Pengajuan pembelian BHP tanggal {$tanggal}{$supplierLabel} membutuhkan persetujuan.",
             'purchased_items' => $items,
+            'nota_pembelian' => $notaPath,
+            'nota_pembelian_url' => $notaUrl,
             'url' => BmhpPurchaseResource::getUrl('edit', ['record' => $this->purchase]),
             'is_approvable' => true,
             'record_model' => BmhpPurchase::class,

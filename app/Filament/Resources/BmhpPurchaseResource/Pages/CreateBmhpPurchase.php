@@ -3,12 +3,10 @@
 namespace App\Filament\Resources\BmhpPurchaseResource\Pages;
 
 use App\Filament\Resources\BmhpPurchaseResource;
-use App\Models\Bmhp;
 use App\Models\User;
 use App\Notifications\BmhpPurchaseCreated;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 class CreateBmhpPurchase extends CreateRecord
 {
@@ -29,5 +27,13 @@ class CreateBmhpPurchase extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function getCreatedNotification(): ?Notification
+    {
+        return Notification::make()
+            ->success()
+            ->title('Pembelian berhasil dibuat')
+            ->body('Data pembelian BHP telah disimpan.');
     }
 }
