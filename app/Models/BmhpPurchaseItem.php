@@ -18,6 +18,11 @@ class BmhpPurchaseItem extends Model
         'total_pcs',
         'harga',
         'subtotal',
+        'is_checked',
+    ];
+
+    protected $casts = [
+        'is_checked' => 'boolean',
     ];
 
     public function purchase(): BelongsTo

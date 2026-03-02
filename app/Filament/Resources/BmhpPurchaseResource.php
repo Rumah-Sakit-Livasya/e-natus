@@ -74,6 +74,22 @@ class BmhpPurchaseResource extends Resource
                     ->rows(3)
                     ->columnSpanFull(),
 
+                Forms\Components\FileUpload::make('nota_pembelian')
+                    ->label('Upload Nota Pembelian')
+                    ->disk('public')
+                    ->directory('bmhp-purchase-nota')
+                    ->acceptedFileTypes([
+                        'application/pdf',
+                        'image/jpeg',
+                        'image/png',
+                        'image/webp',
+                    ])
+                    ->downloadable()
+                    ->openable()
+                    ->nullable()
+                    ->columnSpanFull()
+                    ->helperText('Opsional. Upload nota dalam format PDF/JPG/PNG/WEBP.'),
+
                 Forms\Components\Repeater::make('items')
                     ->label('Item Pembelian')
                     ->relationship()
@@ -185,6 +201,11 @@ class BmhpPurchaseResource extends Resource
                             ->default(0)
                             ->required()
                             ->helperText('Total harga untuk item ini'),
+
+                        Forms\Components\Checkbox::make('is_checked')
+                            ->label('Sesuai Nota')
+                            ->default(true)
+                            ->helperText('Centang jika item ini benar-benar dibeli sesuai nota.'),
                     ])
                     ->columns(6)
                     ->minItems(1)
@@ -248,6 +269,11 @@ class BmhpPurchaseResource extends Resource
                             Log::info('Loaded ' . $record->items->count() . ' items for purchase #' . $record->id);
 
                             foreach ($record->items as $item) {
+                                if (!(bool) ($item->is_checked ?? true)) {
+                                    Log::info('Skipping item ID: ' . $item->id . ' because is_checked is false');
+                                    continue;
+                                }
+
                                 $pcs = (int) ($item->total_pcs ?? 0);
                                 Log::info('Processing item ID: ' . $item->id . ', BMHP ID: ' . $item->bmhp_id . ', Total PCS: ' . $pcs);
 
@@ -277,7 +303,7 @@ class BmhpPurchaseResource extends Resource
                         Notification::make()
                             ->success()
                             ->title('Pembelian di-approve')
-                            ->body('Stok BMHP sudah ditambahkan sesuai total pcs.')
+                            ->body('Stok BMHP sudah ditambahkan untuk item yang dicentang sesuai nota.')
                             ->send();
                     }),
 

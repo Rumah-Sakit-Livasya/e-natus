@@ -41,6 +41,33 @@ class NotificationResource extends Resource
                 Section::make('Detail Notifikasi')
                     ->schema([
                         Placeholder::make('Pesan')->content(fn(DatabaseNotification $record): ?string => $record->data['message'] ?? '-'),
+                        Placeholder::make('Barang yang Dibeli')
+                            ->content(function (DatabaseNotification $record) {
+                                $items = $record->data['purchased_items'] ?? [];
+                                if (!is_array($items) || empty($items)) {
+                                    return '-';
+                                }
+
+                                $listItems = collect($items)
+                                    ->map(function ($item) {
+                                        if (is_array($item)) {
+                                            $label = (string) ($item['label'] ?? '-');
+                                            $isChecked = (bool) ($item['is_checked'] ?? true);
+                                            $symbol = $isChecked
+                                                ? "<span class='inline-flex h-5 w-5 items-center justify-center rounded-full border border-success-500/40 bg-success-500/15 text-success-500 text-xs font-bold' title='Sesuai nota'>✓</span>"
+                                                : "<span class='inline-flex h-5 w-5 items-center justify-center rounded-full border border-danger-500/40 bg-danger-500/15 text-danger-500 text-xs font-bold' title='Tidak sesuai nota'>✕</span>";
+
+                                            return "<li class='flex items-center gap-2'><span>" . e($label) . "</span>{$symbol}</li>";
+                                        }
+
+                                        // Backward compatibility for old notifications
+                                        return "<li class='flex items-center gap-2'><span>" . e((string) $item) . "</span><span class='inline-flex h-5 w-5 items-center justify-center rounded-full border border-success-500/40 bg-success-500/15 text-success-500 text-xs font-bold'>✓</span></li>";
+                                    })
+                                    ->implode('');
+
+                                return new \Illuminate\Support\HtmlString("<ul class='space-y-1'>{$listItems}</ul>");
+                            })
+                            ->visible(fn(DatabaseNotification $record): bool => !empty($record->data['purchased_items'])),
                         Placeholder::make('Waktu Diterima')->content(fn(DatabaseNotification $record): string => $record->created_at->isoFormat('dddd, D MMMM YYYY - HH:mm')),
                         Placeholder::make('Link')
                             ->content(function (DatabaseNotification $record) {
@@ -214,6 +241,10 @@ class NotificationResource extends Resource
                     if ($newStatus === 'approved') {
                         $sourceRecord->loadMissing('items.bmhp');
                         foreach ($sourceRecord->items as $item) {
+                            if (!(bool) ($item->is_checked ?? true)) {
+                                continue;
+                            }
+
                             $pcs = (int) ($item->total_pcs ?? 0);
                             if ($pcs > 0) {
                                 $item->bmhp->increment('stok_sisa', $pcs);

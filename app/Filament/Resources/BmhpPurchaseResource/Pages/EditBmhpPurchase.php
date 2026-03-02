@@ -63,6 +63,7 @@ class EditBmhpPurchase extends EditRecord
                 'total_pcs' => $totalPcs,
                 'harga' => $harga,
                 'subtotal' => $subtotal,
+                'is_checked' => (bool) ($item['is_checked'] ?? true),
             ]);
         }
     }
