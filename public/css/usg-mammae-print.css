@@ -1,0 +1,58 @@
+.usg-mammae-body {
+    margin-top: 8px;
+    border-top: 1px solid #777;
+    padding-top: 10px;
+}
+
+.finding-group {
+    margin-top: 8px;
+}
+
+.finding-title {
+    font-weight: 700;
+}
+
+.finding-list {
+    margin: 4px 0 0 20px;
+    padding-left: 14px;
+}
+
+.finding-list li {
+    margin-bottom: 2px;
+}
+
+.preserve-line {
+    white-space: pre-wrap;
+}
+
+.signature-block {
+    width: 280px;
+    margin-left: auto;
+    margin-top: 28px;
+}
+
+.usg-mammae-grid {
+    margin-top: 10px;
+    border: 1px solid #666;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    min-height: 640px;
+}
+
+.usg-mammae-card {
+    border: 1px solid #ddd;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.usg-mammae-card img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+    display: block;
+}

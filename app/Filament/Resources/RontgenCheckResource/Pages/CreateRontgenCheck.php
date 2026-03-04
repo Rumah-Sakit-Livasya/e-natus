@@ -12,6 +12,17 @@ class CreateRontgenCheck extends CreateRecord
 {
     protected static string $resource = RontgenCheckResource::class;
 
+    private function getDefaultTemuan(): string
+    {
+        return "- Apex pulmo bilateral tidak ada infiltrate\n"
+            . "- Corakan bronchovasculer normal\n"
+            . "- Fissura minor menebal\n"
+            . "- Sinus costophrenicus lancip\n"
+            . "- Diafragma licin\n"
+            . "- CTR < 50%\n"
+            . "- Tulang tulang baik";
+    }
+
     /**
      * Metode mount() berjalan saat halaman pertama kali dimuat.
      * Ia akan membaca parameter 'participant_id' dari URL dan
@@ -32,6 +43,7 @@ class CreateRontgenCheck extends CreateRecord
                     'usia'           => Carbon::parse($participant->date_of_birth)->age,
                     'jenis_kelamin'  => $participant->gender,
                     'instansi'       => $participant->department,
+                    'temuan'         => $this->getDefaultTemuan(),
                 ]);
             }
         }

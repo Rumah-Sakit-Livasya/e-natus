@@ -70,6 +70,10 @@ class UsgMammaeCheckResource extends Resource
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),
                         Forms\Components\TextInput::make('jenis_kelamin')->label('Jenis Kelamin')->readOnly(),
                         Forms\Components\TextInput::make('instansi')->label('Instansi')->readOnly(),
+                        Forms\Components\TextInput::make('nik_no_pekerja')
+                            ->label('NIK/No. Pekerja')
+                            ->default('-/-')
+                            ->maxLength(255),
                         Forms\Components\DatePicker::make('tanggal_pemeriksaan')->label('Pelaksanaan')->default(now()),
                     ]),
 
@@ -104,7 +108,38 @@ class UsgMammaeCheckResource extends Resource
                             ->content(fn(Forms\Get $get): string => $get('radiologist') ?: '-'),
                         Forms\Components\Hidden::make('radiologist'),
                         Forms\Components\Hidden::make('tanda_tangan'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg')->label('Upload Gambar Hasil USG')->image()->disk('public')->directory('hasil-usg-mammae')->required()->columnSpanFull(),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg')
+                            ->label('Gambar Hasil USG 1')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg-mammae')
+                            ->required(),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_2')
+                            ->label('Gambar Hasil USG 2 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg-mammae'),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_3')
+                            ->label('Gambar Hasil USG 3 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg-mammae'),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_4')
+                            ->label('Gambar Hasil USG 4 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg-mammae'),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_5')
+                            ->label('Gambar Hasil USG 5 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg-mammae'),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_6')
+                            ->label('Gambar Hasil USG 6 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg-mammae')
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

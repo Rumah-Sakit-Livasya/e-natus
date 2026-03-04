@@ -116,7 +116,16 @@ class TreadmillCheckResource extends Resource
                             ->content(fn(Forms\Get $get): string => $get('cardiologist') ?: '-'),
                         Forms\Components\Hidden::make('cardiologist'),
                         Forms\Components\Hidden::make('tanda_tangan'),
-                        Forms\Components\FileUpload::make('gambar_hasil_treadmill')->label('Upload Gambar Hasil Treadmill')->image()->disk('public')->directory('hasil-treadmill')->required()->columnSpanFull(),
+                        Forms\Components\FileUpload::make('gambar_hasil_treadmill')
+                            ->label('Upload Lampiran Hasil Treadmill (PDF)')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(10240)
+                            ->openable()
+                            ->downloadable()
+                            ->disk('public')
+                            ->directory('hasil-treadmill')
+                            ->required()
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

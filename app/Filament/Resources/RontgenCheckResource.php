@@ -77,6 +77,7 @@ class RontgenCheckResource extends Resource
                     ->schema([
                         Forms\Components\Textarea::make('temuan')
                             ->label('Yth, TS.')
+                            ->default($defaultTemuan)
                             ->rows(8),
                         Forms\Components\TextInput::make('kesan')
                             ->label('Kesan'),
