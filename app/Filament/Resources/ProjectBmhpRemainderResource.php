@@ -233,7 +233,7 @@ class ProjectBmhpRemainderResource extends Resource
         ];
     }
 
-    public static function canAccess(): bool
+    public static function canViewAny(): bool
     {
         $user = auth()->user();
         if (!$user) return false;
@@ -242,6 +242,9 @@ class ProjectBmhpRemainderResource extends Resource
             return true;
         }
 
-        return $user->can('view bmhp');
+        return $user->hasAnyPermission([
+            'view bmhp',
+            'view bmhp remainders',
+        ]);
     }
 }

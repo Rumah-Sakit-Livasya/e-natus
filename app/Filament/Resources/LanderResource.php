@@ -91,6 +91,9 @@ class LanderResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return auth()->user()->can('view landers');
+        return $user->hasAnyPermission([
+            'view landers',
+            'view aset landers',
+        ]);
     }
 }

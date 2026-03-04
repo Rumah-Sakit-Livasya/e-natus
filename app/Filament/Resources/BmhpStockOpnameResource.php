@@ -168,6 +168,9 @@ class BmhpStockOpnameResource extends Resource
         if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user && $user->can('view stock opname');
+        return $user && $user->hasAnyPermission([
+            'view stock opname',
+            'view bmhp stock opname',
+        ]);
     }
 }

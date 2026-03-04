@@ -118,6 +118,9 @@ class VendorRentalResource extends Resource
             return true;
         }
 
-        return $user->can('view vendor rentals');
+        return $user->hasAnyPermission([
+            'view vendor rentals',
+            'view aset vendor rentals',
+        ]);
     }
 }

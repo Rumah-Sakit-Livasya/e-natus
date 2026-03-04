@@ -21,12 +21,21 @@ class AsetCluster extends Cluster
 
         $permissions = [
             'view asets',
+            'view aset master',
             'view categories',
+            'view aset categories',
             'view landers',
+            'view aset landers',
             'view procurement',
+            'view aset procurement',
             'view realisations',
+            'view aset realisations',
             'view aset receipt',
+            'view aset receipts',
             'view vendor rentals',
+            'view aset vendor rentals',
+            'view templates',
+            'view aset templates',
         ];
 
         return $user->hasAnyPermission($permissions);

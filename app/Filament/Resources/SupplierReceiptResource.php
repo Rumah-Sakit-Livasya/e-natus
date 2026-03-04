@@ -86,6 +86,6 @@ class SupplierReceiptResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return auth()->user()->can('view supplier');
+        return auth()->user()->can('view bmhp');
     }
 }

@@ -147,6 +147,9 @@ class RealisationResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return auth()->user()->can('view realisations');
+        return $user->hasAnyPermission([
+            'view realisations',
+            'view aset realisations',
+        ]);
     }
 }
