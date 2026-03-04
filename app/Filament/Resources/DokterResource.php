@@ -111,10 +111,20 @@ class DokterResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true;
         }
 
-        return $user->can('view dokters') || $user->can('view hasil mcu');
+        return $user && $user->can('view dokters');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

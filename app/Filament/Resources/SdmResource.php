@@ -84,9 +84,19 @@ class SdmResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return auth()->user()->can('view sdm');
+        return $user && $user->can('view sdm');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

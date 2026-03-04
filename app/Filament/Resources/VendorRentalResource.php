@@ -118,6 +118,16 @@ class VendorRentalResource extends Resource
             return true;
         }
 
-        return $user->can('view vendor rentals');
+        return $user->can('view aset vendor rentals');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

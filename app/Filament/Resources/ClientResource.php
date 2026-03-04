@@ -83,10 +83,20 @@ class ClientResource extends Resource
     {
         $user = auth()->user();
 
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
 
-        return auth()->user()->can('view clients');
+        return $user && $user->can('view clients');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

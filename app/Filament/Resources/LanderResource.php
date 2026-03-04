@@ -88,9 +88,20 @@ class LanderResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->can('view landers');
+
+        return $user && $user->can('view aset landers');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

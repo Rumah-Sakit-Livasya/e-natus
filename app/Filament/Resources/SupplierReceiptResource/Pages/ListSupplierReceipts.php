@@ -10,6 +10,18 @@ class ListSupplierReceipts extends ListRecords
 {
     protected static string $resource = SupplierReceiptResource::class;
 
+    public function mount(): void
+    {
+        abort_unless(SupplierReceiptResource::canViewAny(), 403);
+
+        parent::mount();
+    }
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        return SupplierReceiptResource::canViewAny();
+    }
+
     protected function getHeaderActions(): array
     {
         return [

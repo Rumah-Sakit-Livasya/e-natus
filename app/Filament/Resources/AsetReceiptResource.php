@@ -267,9 +267,20 @@ class AsetReceiptResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->can('view receipts');
+
+        return $user && $user->can('view aset receipts');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

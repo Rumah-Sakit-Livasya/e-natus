@@ -144,9 +144,20 @@ class RealisationResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
+        if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->can('view realisations');
+
+        return $user && $user->can('view aset realisations');
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
     }
 }

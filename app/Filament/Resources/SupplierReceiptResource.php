@@ -6,6 +6,7 @@ use App\Filament\Resources\SupplierReceiptResource\Pages;
 use App\Filament\Resources\SupplierReceiptResource\RelationManagers;
 use App\Models\Supplier;
 use App\Models\SupplierReceipt;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -83,9 +84,36 @@ class SupplierReceiptResource extends Resource
     public static function canViewAny(): bool
     {
         $user = auth()->user();
-        if ($user->isSuperAdmin()) {
-            return true; // bypass semua permission cek
-        }
-        return auth()->user()->can('view bmhp');
+        return $user ? $user->hasPermissionTo('view supplier') : false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return static::canViewAny();
     }
 }
