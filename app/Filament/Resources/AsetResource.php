@@ -370,7 +370,7 @@ class AsetResource extends Resource
             return true; // bypass semua permission cek
         }
 
-        return $user && $user->can('view aset master');
+        return $user && $user->can('view asets');
     }
 
     public static function canAccess(): bool
