@@ -16,4 +16,9 @@ class EkgCheck extends Model
     {
         return $this->belongsTo(Participant::class);
     }
+
+    public function dokter(): BelongsTo
+    {
+        return $this->belongsTo(Dokter::class);
+    }
 }

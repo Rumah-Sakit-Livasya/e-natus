@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AudiometryCheckResource\Pages;
 
 use App\Filament\Resources\AudiometryCheckResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -14,6 +15,13 @@ class EditAudiometryCheck extends EditRecord
     {
         return [
             Actions\DeleteAction::make(),
+        ];
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
         ];
     }
 }

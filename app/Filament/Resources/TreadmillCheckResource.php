@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TreadmillCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\TreadmillCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -98,8 +99,23 @@ class TreadmillCheckResource extends Resource
                 Section::make('Cardiologist & Lampiran')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('cardiologist')->label('Cardiologist')->default('dr. Muhammad Aditya, Sp.JP'),
-                        Forms\Components\FileUpload::make('tanda_tangan')->label('Upload TTD Dokter')->image()->disk('public')->directory('ttd-treadmill'),
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Cardiologist')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('cardiologist', $dokter?->name);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Placeholder::make('cardiologist_preview')
+                            ->label('Nama Dokter')
+                            ->content(fn(Forms\Get $get): string => $get('cardiologist') ?: '-'),
+                        Forms\Components\Hidden::make('cardiologist'),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                         Forms\Components\FileUpload::make('gambar_hasil_treadmill')->label('Upload Gambar Hasil Treadmill')->image()->disk('public')->directory('hasil-treadmill')->required()->columnSpanFull(),
                     ]),
             ]);

@@ -106,4 +106,18 @@ class VendorRentalResource extends Resource
             'edit' => Pages\EditVendorRental::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->can('view vendor rentals');
+    }
 }

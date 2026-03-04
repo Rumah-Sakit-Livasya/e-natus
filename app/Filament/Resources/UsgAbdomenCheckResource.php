@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UsgAbdomenCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\UsgAbdomenCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -94,8 +95,23 @@ class UsgAbdomenCheckResource extends Resource
                         Forms\Components\Textarea::make('kesimpulan')->label('Kesimpulan')
                             ->default('Hepar / Lien / Gallbladder / Pankreas / Ren kanan / Ren kiri / Vesica urinaria / Prostat tak tampak kelainan')
                             ->columnSpanFull(),
-                        Forms\Components\TextInput::make('radiologist')->label('Radiologist')->default('dr. Yockie Risvian Manfigiawan, Sp.Rad'),
-                        Forms\Components\FileUpload::make('tanda_tangan')->label('Upload TTD Dokter')->image()->disk('public')->directory('ttd-usg'),
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Radiologist')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('radiologist', $dokter?->name);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Placeholder::make('radiologist_preview')
+                            ->label('Nama Dokter')
+                            ->content(fn(Forms\Get $get): string => $get('radiologist') ?: '-'),
+                        Forms\Components\Hidden::make('radiologist'),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                     ]),
 
                 Section::make('Lampiran Gambar Hasil USG (Untuk Halaman 2)')

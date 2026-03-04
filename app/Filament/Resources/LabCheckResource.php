@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LabCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\LabCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -180,8 +181,23 @@ class LabCheckResource extends Resource
                 ])->columnSpanFull(),
 
                 Section::make('Penanggung Jawab')->schema([
-                    Forms\Components\TextInput::make('penanggung_jawab')->default('dr. Ridla Ubaidillah, Sp.PK'),
-                    Forms\Components\FileUpload::make('tanda_tangan')->label('Upload TTD')->image()->disk('public')->directory('ttd-lab'),
+                    Forms\Components\Select::make('dokter_id')
+                        ->label('Dokter Penanggung Jawab')
+                        ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                        ->searchable()
+                        ->preload()
+                        ->live()
+                        ->required()
+                        ->afterStateUpdated(function (Set $set, ?string $state) {
+                            $dokter = Dokter::find($state);
+                            $set('penanggung_jawab', $dokter?->name);
+                            $set('tanda_tangan', $dokter?->tanda_tangan);
+                        }),
+                    Forms\Components\Placeholder::make('penanggung_jawab_preview')
+                        ->label('Nama Dokter')
+                        ->content(fn(Forms\Get $get): string => $get('penanggung_jawab') ?: '-'),
+                    Forms\Components\Hidden::make('penanggung_jawab'),
+                    Forms\Components\Hidden::make('tanda_tangan'),
                 ])
             ]);
     }

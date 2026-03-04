@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UsgAbdomenCheckResource\Pages;
 
 use App\Filament\Resources\UsgAbdomenCheckResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -14,6 +15,13 @@ class EditUsgAbdomenCheck extends EditRecord
     {
         return [
             Actions\DeleteAction::make(),
+        ];
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
         ];
     }
 }

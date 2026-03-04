@@ -4,13 +4,23 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\McuResultResource\Pages;
 use App\Filament\Resources\McuResultResource\RelationManagers;
+use App\Models\AudiometryCheck;
+use App\Models\DrugTest;
+use App\Models\EkgCheck;
+use App\Models\LabCheck;
 use App\Models\McuResult;
+use App\Models\RontgenCheck;
+use App\Models\SpirometryCheck;
+use App\Models\TreadmillCheck;
+use App\Models\UsgAbdomenCheck;
+use App\Models\UsgMammaeCheck;
 use Filament\Forms\Get;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class McuResultResource extends Resource
 {
@@ -427,11 +437,76 @@ class McuResultResource extends Resource
                 Tables\Columns\TextColumn::make('tanggal_mcu')->date()->sortable(),
             ])
             ->actions([
-                Tables\Actions\Action::make('view_result')
-                    ->label('Lihat Hasil')
-                    ->url(fn(McuResult $record): string => static::getUrl('view', ['record' => $record]))
-                    ->icon('heroicon-o-eye'),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    self::makePemeriksaanAction(
+                        name: 'audiometri',
+                        label: 'Audiometri',
+                        routeName: 'audiometry.print',
+                        modelClass: AudiometryCheck::class,
+                        icon: 'heroicon-o-clipboard-document-list',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'drug_test',
+                        label: 'Tes Narkoba',
+                        routeName: 'drug-test.print',
+                        modelClass: DrugTest::class,
+                        icon: 'heroicon-o-beaker',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'ekg',
+                        label: 'EKG',
+                        routeName: 'ekg.print',
+                        modelClass: EkgCheck::class,
+                        icon: 'heroicon-o-heart',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'lab',
+                        label: 'Lab Lengkap',
+                        routeName: 'lab.print',
+                        modelClass: LabCheck::class,
+                        icon: 'heroicon-o-clipboard-document-list',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'rontgen',
+                        label: 'Rontgen',
+                        routeName: 'rontgen.print',
+                        modelClass: RontgenCheck::class,
+                        icon: 'heroicon-o-viewfinder-circle',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'spirometri',
+                        label: 'Spirometri',
+                        routeName: 'spirometri.print',
+                        modelClass: SpirometryCheck::class,
+                        icon: 'heroicon-o-scale',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'treadmill',
+                        label: 'Treadmill',
+                        routeName: 'treadmill.print',
+                        modelClass: TreadmillCheck::class,
+                        icon: 'heroicon-o-presentation-chart-line',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'usg_abdomen',
+                        label: 'USG Abdomen',
+                        routeName: 'usg.print',
+                        modelClass: UsgAbdomenCheck::class,
+                        icon: 'heroicon-o-photo',
+                    ),
+                    self::makePemeriksaanAction(
+                        name: 'usg_mammae',
+                        label: 'USG Mammae',
+                        routeName: 'usg-mammae.print',
+                        modelClass: UsgMammaeCheck::class,
+                        icon: 'heroicon-o-sparkles',
+                    ),
+                ])
+                    ->label('Pemeriksaan')
+                    ->icon('heroicon-o-document-magnifying-glass')
+                    ->color('gray')
+                    ->button()
+                    ->dropdown(true),
             ]);
     }
 
@@ -459,5 +534,39 @@ class McuResultResource extends Resource
             return true; // bypass semua permission cek
         }
         return auth()->user()->can('view mcu result');
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    private static function makePemeriksaanAction(
+        string $name,
+        string $label,
+        string $routeName,
+        string $modelClass,
+        string $icon
+    ): Tables\Actions\Action {
+        return Tables\Actions\Action::make("pemeriksaan_{$name}")
+            ->label($label)
+            ->icon($icon)
+            ->visible(fn(McuResult $record): bool => $modelClass::query()
+                ->where('participant_id', $record->participant_id)
+                ->exists())
+            ->url(function (McuResult $record) use ($modelClass, $routeName): string {
+                $id = $modelClass::query()
+                    ->where('participant_id', $record->participant_id)
+                    ->latest('id')
+                    ->value('id');
+
+                return route($routeName, ['record' => $id]);
+            })
+            ->openUrlInNewTab();
     }
 }

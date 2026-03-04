@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RontgenCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\RontgenCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -84,8 +85,23 @@ class RontgenCheckResource extends Resource
                 Section::make('Radiologist & Lampiran')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('radiologist')->label('Radiologist')->default('dr. Firdaus, Sp. Rad'),
-                        Forms\Components\FileUpload::make('tanda_tangan')->label('Upload TTD Dokter')->image()->disk('public')->directory('ttd-rontgen'),
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Radiologist')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('radiologist', $dokter?->name);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Placeholder::make('radiologist_preview')
+                            ->label('Nama Dokter')
+                            ->content(fn(Forms\Get $get): string => $get('radiologist') ?: '-'),
+                        Forms\Components\Hidden::make('radiologist'),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                         Forms\Components\FileUpload::make('gambar_hasil_rontgen')->label('Upload Gambar Hasil Rontgen')->image()->disk('public')->directory('hasil-rontgen')->required()->columnSpanFull(),
                     ]),
             ]);

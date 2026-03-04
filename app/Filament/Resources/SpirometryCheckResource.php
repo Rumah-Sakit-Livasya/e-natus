@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SpirometryCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\SpirometryCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -113,8 +114,23 @@ class SpirometryCheckResource extends Resource
                 Section::make('Dokter & Lampiran')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('dokter_pemeriksa')->label('Dokter Pemeriksa')->default('dr. Daniel Pratama, Sp.P'),
-                        Forms\Components\FileUpload::make('tanda_tangan')->label('Upload TTD Dokter')->image()->disk('public')->directory('ttd-spirometri'),
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Dokter Pemeriksa')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('dokter_pemeriksa', $dokter?->name);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Placeholder::make('dokter_pemeriksa_preview')
+                            ->label('Nama Dokter')
+                            ->content(fn(Get $get): string => $get('dokter_pemeriksa') ?: '-'),
+                        Forms\Components\Hidden::make('dokter_pemeriksa'),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                         Forms\Components\FileUpload::make('gambar_hasil_spirometri')->label('Upload Gambar Hasil Spirometri')->image()->disk('public')->directory('hasil-spirometri')->required()->columnSpanFull(),
                     ]),
             ]);

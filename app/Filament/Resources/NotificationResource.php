@@ -320,4 +320,18 @@ class NotificationResource extends Resource
             'view' => Pages\ViewNotification::route('/{record}'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->can('view notifications');
+    }
 }

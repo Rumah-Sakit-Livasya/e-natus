@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AudiometryCheckResource\Pages;
 use App\Models\AudiometryCheck;
+use App\Models\Dokter;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Forms;
@@ -136,6 +137,22 @@ class AudiometryCheckResource extends Resource
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('saran')
                             ->columnSpanFull(),
+                    ]),
+
+                Section::make('Dokter & Tanda Tangan')
+                    ->schema([
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Dokter Pemeriksa')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                     ]),
             ]);
     }

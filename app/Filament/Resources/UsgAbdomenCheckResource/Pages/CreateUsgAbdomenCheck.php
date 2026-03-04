@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UsgAbdomenCheckResource\Pages;
 
 use App\Filament\Resources\UsgAbdomenCheckResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\Participant; // <-- Tambahkan use statement ini
 use Carbon\Carbon;          // <-- Tambahkan use statement ini
@@ -34,5 +35,12 @@ class CreateUsgAbdomenCheck extends CreateRecord
                 ]);
             }
         }
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
+        ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DrugTestResource\Pages;
 
 use App\Filament\Resources\DrugTestResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\Participant; // <-- Tambahkan use statement ini
 use Carbon\Carbon;          // <-- Tambahkan use statement ini
@@ -37,5 +38,12 @@ class CreateDrugTest extends CreateRecord
                 ]);
             }
         }
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
+        ];
     }
 }

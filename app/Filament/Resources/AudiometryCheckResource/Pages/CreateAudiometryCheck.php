@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AudiometryCheckResource\Pages;
 
 use App\Filament\Resources\AudiometryCheckResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\Participant; // <-- Tambahkan use statement ini
@@ -31,5 +32,12 @@ class CreateAudiometryCheck extends CreateRecord
                 ]);
             }
         }
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
+        ];
     }
 }

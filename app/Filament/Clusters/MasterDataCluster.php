@@ -24,6 +24,8 @@ class MasterDataCluster extends Cluster
             'view regions',
             'view templates',
             'view supplier',
+            'view dokters',
+            'view hasil mcu',
         ];
 
         return $user->hasAnyPermission($permissions);

@@ -112,6 +112,7 @@ class ParticipantResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('id', 'desc')
             ->columns([
                 Tables\Columns\ImageColumn::make('photo')
                     ->label('Foto')
@@ -159,12 +160,13 @@ class ParticipantResource extends Resource
                 // ==========================================================
             ])
             ->actions([
-                Action::make('print_summary')
-                    ->label('Rekap Laporan')
-                    ->icon('heroicon-o-document-chart-bar')
-                    ->color('warning')
-                    ->url(fn(Participant $record): string => route('participant.report.print', $record))
-                    ->openUrlInNewTab(),
+                // Action::make('print_summary')
+                //     ->label('Rekap Laporan')
+                //     ->icon('heroicon-o-document-chart-bar')
+                //     ->color('success')
+                //     ->button()
+                //     ->url(fn(Participant $record): string => route('participant.report.print', $record))
+                //     ->openUrlInNewTab(),
 
                 ActionGroup::make([
                     Action::make('audiometry')
@@ -207,15 +209,18 @@ class ParticipantResource extends Resource
                     ->label('Pemeriksaan')
                     ->icon('heroicon-m-plus')
                     ->color('success')
+                    ->button()
                     ->dropdown(true),
 
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->color('success')
+                    ->button(),
                 // Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 

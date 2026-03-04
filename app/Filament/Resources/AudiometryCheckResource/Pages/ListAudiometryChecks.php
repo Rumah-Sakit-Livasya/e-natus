@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AudiometryCheckResource\Pages;
 
 use App\Filament\Resources\AudiometryCheckResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -14,6 +15,13 @@ class ListAudiometryChecks extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+        ];
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UsgMammaeCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\UsgMammaeCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -86,8 +87,23 @@ class UsgMammaeCheckResource extends Resource
                 Section::make('Radiologist & Lampiran')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('radiologist')->label('Radiologist')->default('dr. Fitri Lutfia, Sp.Rad'),
-                        Forms\Components\FileUpload::make('tanda_tangan')->label('Upload TTD Dokter')->image()->disk('public')->directory('ttd-usg-mammae'),
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Radiologist')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('radiologist', $dokter?->name);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Placeholder::make('radiologist_preview')
+                            ->label('Nama Dokter')
+                            ->content(fn(Forms\Get $get): string => $get('radiologist') ?: '-'),
+                        Forms\Components\Hidden::make('radiologist'),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                         Forms\Components\FileUpload::make('gambar_hasil_usg')->label('Upload Gambar Hasil USG')->image()->disk('public')->directory('hasil-usg-mammae')->required()->columnSpanFull(),
                     ]),
             ]);

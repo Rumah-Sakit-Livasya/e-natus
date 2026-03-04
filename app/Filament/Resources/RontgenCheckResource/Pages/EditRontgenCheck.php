@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RontgenCheckResource\Pages;
 
 use App\Filament\Resources\RontgenCheckResource;
+use App\Filament\Resources\ParticipantResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -14,6 +15,13 @@ class EditRontgenCheck extends EditRecord
     {
         return [
             Actions\DeleteAction::make(),
+        ];
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            ParticipantResource::getUrl() => 'Participants',
         ];
     }
 }

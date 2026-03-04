@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\EkgCheckResource\Pages;
+use App\Models\Dokter;
 use App\Models\EkgCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -72,13 +73,23 @@ class EkgCheckResource extends Resource
                 Section::make('Dokter Pemeriksa & Tanda Tangan')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('dokter_pemeriksa')
-                            ->label('Nama Dokter (Cardiologist)')
-                            ->default('dr. Giky Karwiky, Sp.JP(K)'),
-                        Forms\Components\FileUpload::make('tanda_tangan')
-                            ->label('Upload TTD Dokter (.png)')
-                            ->image()->disk('public')->directory('ttd-ekg')
-                            ->imagePreviewHeight('100'),
+                        Forms\Components\Select::make('dokter_id')
+                            ->label('Dokter (Cardiologist)')
+                            ->relationship('dokter', 'name', fn($query) => $query->where('is_active', true))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                $dokter = Dokter::find($state);
+                                $set('dokter_pemeriksa', $dokter?->name);
+                                $set('tanda_tangan', $dokter?->tanda_tangan);
+                            }),
+                        Forms\Components\Placeholder::make('dokter_pemeriksa_preview')
+                            ->label('Nama Dokter')
+                            ->content(fn(Forms\Get $get): string => $get('dokter_pemeriksa') ?: '-'),
+                        Forms\Components\Hidden::make('dokter_pemeriksa'),
+                        Forms\Components\Hidden::make('tanda_tangan'),
                     ]),
 
                 Section::make('Gambar Hasil EKG (Untuk Halaman 2)')

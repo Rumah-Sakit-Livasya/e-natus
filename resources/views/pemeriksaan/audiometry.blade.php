@@ -250,6 +250,15 @@
                 </tr>
             </table>
         </div>
+
+        @if ($record->tanda_tangan)
+            <div class="summary-section" style="text-align: right; margin-top: 30px;">
+                <p style="margin: 0 0 8px;">Dokter Pemeriksa</p>
+                <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" alt="TTD Dokter"
+                    style="height: 90px; max-width: 220px; object-fit: contain;">
+                <p style="margin: 8px 0 0;"><strong>{{ $record->dokter?->name ?? '-' }}</strong></p>
+            </div>
+        @endif
     </div>
 
     <script>

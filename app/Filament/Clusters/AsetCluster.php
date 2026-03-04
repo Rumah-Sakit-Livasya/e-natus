@@ -26,6 +26,7 @@ class AsetCluster extends Cluster
             'view procurement',
             'view realisations',
             'view aset receipt',
+            'view vendor rentals',
         ];
 
         return $user->hasAnyPermission($permissions);
