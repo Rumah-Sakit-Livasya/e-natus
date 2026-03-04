@@ -52,13 +52,25 @@ class AudiometryCheckResource extends Resource
         return array_sum(array_map('floatval', $values)) / 4;
     }
 
+    private static function formatAverageValue(?float $average): string
+    {
+        if ($average === null) {
+            return '-';
+        }
+        return number_format($average, 2, '.', '');
+    }
+
     private static function updateHearingThreshold(Get $get, Set $set): void
     {
         $adAverage = self::calculateAverage($get, 'ad_ac');
         $asAverage = self::calculateAverage($get, 'as_ac');
+        $adBcAverage = self::calculateAverage($get, 'ad_bc');
+        $asBcAverage = self::calculateAverage($get, 'as_bc');
 
-        $set('derajat_ad', $adAverage !== null ? number_format($adAverage, 2, '.', '') : null);
-        $set('derajat_as', $asAverage !== null ? number_format($asAverage, 2, '.', '') : null);
+        $set('derajat_ad', self::formatAverageValue($adAverage));
+        $set('derajat_as', self::formatAverageValue($asAverage));
+        $set('derajat_ad_bc', self::formatAverageValue($adBcAverage));
+        $set('derajat_as_bc', self::formatAverageValue($asBcAverage));
     }
 
     public static function form(Form $form): Form
@@ -192,27 +204,91 @@ class AudiometryCheckResource extends Resource
                             Fieldset::make('Telinga Kanan (AD) - Bone Conduction (Opsional)')
                                 ->schema([
                                     Grid::make(8)->schema([
-                                        Forms\Components\TextInput::make('ad_bc_250')->label('250 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_500')->label('500 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_1000')->label('1000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_2000')->label('2000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_3000')->label('3000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_4000')->label('4000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_6000')->label('6000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('ad_bc_8000')->label('8000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_250')
+                                            ->label('250 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_500')
+                                            ->label('500 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_1000')
+                                            ->label('1000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_2000')
+                                            ->label('2000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_3000')
+                                            ->label('3000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_4000')
+                                            ->label('4000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_6000')
+                                            ->label('6000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('ad_bc_8000')
+                                            ->label('8000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
                                     ]),
                                 ]),
                             Fieldset::make('Telinga Kiri (AS) - Bone Conduction (Opsional)')
                                 ->schema([
                                     Grid::make(8)->schema([
-                                        Forms\Components\TextInput::make('as_bc_250')->label('250 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_500')->label('500 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_1000')->label('1000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_2000')->label('2000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_3000')->label('3000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_4000')->label('4000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_6000')->label('6000 Hz')->numeric(),
-                                        Forms\Components\TextInput::make('as_bc_8000')->label('8000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_250')
+                                            ->label('250 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_500')
+                                            ->label('500 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_1000')
+                                            ->label('1000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_2000')
+                                            ->label('2000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_3000')
+                                            ->label('3000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_4000')
+                                            ->label('4000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_6000')
+                                            ->label('6000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
+                                        Forms\Components\TextInput::make('as_bc_8000')
+                                            ->label('8000 Hz')
+                                            ->numeric()
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateHearingThreshold($get, $set)),
                                     ]),
                                 ]),
                         ]),
@@ -226,6 +302,14 @@ class AudiometryCheckResource extends Resource
                             ->readOnly(),
                         Forms\Components\TextInput::make('derajat_as')
                             ->label('Derajat Ambang Dengar Kiri (AS)')
+                            ->suffix('dB')
+                            ->readOnly(),
+                        Forms\Components\TextInput::make('derajat_ad_bc')
+                            ->label('Derajat Ambang Dengar Kanan (AD) - Bone Conduction')
+                            ->suffix('dB')
+                            ->readOnly(),
+                        Forms\Components\TextInput::make('derajat_as_bc')
+                            ->label('Derajat Ambang Dengar Kiri (AS) - Bone Conduction')
                             ->suffix('dB')
                             ->readOnly(),
                         Forms\Components\Textarea::make('kesimpulan')
