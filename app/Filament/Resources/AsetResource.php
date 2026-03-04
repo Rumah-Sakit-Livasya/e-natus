@@ -369,9 +369,6 @@ class AsetResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->hasAnyPermission([
-            'view asets',
-            'view aset master',
-        ]);
+        return $user->can('view aset master');
     }
 }

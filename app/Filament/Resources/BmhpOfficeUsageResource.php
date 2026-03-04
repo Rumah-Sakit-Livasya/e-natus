@@ -176,9 +176,6 @@ class BmhpOfficeUsageResource extends Resource
             return true;
         }
 
-        return $user && $user->hasAnyPermission([
-            'view bmhp',
-            'view bmhp office usage',
-        ]);
+        return $user && $user->can('view bmhp office usage');
     }
 }

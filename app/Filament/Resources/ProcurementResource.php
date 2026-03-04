@@ -174,9 +174,6 @@ class ProcurementResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->hasAnyPermission([
-            'view procurement',
-            'view aset procurement',
-        ]);
+        return $user->can('view aset procurement');
     }
 }

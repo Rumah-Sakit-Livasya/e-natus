@@ -242,9 +242,6 @@ class ProjectBmhpRemainderResource extends Resource
             return true;
         }
 
-        return $user->hasAnyPermission([
-            'view bmhp',
-            'view bmhp remainders',
-        ]);
+        return $user->can('view bmhp remainders');
     }
 }

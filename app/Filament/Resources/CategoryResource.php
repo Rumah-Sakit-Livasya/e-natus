@@ -86,9 +86,6 @@ class CategoryResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->hasAnyPermission([
-            'view categories',
-            'view aset categories',
-        ]);
+        return $user->can('view aset categories');
     }
 }

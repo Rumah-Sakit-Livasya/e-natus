@@ -224,9 +224,6 @@ class BmhpResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->hasAnyPermission([
-            'view bmhp',
-            'view bmhp master',
-        ]);
+        return $user->can('view bmhp master');
     }
 }

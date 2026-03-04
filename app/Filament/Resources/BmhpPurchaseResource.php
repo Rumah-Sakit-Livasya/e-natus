@@ -336,9 +336,6 @@ class BmhpPurchaseResource extends Resource
             return true;
         }
 
-        return $user && $user->hasAnyPermission([
-            'view bmhp',
-            'view bmhp purchases',
-        ]);
+        return $user && $user->can('view bmhp purchases');
     }
 }

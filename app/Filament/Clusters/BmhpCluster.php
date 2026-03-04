@@ -21,12 +21,10 @@ class BmhpCluster extends Cluster
         }
 
         $permissions = [
-            'view bmhp',
             'view bmhp master',
             'view bmhp purchases',
             'view bmhp stock status',
             'view bmhp office usage',
-            'view stock opname',
             'view bmhp stock opname',
             'view bmhp remainders',
         ];
