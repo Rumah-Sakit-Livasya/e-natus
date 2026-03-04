@@ -1,0 +1,202 @@
+body {
+    font-family: "Courier New", Courier, monospace;
+    margin: 0;
+    padding: 16px;
+    color: #222;
+    background: #fff;
+    font-size: 12px;
+}
+
+.container {
+    max-width: 980px;
+    margin: auto;
+    border: 1px solid #8a8a8a;
+    padding: 14px 16px;
+}
+
+.title {
+    text-align: center;
+    margin: 2px 0 8px;
+    letter-spacing: 1px;
+    font-weight: bold;
+    font-size: 31px;
+    border-bottom: 2px solid #555;
+    padding-bottom: 4px;
+}
+
+.info-grid {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.info-grid td {
+    padding: 1px 4px;
+    vertical-align: top;
+}
+
+.label-col {
+    width: 120px;
+}
+
+.right-col {
+    padding-left: 12px;
+}
+
+.panel-wrap {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.ear-panel {
+    width: 50%;
+    border: 1px solid #666;
+    padding: 4px 4px 0;
+}
+
+.ear-title {
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 2px;
+    font-size: 13px;
+    margin: 0 0 2px;
+}
+
+.graph-box {
+    border: 1px solid #666;
+    height: 220px;
+    padding: 4px;
+}
+
+.freq-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.freq-table th,
+.freq-table td {
+    border: 1px solid #666;
+    text-align: center;
+    padding: 2px;
+}
+
+.freq-table .head {
+    background: #e7e7e7;
+    font-weight: bold;
+}
+
+.freq-table .head-right {
+    background: #ecd0bc;
+}
+
+.freq-table .head-left {
+    background: #cfe2f3;
+}
+
+.freq-table .air-right {
+    background: #ffe7e7;
+}
+
+.freq-table .air-left {
+    background: #e8f1ff;
+}
+
+.freq-table .bone {
+    background: #f2f2f2;
+}
+
+.summary {
+    margin-top: 8px;
+}
+
+.summary-tight {
+    margin-top: 6px;
+}
+
+.line-row {
+    display: flex;
+    gap: 18px;
+    margin-top: 4px;
+}
+
+.line-item {
+    width: 48%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.threshold-col {
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.line-item-full {
+    width: 100%;
+}
+
+.label-short {
+    min-width: 74px;
+}
+
+.line {
+    border-bottom: 1px solid #666;
+    flex: 1;
+    height: 12px;
+    display: inline-block;
+    line-height: 12px;
+    padding-left: 4px;
+}
+
+.footer-sign {
+    margin-top: 36px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sign-box {
+    width: 280px;
+    text-align: center;
+}
+
+.sign-image {
+    height: 72px;
+    margin: 6px auto 2px;
+    object-fit: contain;
+    max-width: 220px;
+}
+
+.sign-placeholder {
+    height: 72px;
+}
+
+.doctor-name {
+    border-bottom: 1px solid #444;
+    margin: 2px 0;
+    padding-bottom: 1px;
+    font-size: 12px;
+}
+
+#audiometry-payload {
+    display: none;
+}
+
+@page {
+    size: A4;
+    margin: 8mm;
+}
+
+@media print {
+    body {
+        padding: 0;
+    }
+
+    .container {
+        border: 1px solid #8a8a8a;
+        padding: 0;
+    }
+}

@@ -47,13 +47,21 @@ class DrugTestResource extends Resource
                                     $participant = Participant::find($state);
                                     if ($participant) {
                                         $set('nik', $participant->employee_code); // Menggunakan employee_code sebagai NIK
+                                        $set('department', $participant->department);
                                         $set('tgl_lahir', Carbon::parse($participant->date_of_birth)->translatedFormat('j F Y'));
                                         $set('umur', Carbon::parse($participant->date_of_birth)->age);
                                         $set('j_kel', $participant->gender);
                                     }
+                                } else {
+                                    $set('nik', null);
+                                    $set('department', null);
+                                    $set('tgl_lahir', null);
+                                    $set('umur', null);
+                                    $set('j_kel', null);
                                 }
                             })
                             ->required()
+                            ->default(request('participant_id'))
                             ->disabled(filled(request('participant_id')))
                             ->columnSpan(2),
 
@@ -68,6 +76,7 @@ class DrugTestResource extends Resource
 
                         Forms\Components\TextInput::make('department')
                             ->label('Instansi')
+                            ->readOnly()
                             ->maxLength(255),
 
                         Forms\Components\TextInput::make('tgl_lahir')

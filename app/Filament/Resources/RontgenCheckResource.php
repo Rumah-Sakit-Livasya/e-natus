@@ -65,8 +65,8 @@ class RontgenCheckResource extends Resource
                             ->columnSpan(2),
 
                         Forms\Components\TextInput::make('no_rontgen')->label('No. Rontgen'),
-                        Forms\Components\TextInput::make('no_rm')->label('No. RM'),
-                        Forms\Components\TextInput::make('instansi')->label('Instansi'),
+                        Forms\Components\TextInput::make('no_rm')->label('No. RM')->required(),
+                        Forms\Components\TextInput::make('instansi')->label('Instansi')->readOnly(),
                         Forms\Components\DatePicker::make('tanggal_pemeriksaan')->label('Pelaksanaan')->default(now()),
                         Forms\Components\TextInput::make('tgl_lahir')->label('Tanggal Lahir')->readOnly(),
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),

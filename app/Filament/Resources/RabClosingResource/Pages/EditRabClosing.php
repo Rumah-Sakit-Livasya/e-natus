@@ -141,7 +141,7 @@ class EditRabClosing extends EditRecord
                     Notification::make()->title('RAB berhasil difinalisasi & Stok sisa telah dikembalikan ke gudang.')->success()->send();
                     return redirect(RabClosingResource::getUrl('edit', ['record' => $this->record]));
                 })->visible(fn(): bool => $this->record->status === 'draft'),
-            Actions\DeleteAction::make(),
+            // Actions\DeleteAction::make(),
         ];
     }
 

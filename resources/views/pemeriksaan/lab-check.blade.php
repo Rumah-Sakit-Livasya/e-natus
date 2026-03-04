@@ -4,679 +4,306 @@
 <head>
     <meta charset="UTF-8">
     <title>Hasil Pemeriksaan Lab - {{ $record->participant?->name }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10px;
-        }
-
-        .container {
-            width: 95%;
-            margin: auto;
-        }
-
-        .header-table,
-        .main-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .header-table td {
-            padding: 4px 6px;
-        }
-
-        .main-table th,
-        .main-table td {
-            border: 1px solid #555;
-            padding: 4px 6px;
-        }
-
-        .main-table th {
-            background-color: #e0e0e0;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .section-header td {
-            background-color: #f0f0f0;
-            font-weight: bold;
-            text-decoration: underline;
-        }
-
-        .sub-section-header td {
-            padding-left: 15px !important;
-            font-style: italic;
-        }
-
-        .col-pemeriksaan {
-            width: 25%;
-        }
-
-        .col-hasil {
-            width: 15%;
-            text-align: center;
-        }
-
-        .col-rujukan {
-            width: 20%;
-            text-align: center;
-        }
-
-        .col-satuan {
-            width: 15%;
-            text-align: center;
-        }
-
-        .col-keterangan {
-            width: 25%;
-        }
-
-        .footer {
-            margin-top: 20px;
-            text-align: right;
-        }
-
-        .signature-area {
-            height: 80px;
-        }
-
-        .page-break {
-            page-break-before: always;
-        }
-
-        .note {
-            font-size: 9px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/medical-check-print.css') }}">
+    <script src="{{ asset('js/medical-check-print.js') }}" defer></script>
 </head>
 
-<body>
-    <!-- HALAMAN PERTAMA -->
+<body class="print-page">
+    @php
+        $pageOneSections = [
+            [
+                'title' => 'HEMATOLOGI LENGKAP',
+                'rows' => [
+                    ['Hemoglobin', $record->hemoglobin, '13.5 - 17.5', 'g/dL'],
+                    ['Leukosit', $record->leukosit, '4.5 - 11.0', '10³/uL'],
+                    ['Trombosit', $record->trombosit, '150 - 450', '10³/uL'],
+                    ['Hematokrit', $record->hematokrit, '35.0 - 45.0', '%'],
+                    ['Eritrosit', $record->eritrosit, '4.50 - 5.90', '10⁶/uL'],
+                    ['MCV', $record->mcv, '80.0 - 96.0', 'fl'],
+                    ['MCH', $record->mch, '28.0 - 33.0', 'pg'],
+                    ['MCHC', $record->mchc, '33.0 - 36.0', 'g/dL'],
+                    ['RDW', $record->rdw, '11.6 - 14.6', '%'],
+                    ['LED', $record->led, '0 - 20', 'mm/jam'],
+                ],
+                'subsections' => [
+                    [
+                        'title' => 'Hitung Jenis Leukosit',
+                        'rows' => [
+                            ['Eosinofil', $record->eosinofil, '0 - 4', '%'],
+                            ['Basofil', $record->basofil, '0 - 2', '%'],
+                            ['Netrofil Batang', $record->netrofil_batang, '2 - 6', '%'],
+                            ['Netrofil Segmen', $record->netrofil_segmen, '55 - 80', '%'],
+                            ['Limfosit', $record->limfosit, '22 - 44', '%'],
+                            ['Monosit', $record->monosit, '0 - 7', '%'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'URINALISA',
+                'subsections' => [
+                    [
+                        'title' => 'Urine Lengkap',
+                        'rows' => [
+                            ['Warna', $record->urine_warna, 'Kuning', ''],
+                            ['Kejernihan', $record->urine_kejernihan, 'Jernih', ''],
+                            ['Berat Jenis', $record->urine_berat_jenis, '1.015 - 1.025', ''],
+                            ['pH', $record->urine_ph, '4.5 - 8.0', ''],
+                            ['Protein (Albumin)', $record->urine_protein, 'Negatif', ''],
+                            ['Glukosa', $record->urine_glukosa, 'Normal', ''],
+                            ['Keton', $record->urine_keton, 'Negatif', ''],
+                            ['Darah / Hb', $record->urine_darah, 'Negatif', ''],
+                            ['Bilirubin', $record->urine_bilirubin, 'Negatif', ''],
+                            ['Urobilinogen', $record->urine_urobilinogen, '0.2 - 1.0', 'mg/dL'],
+                            ['Nitrit', $record->urine_nitrit, 'Negatif', ''],
+                            ['Leukosit Esterase', $record->urine_leukosit_esterase, 'Negatif', ''],
+                        ],
+                    ],
+                    [
+                        'title' => 'Sedimen',
+                        'rows' => [
+                            ['Leukosit', $record->sedimen_leukosit, '< 5', '/LPB'],
+                            ['Eritrosit', $record->sedimen_eritrosit, '< 3', '/LPB'],
+                            ['Silinder', $record->sedimen_silinder, 'Negatif', ''],
+                            ['Sel Epitel', $record->sedimen_sel_epitel, '', ''],
+                            ['Kristal', $record->sedimen_kristal, 'Negatif', ''],
+                            ['Bakteria', $record->sedimen_bakteria, 'Negatif', ''],
+                            ['Lain - lain', $record->sedimen_lain_lain, '', ''],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $pageTwoSections = [
+            [
+                'title' => 'KIMIA KLINIK',
+                'rows' => [
+                    ['Glukosa Puasa', $record->glukosa_puasa, '70 - 110', 'mg/dL'],
+                    ['Glukosa 2 Jam Pp', $record->glukosa_2_jam_pp, '80 - 140', 'mg/dL'],
+                ],
+                'subsections' => [
+                    [
+                        'title' => 'Fungsi Ginjal',
+                        'rows' => [
+                            ['Ureum', $record->ureum, '< 50.0', 'mg/dL'],
+                            ['Kreatinin', $record->kreatinin, '0.6 - 1.1', 'mg/dL'],
+                            ['Asam Urat', $record->asam_urat, '2.4 - 6.1', 'mg/dL'],
+                            ['HBeAg', $record->hbeag, 'Non Reaktif', ''],
+                        ],
+                    ],
+                    [
+                        'title' => 'Fungsi Hati',
+                        'rows' => [
+                            ['SGOT', $record->sgot, '< 35.00', 'µ/L'],
+                            ['SGPT', $record->sgpt, '< 45.00', 'µ/L'],
+                            ['Alkali Fosfatase', $record->alkali_fosfatase, '30 - 120', 'µ/L'],
+                            ['Kolinesterase', $record->kolinesterase, '4620 - 11250', 'µ/L'],
+                            ['Bilirubin Total', $record->bilirubin_total, '0.00 - 1.00', 'mg/dL'],
+                            ['Bilirubin Direk', $record->bilirubin_direk, '0.00 - 0.30', 'mg/dL'],
+                            ['Bilirubin InDirek', $record->bilirubin_indirek, '0.00 - 0.70', ''],
+                        ],
+                    ],
+                    [
+                        'title' => 'Profil Lemak',
+                        'rows' => [
+                            ['Kolesterol Total', $record->kolesterol_total, '50 - 200', 'mg/dL'],
+                            ['HDL', $record->hdl, '37 - 92', 'mg/dL'],
+                            ['LDL', $record->ldl, '97 - 202', 'mg/dL'],
+                            ['Trigliserida', $record->trigliserida, '< 150.0', 'mg/dL'],
+                            ['HbA1c', $record->hba1c, '4.8 - 5.9', '%'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'SEROLOGI',
+                'rows' => [
+                    ['TPHA', $record->tpha, 'Non Reaktif', ''],
+                    ['VDRL', $record->vdrl, 'Non Reaktif', ''],
+                ],
+            ],
+            [
+                'title' => 'IMUNOLOGI',
+                'rows' => [
+                    ['HBsAg', $record->hbsag, 'Non Reaktif', ''],
+                    ['Anti HCV', $record->anti_hcv, 'Non Reaktif', ''],
+                    ['Anti HBS', $record->anti_hbs, 'Non Reaktif', ''],
+                ],
+            ],
+            [
+                'title' => 'SKRINING NARKOBA',
+                'rows' => [
+                    ['Amphetamine', $record->narkoba_amphetamine, 'Negatif', ''],
+                    ['THC (Canabis)', $record->narkoba_thc, 'Negatif', ''],
+                    ['Morphine', $record->narkoba_morphine, 'Negatif', ''],
+                    ['Benzodiazepine', $record->narkoba_benzodiazepine, 'Negatif', ''],
+                    ['Methamphetamine', $record->narkoba_methamphetamine, 'Negatif', ''],
+                    ['Cocaine', $record->narkoba_cocaine, 'Negatif', ''],
+                    ['Alkohol Urin', $record->alkohol_urin, 'Negatif', ''],
+                ],
+            ],
+        ];
+
+        $renderRow = function ($label, $value, $rujukan, $satuan) {
+            $keterangan = str_contains((string) $value, '*') ? 'Perhatikan' : '';
+            return [$label, $value, $rujukan, $satuan, $keterangan];
+        };
+    @endphp
+
     <div class="container">
-        <table class="header-table">
+        <table class="info-table header-with-border">
             <tr>
                 <td>No. RM</td>
-                <td>: <b>{{ $record->no_rm }}</b></td>
+                <td>:</td>
+                <td><span class="bold">{{ $record->no_rm }}</span></td>
                 <td>No. Lab</td>
-                <td>: <b>{{ $record->no_lab }}</b></td>
+                <td>:</td>
+                <td><span class="bold">{{ $record->no_lab }}</span></td>
             </tr>
             <tr>
                 <td>Nama</td>
-                <td>: <b>{{ $record->participant?->name }}</b></td>
+                <td>:</td>
+                <td><span class="bold">{{ $record->participant?->name }}</span></td>
                 <td>Jenis Kelamin</td>
-                <td>: {{ $record->participant?->gender }}</td>
+                <td>:</td>
+                <td>{{ $record->participant?->gender }}</td>
             </tr>
             <tr>
                 <td>Tanggal Lahir</td>
-                <td>: {{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->format('d-m-Y') }}</td>
+                <td>:</td>
+                <td>{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->translatedFormat('j F Y') }}</td>
                 <td>Instansi</td>
-                <td>: {{ $record->instansi }}</td>
+                <td>:</td>
+                <td>{{ $record->instansi }}</td>
             </tr>
             <tr>
                 <td>Usia</td>
-                <td>: {{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->age }} Tahun</td>
+                <td>:</td>
+                <td>{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->age }} Tahun</td>
                 <td>Tanggal</td>
-                <td>: {{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->format('d-m-Y') }}</td>
+                <td>:</td>
+                <td>{{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->translatedFormat('j F Y') }}</td>
             </tr>
         </table>
 
-        <table class="main-table" style="margin-top: 10px;">
+        <table class="main-table mt-10">
             <thead>
                 <tr>
-                    <th class="col-pemeriksaan">PEMERIKSAAN</th>
-                    <th class="col-hasil">HASIL</th>
-                    <th class="col-rujukan">NILAI RUJUKAN</th>
-                    <th class="col-satuan">SATUAN</th>
-                    <th class="col-keterangan">KETERANGAN</th>
+                    <th class="pemeriksaan-col">PEMERIKSAAN</th>
+                    <th class="hasil-col">HASIL</th>
+                    <th class="rujukan-col">NILAI RUJUKAN</th>
+                    <th class="satuan-col">SATUAN</th>
+                    <th class="keterangan-col">KETERANGAN</th>
                 </tr>
             </thead>
             <tbody>
-                <tr class="section-header">
-                    <td colspan="5">HEMATOLOGI LENGKAP</td>
-                </tr>
-                <tr>
-                    <td>Hemoglobin</td>
-                    <td>{{ $record->hemoglobin }}*</td>
-                    <td>13.5 - 17.5</td>
-                    <td>g/dL</td>
-                    <td>Low</td>
-                </tr>
-                <tr>
-                    <td>Leukosit</td>
-                    <td>{{ $record->leukosit }}</td>
-                    <td>4.5 - 11.0</td>
-                    <td>10³/uL</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Trombosit</td>
-                    <td>{{ $record->trombosit }}*</td>
-                    <td>150 - 450</td>
-                    <td>10³/uL</td>
-                    <td>Low</td>
-                </tr>
-                <tr>
-                    <td>Hematokrit</td>
-                    <td>{{ $record->hematokrit }}</td>
-                    <td>35.0 - 45.0</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Eritrosit</td>
-                    <td>{{ $record->eritrosit }}*</td>
-                    <td>4.50 - 5.90</td>
-                    <td>10⁶/uL</td>
-                    <td>Low</td>
-                </tr>
-                <tr>
-                    <td>MCV</td>
-                    <td>{{ $record->mcv }}</td>
-                    <td>80.0 - 36.0</td>
-                    <td>fl</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>MCH</td>
-                    <td>{{ $record->mch }}</td>
-                    <td>28.0 - 33.0</td>
-                    <td>pg</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>MCHC</td>
-                    <td>{{ $record->mchc }}</td>
-                    <td>33.0 - 36.0</td>
-                    <td>g/dL</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>RDW</td>
-                    <td>{{ $record->rdw }}</td>
-                    <td>11.6 - 14.6</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr class="sub-section-header">
-                    <td colspan="5">Hitung Jenis Leukosit</td>
-                </tr>
-                <tr>
-                    <td>Eosinofil</td>
-                    <td>{{ $record->eosinofil }}</td>
-                    <td>0 - 4</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Basofil</td>
-                    <td>{{ $record->basofil }}</td>
-                    <td>0 - 2</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Netrofil Batang</td>
-                    <td>{{ $record->netrofil_batang }}</td>
-                    <td>2 - 6</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Netrofil Segmen</td>
-                    <td>{{ $record->netrofil_segmen }}</td>
-                    <td>55 - 80</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Limfosit</td>
-                    <td>{{ $record->limfosit }}</td>
-                    <td>22 - 44</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Monosit</td>
-                    <td>{{ $record->monosit }}</td>
-                    <td>0 - 7</td>
-                    <td>%</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>LED</td>
-                    <td>{{ $record->led }}</td>
-                    <td>0 - 20</td>
-                    <td>mm/jam</td>
-                    <td></td>
-                </tr>
+                @foreach ($pageOneSections as $section)
+                    <tr class="section-header">
+                        <td colspan="5">{{ $section['title'] }}</td>
+                    </tr>
 
-                <tr class="section-header">
-                    <td colspan="5">URINALISA</td>
-                </tr>
-                <tr class="sub-section-header">
-                    <td colspan="5">Urine Lengkap</td>
-                </tr>
-                <tr>
-                    <td>Warna</td>
-                    <td>{{ $record->urine_warna }}</td>
-                    <td>Kuning</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Kejernihan</td>
-                    <td>{{ $record->urine_kejernihan }}</td>
-                    <td>Jernih</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Berat Jenis</td>
-                    <td>{{ $record->urine_berat_jenis }}</td>
-                    <td>1.015 - 1.025</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>pH</td>
-                    <td>{{ $record->urine_ph }}</td>
-                    <td>4.5 - 8.0</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Protein (Albumin)</td>
-                    <td>{{ $record->urine_protein }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Glukosa</td>
-                    <td>{{ $record->urine_glukosa }}</td>
-                    <td>Normal</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Keton</td>
-                    <td>{{ $record->urine_keton }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Darah / Hb</td>
-                    <td>{{ $record->urine_darah }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Bilirubin</td>
-                    <td>{{ $record->urine_bilirubin }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Urobilinogen</td>
-                    <td>{{ $record->urine_urobilinogen }}</td>
-                    <td>0.2 - 1.0</td>
-                    <td>mg/dL</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Nitrit</td>
-                    <td>{{ $record->urine_nitrit }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Leukosit Esterase</td>
-                    <td>{{ $record->urine_leukosit_esterase }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr class="sub-section-header">
-                    <td colspan="5">Sedimen</td>
-                </tr>
-                <tr>
-                    <td>Leukosit</td>
-                    <td>{{ $record->sedimen_leukosit }}</td>
-                    <td>
-                        <5< /td>
-                    <td>/LPB</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Eritrosit</td>
-                    <td>{{ $record->sedimen_eritrosit }}</td>
-                    <td>
-                        <3< /td>
-                    <td>/LPB</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Silinder</td>
-                    <td>{{ $record->sedimen_silinder }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Sel Epitel</td>
-                    <td>{{ $record->sedimen_sel_epitel }}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Kristal</td>
-                    <td>{{ $record->sedimen_kristal }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Bakteria</td>
-                    <td>{{ $record->sedimen_bakteria }}</td>
-                    <td>Negatif</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Lain - lain</td>
-                    <td>{{ $record->sedimen_lain_lain }}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
+                    @foreach ($section['rows'] ?? [] as $row)
+                        @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                        <tr>
+                            <td>{{ $label }}</td>
+                            <td class="center">{{ $value }}</td>
+                            <td class="center">{{ $rujukan }}</td>
+                            <td class="center">{{ $satuan }}</td>
+                            <td>{{ $keterangan }}</td>
+                        </tr>
+                    @endforeach
+
+                    @foreach ($section['subsections'] ?? [] as $subsection)
+                        <tr class="sub-section-header">
+                            <td colspan="5">{{ $subsection['title'] }}</td>
+                        </tr>
+                        @foreach ($subsection['rows'] as $row)
+                            @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                            <tr>
+                                <td>{{ $label }}</td>
+                                <td class="center">{{ $value }}</td>
+                                <td class="center">{{ $rujukan }}</td>
+                                <td class="center">{{ $satuan }}</td>
+                                <td>{{ $keterangan }}</td>
+                            </tr>
+                        @endforeach
+                    @endforeach
+                @endforeach
             </tbody>
         </table>
-        <div class="note">
+
+        <div class="note mt-10">
             Hasil berupa angka menggunakan sistem desimal dengan separator titik.<br>
             Tanda * menunjukkan nilai di atas atau di bawah nilai rujukan.
         </div>
     </div>
 
-    <!-- HALAMAN KEDUA -->
-    <div class="page-break">
+    <div class="page-break print-page">
         <div class="container">
-            <table class="main-table" style="margin-top: 10px;">
+            <table class="main-table">
                 <thead>
                     <tr>
-                        <th>PEMERIKSAAN</th>
-                        <th>HASIL</th>
-                        <th>NILAI RUJUKAN</th>
-                        <th>SATUAN</th>
-                        <th>KETERANGAN</th>
+                        <th class="pemeriksaan-col">PEMERIKSAAN</th>
+                        <th class="hasil-col">HASIL</th>
+                        <th class="rujukan-col">NILAI RUJUKAN</th>
+                        <th class="satuan-col">SATUAN</th>
+                        <th class="keterangan-col">KETERANGAN</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="section-header">
-                        <td colspan="5">KIMIA KLINIK</td>
-                    </tr>
-                    <tr>
-                        <td>Glukosa Puasa</td>
-                        <td>{{ $record->glukosa_puasa }}</td>
-                        <td>70 - 110</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Glukosa 2 Jam Pp</td>
-                        <td>{{ $record->glukosa_2_jam_pp }}</td>
-                        <td>80 - 140</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr class="sub-section-header">
-                        <td colspan="5">Fungsi Ginjal</td>
-                    </tr>
-                    <tr>
-                        <td>Ureum</td>
-                        <td>{{ $record->ureum }}</td>
-                        <td>
-                            < 50.0</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Kreatinin</td>
-                        <td>{{ $record->kreatinin }}</td>
-                        <td>0.6 - 1.1</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Asam Urat</td>
-                        <td>{{ $record->asam_urat }}</td>
-                        <td>2.4 - 6.1</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>HBeAg</td>
-                        <td>{{ $record->hbeag }}</td>
-                        <td>Non Reaktif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr class="sub-section-header">
-                        <td colspan="5">Fungsi Hati</td>
-                    </tr>
-                    <tr>
-                        <td>SGOT</td>
-                        <td>{{ $record->sgot }}</td>
-                        <td>
-                            < 35.00</td>
-                        <td>µ/L</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>SGPT</td>
-                        <td>{{ $record->sgpt }}</td>
-                        <td>
-                            < 45.00</td>
-                        <td>µ/L</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Alkali Fosfatase</td>
-                        <td>{{ $record->alkali_fosfatase }}</td>
-                        <td>30 - 120</td>
-                        <td>µ/L</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Kolinesterase</td>
-                        <td>{{ $record->kolinesterase }}</td>
-                        <td>4620 - 11250</td>
-                        <td>µ/L</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Bilirubin Total</td>
-                        <td>{{ $record->bilirubin_total }}</td>
-                        <td>0.00 - 1.00</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Bilirubin Direk</td>
-                        <td>{{ $record->bilirubin_direk }}</td>
-                        <td>0.00 - 0.30</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Bilirubin InDirek</td>
-                        <td>{{ $record->bilirubin_indirek }}</td>
-                        <td>0.00 - 0.70</td>
-                        <td>-</td>
-                        <td></td>
-                    </tr>
-                    <tr class="sub-section-header">
-                        <td colspan="5">Profil Lemak</td>
-                    </tr>
-                    <tr>
-                        <td>Kolesterol Total</td>
-                        <td>{{ $record->kolesterol_total }}</td>
-                        <td>50 - 200</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>HDL</td>
-                        <td>{{ $record->hdl }}</td>
-                        <td>37 - 92</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>LDL</td>
-                        <td>{{ $record->ldl }}</td>
-                        <td>97 - 202</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Trigliserida</td>
-                        <td>{{ $record->trigliserida }}</td>
-                        <td>
-                            < 150.0</td>
-                        <td>mg/dL</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>HbA1c</td>
-                        <td>{{ $record->hba1c }}</td>
-                        <td>4.8 - 5.9</td>
-                        <td>%</td>
-                        <td></td>
-                    </tr>
+                    @foreach ($pageTwoSections as $section)
+                        <tr class="section-header">
+                            <td colspan="5">{{ $section['title'] }}</td>
+                        </tr>
 
-                    <tr class="section-header">
-                        <td colspan="5">SEROLOGI</td>
-                    </tr>
-                    <tr>
-                        <td>TPHA</td>
-                        <td>{{ $record->tpha }}</td>
-                        <td>Non Reaktif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>VDRL</td>
-                        <td>{{ $record->vdrl }}</td>
-                        <td>Non Reaktif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
+                        @foreach ($section['rows'] ?? [] as $row)
+                            @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                            <tr>
+                                <td>{{ $label }}</td>
+                                <td class="center">{{ $value }}</td>
+                                <td class="center">{{ $rujukan }}</td>
+                                <td class="center">{{ $satuan }}</td>
+                                <td>{{ $keterangan }}</td>
+                            </tr>
+                        @endforeach
 
-                    <tr class="section-header">
-                        <td colspan="5">IMUNOLOGI</td>
-                    </tr>
-                    <tr>
-                        <td>HBsAg</td>
-                        <td>{{ $record->hbsag }}</td>
-                        <td>Non Reaktif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Anti HCV</td>
-                        <td>{{ $record->anti_hcv }}</td>
-                        <td>Non Reaktif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Anti HBS</td>
-                        <td>{{ $record->anti_hbs }}</td>
-                        <td>Non Reaktif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-
-                    <tr class="section-header">
-                        <td colspan="5">SKRINING NARKOBA</td>
-                    </tr>
-                    <tr>
-                        <td>Amphetamine</td>
-                        <td>{{ $record->narkoba_amphetamine }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>THC (Canabis)</td>
-                        <td>{{ $record->narkoba_thc }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Morphine</td>
-                        <td>{{ $record->narkoba_morphine }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Benzodiazepine</td>
-                        <td>{{ $record->narkoba_benzodiazepine }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Methamphetamine</td>
-                        <td>{{ $record->narkoba_methamphetamine }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Cocaine</td>
-                        <td>{{ $record->narkoba_cocaine }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Alkohol Urin</td>
-                        <td>{{ $record->alkohol_urin }}</td>
-                        <td>Negatif</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
+                        @foreach ($section['subsections'] ?? [] as $subsection)
+                            <tr class="sub-section-header">
+                                <td colspan="5">{{ $subsection['title'] }}</td>
+                            </tr>
+                            @foreach ($subsection['rows'] as $row)
+                                @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                                <tr>
+                                    <td>{{ $label }}</td>
+                                    <td class="center">{{ $value }}</td>
+                                    <td class="center">{{ $rujukan }}</td>
+                                    <td class="center">{{ $satuan }}</td>
+                                    <td>{{ $keterangan }}</td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    @endforeach
                 </tbody>
             </table>
-            <div class="note" style="margin-top: 20px;">
+
+            <div class="note mt-10">
                 Hasil berupa angka menggunakan sistem desimal dengan separator titik.<br>
                 Tanda * menunjukkan nilai di atas atau di bawah nilai rujukan.
             </div>
+
             <div class="footer">
                 Penanggung Jawab Laboratorium
                 <div class="signature-area">
                     @if ($record->tanda_tangan)
-                        <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}"
-                            style="max-height: 80px;" alt="TTD">
+                        <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" class="ttd-image"
+                            alt="TTD">
                     @endif
                 </div>
-                <b><u>{{ $record->penanggung_jawab }}</u></b>
+                <span class="bold underline">{{ $record->penanggung_jawab }}</span>
             </div>
         </div>
     </div>
-    <script>
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    </script>
 </body>
 
 </html>

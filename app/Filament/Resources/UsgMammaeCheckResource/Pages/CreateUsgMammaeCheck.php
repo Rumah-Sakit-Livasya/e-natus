@@ -43,4 +43,9 @@ class CreateUsgMammaeCheck extends CreateRecord
             ParticipantResource::getUrl() => 'Participants',
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return ParticipantResource::getUrl();
+    }
 }

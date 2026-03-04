@@ -1,16 +1,14 @@
-{{-- resources/views/print/partials/usg_patient_header.blade.php --}}
-<div class="header">
-    <h2>HASIL PEMERIKSAAN USG ABDOMEN</h2>
-    <h3>( RADIOLOGI )</h3>
-</div>
-<table class="info-table" style="border: 2px solid black; margin-bottom: 10px;">
+<div class="report-title">HASIL PEMERIKSAAN USG ABDOMEN</div>
+<div class="report-subtitle">( RADIOLOGI )</div>
+
+<table class="info-table header-with-border">
     <tr>
         <td class="label">No. RM</td>
         <td class="separator">:</td>
         <td class="value">{{ $record->no_rm }}</td>
-        <td></td>
-        <td></td>
-        <td></td>
+        <td class="label">Instansi</td>
+        <td class="separator">:</td>
+        <td class="value">{{ $record->instansi }}</td>
     </tr>
     <tr>
         <td class="label">Nama</td>
@@ -23,17 +21,15 @@
     <tr>
         <td class="label">Tanggal Lahir</td>
         <td class="separator">:</td>
-        <td class="value">{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->format('d-m-Y') }}</td>
-        <td class="label">Instansi</td>
-        <td class="separator">:</td>
-        <td class="value">{{ $record->instansi }}</td>
-    </tr>
-    <tr>
+        <td class="value">{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->translatedFormat('j F Y') }}</td>
         <td class="label">Usia</td>
         <td class="separator">:</td>
         <td class="value">{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->age }} Tahun</td>
+    </tr>
+    <tr>
         <td class="label">Pelaksanaan</td>
         <td class="separator">:</td>
-        <td class="value">{{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->format('d-m-Y') }}</td>
+        <td class="value">{{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->translatedFormat('j F Y') }}</td>
+        <td class="value" colspan="3"></td>
     </tr>
 </table>

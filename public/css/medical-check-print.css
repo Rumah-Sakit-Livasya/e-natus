@@ -1,0 +1,263 @@
+body {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    line-height: 1.25;
+    margin: 0;
+    color: #111;
+    background: #fff;
+}
+
+.print-page {
+    padding: 10mm;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.report-title {
+    text-align: center;
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #444;
+    margin: 0 0 8px;
+    padding-bottom: 3px;
+}
+
+.report-subtitle {
+    text-align: center;
+    font-weight: 700;
+    font-size: 16px;
+    margin: 0 0 10px;
+}
+
+.info-table,
+.content-table,
+.main-table,
+.result-table,
+.conclusion-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table.border,
+.content-table.border,
+.result-table,
+.conclusion-table.border {
+    border: 2px solid #333;
+}
+
+.info-table td,
+.content-table td,
+.main-table td,
+.main-table th,
+.result-table td,
+.result-table th,
+.conclusion-table td {
+    border: 1px solid #555;
+    padding: 4px 6px;
+    vertical-align: top;
+}
+
+.info-table.no-inner td {
+    border: 0;
+    padding: 2px 4px;
+}
+
+.main-table th,
+.result-table th {
+    background: #e5e5e5;
+    text-align: center;
+    font-weight: 700;
+}
+
+.section-header td {
+    background: #dcdcdc;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.sub-section-header td {
+    background: #efefef;
+    font-weight: 700;
+    font-style: italic;
+}
+
+.pemeriksaan-col {
+    width: 34%;
+}
+
+.hasil-col,
+.rujukan-col,
+.satuan-col {
+    width: 14%;
+    text-align: center;
+}
+
+.keterangan-col {
+    width: 24%;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.note {
+    font-size: 10px;
+}
+
+.footer {
+    margin-top: 16px;
+    text-align: right;
+}
+
+.signature-area {
+    height: 90px;
+}
+
+.ttd-image {
+    max-height: 80px;
+    object-fit: contain;
+}
+
+.doctor-name {
+    text-align: center;
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+.page-break {
+    page-break-before: always;
+}
+
+.page-2-layout {
+    min-height: calc(297mm - 20mm);
+    display: flex;
+    flex-direction: column;
+}
+
+.image-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.header-with-border {
+    border: 2px solid #333;
+    margin-bottom: 10px;
+}
+
+.header-with-border td {
+    border: 1px solid #555;
+}
+
+.divider-row td {
+    border-top: 2px solid #333;
+    border-bottom: 2px solid #333;
+    padding: 3px;
+    background: #f7f7f7;
+}
+
+.center {
+    text-align: center;
+}
+
+.bold {
+    font-weight: 700;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.no-border {
+    border: 0 !important;
+}
+
+.left-note {
+    padding: 10px 0 4px;
+}
+
+.usg-findings td:first-child {
+    width: 22%;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.usg-findings td:nth-child(2) {
+    width: 2%;
+    text-align: center;
+}
+
+.usg-images-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.usg-image-card {
+    border: 1px solid #555;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.usg-image-card img {
+    width: 100%;
+    height: 100%;
+    max-height: 320px;
+    object-fit: contain;
+}
+
+.empty-image {
+    font-size: 11px;
+    color: #666;
+}
+
+.w-2 {
+    width: 2%;
+}
+
+.w-13 {
+    width: 13%;
+}
+
+.w-15 {
+    width: 15%;
+}
+
+.w-35 {
+    width: 35%;
+}
+
+.w-60 {
+    width: 60%;
+}
+
+@page {
+    size: A4;
+    margin: 8mm;
+}
+
+@media print {
+    .print-page {
+        padding: 0;
+    }
+}

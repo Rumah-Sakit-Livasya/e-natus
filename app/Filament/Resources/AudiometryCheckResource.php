@@ -60,12 +60,14 @@ class AudiometryCheckResource extends Resource
                                         $set('tanggal_lahir', Carbon::parse($participant->date_of_birth)->translatedFormat('j F Y'));
                                         $set('umur', Carbon::parse($participant->date_of_birth)->age);
                                         $set('jenis_kelamin', $participant->gender);
+                                        $set('instansi', $participant->department);
                                     }
                                 } else {
                                     // Kosongkan field jika pilihan dihapus
                                     $set('tanggal_lahir', null);
                                     $set('umur', null);
                                     $set('jenis_kelamin', null);
+                                    $set('instansi', null);
                                 }
                             })
                             ->required()
@@ -88,6 +90,7 @@ class AudiometryCheckResource extends Resource
 
                         Forms\Components\TextInput::make('instansi')
                             ->label('Instansi')
+                            ->readOnly()
                             ->maxLength(255),
                     ]),
 
@@ -120,6 +123,32 @@ class AudiometryCheckResource extends Resource
                                         Forms\Components\TextInput::make('as_ac_4000')->label('4000 Hz')->numeric(),
                                         Forms\Components\TextInput::make('as_ac_6000')->label('6000 Hz')->numeric(),
                                         Forms\Components\TextInput::make('as_ac_8000')->label('8000 Hz')->numeric(),
+                                    ]),
+                                ]),
+                            Fieldset::make('Telinga Kanan (AD) - Bone Conduction (Opsional)')
+                                ->schema([
+                                    Grid::make(4)->schema([
+                                        Forms\Components\TextInput::make('ad_bc_250')->label('250 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_500')->label('500 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_1000')->label('1000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_2000')->label('2000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_3000')->label('3000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_4000')->label('4000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_6000')->label('6000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('ad_bc_8000')->label('8000 Hz')->numeric(),
+                                    ]),
+                                ]),
+                            Fieldset::make('Telinga Kiri (AS) - Bone Conduction (Opsional)')
+                                ->schema([
+                                    Grid::make(4)->schema([
+                                        Forms\Components\TextInput::make('as_bc_250')->label('250 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_500')->label('500 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_1000')->label('1000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_2000')->label('2000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_3000')->label('3000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_4000')->label('4000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_6000')->label('6000 Hz')->numeric(),
+                                        Forms\Components\TextInput::make('as_bc_8000')->label('8000 Hz')->numeric(),
                                     ]),
                                 ]),
                         ]),

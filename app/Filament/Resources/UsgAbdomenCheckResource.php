@@ -56,11 +56,11 @@ class UsgAbdomenCheckResource extends Resource
                             ->required()
                             ->default(request('participant_id'))
                             ->disabled(filled(request('participant_id'))),
-                        Forms\Components\TextInput::make('no_rm')->label('No. RM'),
+                        Forms\Components\TextInput::make('no_rm')->label('No. RM')->required(),
                         Forms\Components\TextInput::make('tgl_lahir')->label('Tanggal Lahir')->readOnly(),
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),
                         Forms\Components\TextInput::make('jenis_kelamin')->label('Jenis Kelamin')->readOnly(),
-                        Forms\Components\TextInput::make('instansi')->label('Instansi'),
+                        Forms\Components\TextInput::make('instansi')->label('Instansi')->readOnly(),
                         Forms\Components\DatePicker::make('tanggal_pemeriksaan')->label('Pelaksanaan')->default(now()),
                     ]),
 
@@ -116,7 +116,27 @@ class UsgAbdomenCheckResource extends Resource
 
                 Section::make('Lampiran Gambar Hasil USG (Untuk Halaman 2)')
                     ->schema([
-                        Forms\Components\FileUpload::make('gambar_hasil_usg')->label(false)->image()->disk('public')->directory('hasil-usg')->required(),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg')
+                            ->label('Gambar Hasil USG 1')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg')
+                            ->required(),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_2')
+                            ->label('Gambar Hasil USG 2 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg'),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_3')
+                            ->label('Gambar Hasil USG 3 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg'),
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_4')
+                            ->label('Gambar Hasil USG 4 (Opsional)')
+                            ->image()
+                            ->disk('public')
+                            ->directory('hasil-usg'),
                     ])
             ]);
     }

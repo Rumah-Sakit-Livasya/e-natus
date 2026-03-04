@@ -65,11 +65,11 @@ class UsgMammaeCheckResource extends Resource
                             // =======================================================
                             ->default(request('participant_id'))
                             ->disabled(filled(request('participant_id'))),
-                        Forms\Components\TextInput::make('no_rm')->label('No. RM'),
+                        Forms\Components\TextInput::make('no_rm')->label('No. RM')->required(),
                         Forms\Components\TextInput::make('tgl_lahir')->label('Tanggal Lahir')->readOnly(),
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),
                         Forms\Components\TextInput::make('jenis_kelamin')->label('Jenis Kelamin')->readOnly(),
-                        Forms\Components\TextInput::make('instansi')->label('Instansi'),
+                        Forms\Components\TextInput::make('instansi')->label('Instansi')->readOnly(),
                         Forms\Components\DatePicker::make('tanggal_pemeriksaan')->label('Pelaksanaan')->default(now()),
                     ]),
 

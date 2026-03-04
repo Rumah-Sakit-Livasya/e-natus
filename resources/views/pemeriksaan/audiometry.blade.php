@@ -5,370 +5,235 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hasil Pemeriksaan Audiometri - {{ $record->participant?->name }}</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
-
-        body {
-            font-family: 'Roboto Mono', monospace;
-            margin: 0;
-            padding: 20px;
-            background-color: #fdfdfd;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: auto;
-            border: 1px solid #ccc;
-            padding: 25px;
-        }
-
-        h1 {
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-            font-weight: bold;
-        }
-
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        .info-table td {
-            padding: 4px 8px;
-            font-size: 14px;
-        }
-
-        .label {
-            width: 15%;
-        }
-
-        .separator {
-            width: 2%;
-        }
-
-        .chart-container {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 10px;
-        }
-
-        .chart-wrapper {
-            width: 48%;
-            border: 1px solid #999;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            font-size: 13px;
-        }
-
-        .data-table th,
-        .data-table td {
-            border: 1px solid #999;
-            padding: 5px;
-        }
-
-        .data-table th {
-            background-color: #eee;
-        }
-
-        .summary-section {
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .summary-section table {
-            width: 100%;
-        }
-
-        .summary-section td {
-            padding: 4px 8px;
-        }
-
-        .kesimpulan-text {
-            border: 1px solid #ccc;
-            padding: 10px;
-            min-height: 50px;
-        }
-
-        @media print {
-            body {
-                background-color: #fff;
-            }
-
-            .container {
-                border: none;
-                padding: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/audiometry-print.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="{{ asset('js/audiometry-print.js') }}" defer></script>
 </head>
 
 <body>
+    @php
+        $formatDb = function ($value): string {
+            if ($value === null || $value === '') {
+                return '-';
+            }
+
+            if (!is_numeric($value)) {
+                return (string) $value;
+            }
+
+            $formatted = number_format((float) $value, 2, ',', '.');
+            $formatted = rtrim(rtrim($formatted, '0'), ',');
+
+            return $formatted;
+        };
+
+        $avg = function (array $values): ?float {
+            $filtered = array_values(array_filter($values, static fn($v) => is_numeric($v)));
+            if (count($filtered) === 0) {
+                return null;
+            }
+
+            return array_sum($filtered) / count($filtered);
+        };
+
+        $frequencies = [250, 500, 1000, 2000, 3000, 4000, 6000, 8000];
+        $rightAir = [
+            $record->ad_ac_250,
+            $record->ad_ac_500,
+            $record->ad_ac_1000,
+            $record->ad_ac_2000,
+            $record->ad_ac_3000,
+            $record->ad_ac_4000,
+            $record->ad_ac_6000,
+            $record->ad_ac_8000,
+        ];
+        $leftAir = [
+            $record->as_ac_250,
+            $record->as_ac_500,
+            $record->as_ac_1000,
+            $record->as_ac_2000,
+            $record->as_ac_3000,
+            $record->as_ac_4000,
+            $record->as_ac_6000,
+            $record->as_ac_8000,
+        ];
+        $rightBone = [
+            $record->ad_bc_250,
+            $record->ad_bc_500,
+            $record->ad_bc_1000,
+            $record->ad_bc_2000,
+            $record->ad_bc_3000,
+            $record->ad_bc_4000,
+            $record->ad_bc_6000,
+            $record->ad_bc_8000,
+        ];
+        $leftBone = [
+            $record->as_bc_250,
+            $record->as_bc_500,
+            $record->as_bc_1000,
+            $record->as_bc_2000,
+            $record->as_bc_3000,
+            $record->as_bc_4000,
+            $record->as_bc_6000,
+            $record->as_bc_8000,
+        ];
+        $rightBoneAvg = $avg([$record->ad_bc_500, $record->ad_bc_1000, $record->ad_bc_2000, $record->ad_bc_4000]);
+        $leftBoneAvg = $avg([$record->as_bc_500, $record->as_bc_1000, $record->as_bc_2000, $record->as_bc_4000]);
+    @endphp
+
+    <div id="audiometry-payload" data-right-air='@json($rightAir)' data-left-air='@json($leftAir)' data-right-bone='@json($rightBone)' data-left-bone='@json($leftBone)'></div>
 
     <div class="container">
-        <h1>HASIL PEMERIKSAAN AUDIOMETRI</h1>
+        <div class="title">HASIL PEMERIKSAAN AUDIOMETRI</div>
 
-        <table class="info-table">
+        <table class="info-grid">
             <tr>
-                <td class="label">No. RM</td>
-                <td class="separator">:</td>
+                <td class="label-col">No. RM</td>
+                <td>:</td>
                 <td>{{ $record->no_rm }}</td>
-                <td class="label">Jenis Kelamin</td>
-                <td class="separator">:</td>
-                <td>{{ $record->participant?->gender }}</td>
+                <td class="label-col right-col">Jenis Kelamin</td>
+                <td>:</td>
+                <td>{{ $record->participant?->gender ?: '-' }}</td>
             </tr>
             <tr>
-                <td class="label">Nama</td>
-                <td class="separator">:</td>
+                <td class="label-col">Nama</td>
+                <td>:</td>
                 <td>{{ $record->participant?->name }}</td>
-                <td class="label">Instansi</td>
-                <td class="separator">:</td>
-                <td>{{ $record->instansi }}</td>
+                <td class="label-col right-col">Usia</td>
+                <td>:</td>
+                <td>{{ optional($record->participant?->date_of_birth ? \Carbon\Carbon::parse($record->participant?->date_of_birth) : null)?->age }} Tahun</td>
             </tr>
             <tr>
-                <td class="label">Tanggal Lahir</td>
-                <td class="separator">:</td>
-                <td>{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->format('d-m-Y') }}</td>
-                <td class="label">Pelaksanaan</td>
-                <td class="separator">:</td>
+                <td class="label-col">Tanggal Lahir</td>
+                <td>:</td>
+                <td>{{ $record->participant?->date_of_birth ? \Carbon\Carbon::parse($record->participant?->date_of_birth)->format('d-m-Y') : '-' }}</td>
+                <td class="label-col right-col">Pelaksanaan</td>
+                <td>:</td>
                 <td>{{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->format('d-m-Y') }}</td>
             </tr>
             <tr>
-                <td class="label">Usia</td>
-                <td class="separator">:</td>
-                <td>{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->age }} Tahun</td>
-                <td></td>
+                <td class="label-col">Instansi</td>
+                <td>:</td>
+                <td>{{ $record->instansi ?: '-' }}</td>
+                <td class="label-col right-col"></td>
                 <td></td>
                 <td></td>
             </tr>
         </table>
 
-        <div class="chart-container">
-            <div class="chart-wrapper">
-                <canvas id="rightEarChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="leftEarChart"></canvas>
-            </div>
-        </div>
-
-        <div class="chart-container">
-            <div style="width: 48%;">
-                <table class="data-table">
+        <div class="panel-wrap">
+            <div class="ear-panel">
+                <div class="ear-title">Dextra</div>
+                <div class="graph-box">
+                    <canvas id="rightEarChart"></canvas>
+                </div>
+                <table class="freq-table">
                     <tr>
-                        <th>Frequency (Hz)</th>
-                        <th>250</th>
-                        <th>500</th>
-                        <th>1000</th>
-                        <th>2000</th>
-                        <th>3000</th>
-                        <th>4000</th>
-                        <th>6000</th>
-                        <th>8000</th>
+                        <th class="head head-right" colspan="2">Frequency (Hz)</th>
+                        @foreach ($frequencies as $hz)
+                            <th class="head head-right">{{ $hz }}</th>
+                        @endforeach
                     </tr>
                     <tr>
-                        <td style="background-color: #ffdddd;"><strong>Air</strong></td>
-                        <td>{{ $record->ad_ac_250 }}</td>
-                        <td>{{ $record->ad_ac_500 }}</td>
-                        <td>{{ $record->ad_ac_1000 }}</td>
-                        <td>{{ $record->ad_ac_2000 }}</td>
-                        <td>{{ $record->ad_ac_3000 }}</td>
-                        <td>{{ $record->ad_ac_4000 }}</td>
-                        <td>{{ $record->ad_ac_6000 }}</td>
-                        <td>{{ $record->ad_ac_8000 }}</td>
+                        <td class="air-right"><strong>Air</strong></td>
+                        <td class="air-right"><strong>O</strong></td>
+                        @foreach ($rightAir as $value)
+                            <td>{{ $value ?? '-' }}</td>
+                        @endforeach
+                    </tr>
+                    <tr>
+                        <td class="bone"><strong>Bone</strong></td>
+                        <td class="bone"><strong>&lt;</strong></td>
+                        @foreach ($rightBone as $value)
+                            <td>{{ $value ?? '-' }}</td>
+                        @endforeach
                     </tr>
                 </table>
             </div>
-            <div style="width: 48%;">
-                <table class="data-table">
+
+            <div class="ear-panel">
+                <div class="ear-title">Sinistra</div>
+                <div class="graph-box">
+                    <canvas id="leftEarChart"></canvas>
+                </div>
+                <table class="freq-table">
                     <tr>
-                        <th>Frequency (Hz)</th>
-                        <th>250</th>
-                        <th>500</th>
-                        <th>1000</th>
-                        <th>2000</th>
-                        <th>3000</th>
-                        <th>4000</th>
-                        <th>6000</th>
-                        <th>8000</th>
+                        <th class="head head-left" colspan="2">Frequency (Hz)</th>
+                        @foreach ($frequencies as $hz)
+                            <th class="head head-left">{{ $hz }}</th>
+                        @endforeach
                     </tr>
                     <tr>
-                        <td style="background-color: #ddeeff;"><strong>Air</strong></td>
-                        <td>{{ $record->as_ac_250 }}</td>
-                        <td>{{ $record->as_ac_500 }}</td>
-                        <td>{{ $record->as_ac_1000 }}</td>
-                        <td>{{ $record->as_ac_2000 }}</td>
-                        <td>{{ $record->as_ac_3000 }}</td>
-                        <td>{{ $record->as_ac_4000 }}</td>
-                        <td>{{ $record->as_ac_6000 }}</td>
-                        <td>{{ $record->as_ac_8000 }}</td>
+                        <td class="air-left"><strong>Air</strong></td>
+                        <td class="air-left"><strong>X</strong></td>
+                        @foreach ($leftAir as $value)
+                            <td>{{ $value ?? '-' }}</td>
+                        @endforeach
+                    </tr>
+                    <tr>
+                        <td class="bone"><strong>Bone</strong></td>
+                        <td class="bone"><strong>&gt;</strong></td>
+                        @foreach ($leftBone as $value)
+                            <td>{{ $value ?? '-' }}</td>
+                        @endforeach
                     </tr>
                 </table>
             </div>
         </div>
 
-        <div class="summary-section">
-            <table>
-                <tr>
-                    <td style="width: 25%; color: #cc0000; font-style: italic;">Derajat Ambang Dengar:</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Telinga Kanan (AD):</td>
-                    <td><strong>{{ $record->derajat_ad }}</strong></td>
-                </tr>
-                <tr>
-                    <td>Telinga Kiri (AS):</td>
-                    <td><strong>{{ $record->derajat_as }}</strong></td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="summary-section">
-            <table>
-                <tr>
-                    <td style="width: 25%; color: #cc0000; font-style: italic;">Kesimpulan:</td>
-                    <td class="kesimpulan-text">{{ $record->kesimpulan }}</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="summary-section">
-            <table>
-                <tr>
-                    <td style="width: 25%;">Saran:</td>
-                    <td>{{ $record->saran }}</td>
-                </tr>
-            </table>
-        </div>
-
-        @if ($record->tanda_tangan)
-            <div class="summary-section" style="text-align: right; margin-top: 30px;">
-                <p style="margin: 0 0 8px;">Dokter Pemeriksa</p>
-                <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" alt="TTD Dokter"
-                    style="height: 90px; max-width: 220px; object-fit: contain;">
-                <p style="margin: 8px 0 0;"><strong>{{ $record->dokter?->name ?? '-' }}</strong></p>
+        <div class="summary">
+            <div><strong>Derajat Ambang Dengar</strong>:</div>
+            <div class="line-row">
+                <div class="threshold-col">
+                    <div class="line-item line-item-full">
+                        <span>Telinga Kanan (AD)</span>
+                        <span class="line">{{ $record->derajat_ad ?: '-' }}</span>
+                    </div>
+                    <div class="line-item line-item-full">
+                        <span>Telinga Kiri (AS)</span>
+                        <span class="line">{{ $record->derajat_as ?: '-' }}</span>
+                    </div>
+                </div>
+                <div class="threshold-col">
+                    <div class="line-item line-item-full">
+                        <span>Bone</span>
+                        <span class="line">{{ $rightBoneAvg !== null ? $formatDb($rightBoneAvg) . ' dB' : '-' }}</span>
+                    </div>
+                    <div class="line-item line-item-full">
+                        <span>Bone</span>
+                        <span class="line">{{ $leftBoneAvg !== null ? $formatDb($leftBoneAvg) . ' dB' : '-' }}</span>
+                    </div>
+                </div>
             </div>
-        @endif
+        </div>
+
+        <div class="summary summary-tight">
+            <div class="line-item line-item-full">
+                <span class="label-short">Kesimpulan</span>
+                <span class="line">{{ $record->kesimpulan ?: '-' }}</span>
+            </div>
+        </div>
+
+        <div class="summary summary-tight">
+            <div class="line-item line-item-full">
+                <span class="label-short">Saran</span>
+                <span class="line">{{ $record->saran ?: '-' }}</span>
+            </div>
+        </div>
+
+        <div class="footer-sign">
+            <div class="sign-box">
+                <div>Dokter Pemeriksa,</div>
+                @if ($record->tanda_tangan)
+                    <img class="sign-image" src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" alt="TTD Dokter">
+                @else
+                    <div class="sign-placeholder"></div>
+                @endif
+                <div class="doctor-name">{{ $record->dokter?->name ?? '-' }}</div>
+                <div>{{ $record->dokter?->spesialisasi ?: 'Spesialis THT' }}</div>
+            </div>
+        </div>
     </div>
-
-    <script>
-        const frequencies = ['250', '500', '1000', '2000', '3000', '4000', '6000', '8000'];
-
-        const rightEarData = [
-            {{ $record->ad_ac_250 ?? 'null' }}, {{ $record->ad_ac_500 ?? 'null' }},
-            {{ $record->ad_ac_1000 ?? 'null' }},
-            {{ $record->ad_ac_2000 ?? 'null' }}, {{ $record->ad_ac_3000 ?? 'null' }},
-            {{ $record->ad_ac_4000 ?? 'null' }},
-            {{ $record->ad_ac_6000 ?? 'null' }}, {{ $record->ad_ac_8000 ?? 'null' }}
-        ];
-
-        const leftEarData = [
-            {{ $record->as_ac_250 ?? 'null' }}, {{ $record->as_ac_500 ?? 'null' }},
-            {{ $record->as_ac_1000 ?? 'null' }},
-            {{ $record->as_ac_2000 ?? 'null' }}, {{ $record->as_ac_3000 ?? 'null' }},
-            {{ $record->as_ac_4000 ?? 'null' }},
-            {{ $record->as_ac_6000 ?? 'null' }}, {{ $record->as_ac_8000 ?? 'null' }}
-        ];
-
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.parsed.y} dB`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Frequency (Hz)'
-                    },
-                    grid: {
-                        color: '#ccc'
-                    },
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Hearing level in Decibels (dB)'
-                    },
-                    reverse: true,
-                    min: -10,
-                    max: 120,
-                    ticks: {
-                        stepSize: 10
-                    },
-                    grid: {
-                        color: '#ccc'
-                    }
-                }
-            }
-        };
-
-        // Chart Telinga Kanan
-        new Chart(document.getElementById('rightEarChart'), {
-            type: 'line',
-            data: {
-                labels: frequencies,
-                datasets: [{
-                    label: 'Telinga Kanan (AD)',
-                    data: rightEarData,
-                    borderColor: 'red',
-                    backgroundColor: 'red',
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    spanGaps: true // <-- Menyambungkan garis meski ada data null
-                }]
-            },
-            options: chartOptions
-        });
-
-        // Chart Telinga Kiri
-        new Chart(document.getElementById('leftEarChart'), {
-            type: 'line',
-            data: {
-                labels: frequencies,
-                datasets: [{
-                    label: 'Telinga Kiri (AS)',
-                    data: leftEarData,
-                    borderColor: 'blue',
-                    backgroundColor: 'blue',
-                    pointStyle: 'crossRot', // <-- Membuat titik menjadi 'x'
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    spanGaps: true
-                }]
-            },
-            options: chartOptions
-        });
-    </script>
-
-    <script>
-        // Jeda 500 milidetik (0.5 detik) untuk memastikan semua elemen,
-        // terutama grafik, sudah selesai digambar sebelum dialog print muncul.
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    </script>
-
 </body>
 
 </html>

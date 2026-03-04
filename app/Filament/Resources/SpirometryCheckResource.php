@@ -59,15 +59,22 @@ class SpirometryCheckResource extends Resource
                                     $set('tgl_lahir', Carbon::parse($p->date_of_birth)->translatedFormat('j F Y'));
                                     $set('usia', Carbon::parse($p->date_of_birth)->age);
                                     $set('jenis_kelamin', $p->gender);
+                                    $set('instansi', $p->department);
+                                } else {
+                                    $set('tgl_lahir', null);
+                                    $set('usia', null);
+                                    $set('jenis_kelamin', null);
+                                    $set('instansi', null);
                                 }
                             })
                             ->required()
+                            ->default(request('participant_id'))
                             ->disabled(filled(request('participant_id'))),
-                        Forms\Components\TextInput::make('no_rm')->label('No. RM'),
+                        Forms\Components\TextInput::make('no_rm')->label('No. RM')->required(),
                         Forms\Components\TextInput::make('tgl_lahir')->label('Tanggal Lahir')->readOnly(),
                         Forms\Components\TextInput::make('usia')->label('Usia')->suffix('Tahun')->readOnly(),
                         Forms\Components\TextInput::make('jenis_kelamin')->label('Jenis Kelamin')->readOnly(),
-                        Forms\Components\TextInput::make('instansi')->label('Instansi'),
+                        Forms\Components\TextInput::make('instansi')->label('Instansi')->readOnly(),
                         Forms\Components\DatePicker::make('tanggal_pemeriksaan')->label('Pelaksanaan')->default(now()),
                     ]),
 

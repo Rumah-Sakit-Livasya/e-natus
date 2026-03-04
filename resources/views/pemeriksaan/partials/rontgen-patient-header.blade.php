@@ -1,5 +1,4 @@
-{{-- resources/views/print/partials/rontgen_patient_header.blade.php --}}
-<table class="info-table" style="border: 2px solid black; margin-bottom: 10px;">
+<table class="info-table header-with-border">
     <tr>
         <td class="label">No. Rontgen</td>
         <td class="separator">:</td>
@@ -19,7 +18,7 @@
     <tr>
         <td class="label">Tanggal Lahir</td>
         <td class="separator">:</td>
-        <td class="value">{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->format('d-m-Y') }}</td>
+        <td class="value">{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->translatedFormat('j F Y') }}</td>
         <td class="label">Instansi</td>
         <td class="separator">:</td>
         <td class="value">{{ $record->instansi }}</td>
@@ -30,6 +29,6 @@
         <td class="value">{{ \Carbon\Carbon::parse($record->participant?->date_of_birth)->age }} Tahun</td>
         <td class="label">Pelaksanaan</td>
         <td class="separator">:</td>
-        <td class="value">{{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->format('d-m-Y') }}</td>
+        <td class="value">{{ \Carbon\Carbon::parse($record->tanggal_pemeriksaan)->translatedFormat('j F Y') }}</td>
     </tr>
 </table>
