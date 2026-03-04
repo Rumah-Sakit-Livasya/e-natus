@@ -11,6 +11,10 @@ class UsgMammaeCheck extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'gambar_hasil_usg_lampiran' => 'array',
+    ];
+
     public function participant(): BelongsTo
     {
         return $this->belongsTo(Participant::class);

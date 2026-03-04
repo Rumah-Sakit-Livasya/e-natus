@@ -66,15 +66,43 @@ class EkgCheckResource extends Resource
                 Section::make('Hasil Interpretasi EKG')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('irama')->label('Irama')->default('Sinus Ritme'),
-                        Forms\Components\TextInput::make('heart_rate')->label('Heart Rate')->placeholder('x/i reg'),
-                        Forms\Components\TextInput::make('axis')->label('Axis')->default('Normal'),
-                        Forms\Components\TextInput::make('pr_interval')->label('PR Interval')->placeholder('0.16"'),
-                        Forms\Components\TextInput::make('qrs_duration')->label('QRS Duration')->placeholder('0.08"'),
-                        Forms\Components\TextInput::make('gel_t')->label('Gel T')->default('Normal'),
-                        Forms\Components\TextInput::make('st_t_changes')->label('ST-T Changes')->default('-'),
-                        Forms\Components\TextInput::make('kelainan')->label('Kelainan')->default('-'),
-                        Forms\Components\Textarea::make('kesimpulan')->label('Kesimpulan')->default('Normal EKG')->columnSpanFull(),
+                        Forms\Components\TextInput::make('irama')
+                            ->label('Irama')
+                            ->default('Sinus Rhythm')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Sinus Rhythm') : null)
+                            ->required(),
+                        Forms\Components\TextInput::make('heart_rate')
+                            ->label('Heart Rate')
+                            ->placeholder('x/i reg'),
+                        Forms\Components\TextInput::make('axis')
+                            ->label('Axis')
+                            ->default('Normal')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Normal') : null),
+                        Forms\Components\TextInput::make('pr_interval')
+                            ->label('PR Interval')
+                            ->default('0.16')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('0.16') : null),
+                        Forms\Components\TextInput::make('qrs_duration')
+                            ->label('QRS Duration')
+                            ->default('0.08')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('0.08') : null),
+                        Forms\Components\TextInput::make('gel_t')
+                            ->label('Gel T')
+                            ->default('Normal')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Normal') : null),
+                        Forms\Components\TextInput::make('st_t_changes')
+                            ->label('ST-T Changes')
+                            ->default('-')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('-') : null),
+                        Forms\Components\TextInput::make('kelainan')
+                            ->label('Kelainan')
+                            ->default('-')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('-') : null),
+                        Forms\Components\Textarea::make('kesimpulan')
+                            ->label('Kesimpulan')
+                            ->default('Normal Sinus Rhythm')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Normal Sinus Rhythm') : null)
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Dokter Pemeriksa & Tanda Tangan')

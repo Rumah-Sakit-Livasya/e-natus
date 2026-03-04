@@ -8,6 +8,7 @@ use App\Models\TreadmillCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,6 +27,42 @@ class TreadmillCheckResource extends Resource
     protected static ?string $pluralModelLabel = 'Pemeriksaan Treadmill';
 
     protected static bool $shouldRegisterNavigation = false;
+
+    private static function updateIndikasiBerhenti(Get $get, Set $set): void
+    {
+        $targetHr = self::toFloat($get('target_hr'));
+        $tercapaiHr = self::toFloat($get('tercapai_hr'));
+
+        if (! $targetHr || ! $tercapaiHr || $targetHr <= 0) {
+            $set('indikasi_berhenti', null);
+            return;
+        }
+
+        $persentase = (100 * $tercapaiHr) / $targetHr;
+
+        $set(
+            'indikasi_berhenti',
+            $persentase >= 85
+                ? '85 % target Heart Rate tercapai'
+                : 'Fatigue'
+        );
+    }
+
+    private static function toFloat(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $normalized = preg_replace('/[^0-9,.\-]/', '', (string) $value) ?? '';
+        $normalized = str_replace(',', '.', $normalized);
+
+        return is_numeric($normalized) ? (float) $normalized : null;
+    }
 
     public static function form(Form $form): Form
     {
@@ -68,19 +105,42 @@ class TreadmillCheckResource extends Resource
                 Section::make('Hasil Pemeriksaan')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('metode')->default('Bruce'),
-                        Forms\Components\TextInput::make('ekg_resting')->label('EKG Resting')->default('Normal x/menit'),
+                        Forms\Components\TextInput::make('metode')
+                            ->default('Bruce')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Bruce') : null),
+                        Forms\Components\TextInput::make('ekg_resting')
+                            ->label('EKG Resting')
+                            ->default('Normal')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Normal') : null),
                         Fieldset::make('EKG Exercise')->schema([
-                            Forms\Components\TextInput::make('ekg_exercise_st_change')->label('ST-T Change Segmen')->default('--'),
-                            Forms\Components\TextInput::make('ekg_exercise_aritmia')->label('Aritmia')->default('--'),
+                            Forms\Components\TextInput::make('ekg_exercise_st_change')
+                                ->label('Perubahan Segmen ST-T')
+                                ->default('--')
+                                ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('--') : null),
+                            Forms\Components\TextInput::make('ekg_exercise_aritmia')
+                                ->label('Aritmia')
+                                ->default('--')
+                                ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('--') : null),
                         ]),
                         Fieldset::make('Tekanan Darah')->schema([
                             Forms\Components\TextInput::make('td_awal')->label('Awal')->suffix('mm/Hg'),
                             Forms\Components\TextInput::make('td_tertinggi')->label('Tertinggi')->suffix('mm/Hg'),
                         ]),
-                        Forms\Components\TextInput::make('indikasi_berhenti')->default('85 % target Heart Rate tercapai'),
-                        Forms\Components\TextInput::make('target_hr')->label('Target HR')->placeholder('x/menit ( % ) dari Maksimal HR'),
-                        Forms\Components\TextInput::make('tercapai_hr')->label('Tercapai HR')->placeholder('x/menit'),
+                        Forms\Components\TextInput::make('indikasi_berhenti')
+                            ->default('85 % target Heart Rate tercapai')
+                            ->readOnly(),
+                        Forms\Components\TextInput::make('target_hr')
+                            ->label('Target HR')
+                            ->placeholder('x/menit ( % ) dari Maksimal HR')
+                            ->live(onBlur: true)
+                            ->afterStateHydrated(fn(Get $get, Set $set) => self::updateIndikasiBerhenti($get, $set))
+                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateIndikasiBerhenti($get, $set)),
+                        Forms\Components\TextInput::make('tercapai_hr')
+                            ->label('Tercapai HR')
+                            ->placeholder('x/menit')
+                            ->live(onBlur: true)
+                            ->afterStateHydrated(fn(Get $get, Set $set) => self::updateIndikasiBerhenti($get, $set))
+                            ->afterStateUpdated(fn(Get $get, Set $set) => self::updateIndikasiBerhenti($get, $set)),
                         Fieldset::make('Lama Test')->columns(2)->schema([
                             Forms\Components\TextInput::make('lama_tes_menit')->label('Menit')->numeric(),
                             Forms\Components\TextInput::make('lama_tes_detik')->label('Detik')->numeric()->maxValue(59),
@@ -92,8 +152,13 @@ class TreadmillCheckResource extends Resource
 
                 Section::make('Kesimpulan & Saran')
                     ->schema([
-                        Forms\Components\Textarea::make('kesimpulan')->default('Negative ischemic response'),
-                        Forms\Components\Textarea::make('saran')->rows(4)->default("Olah raga teratur\nDiet Seimbang\nLakukan pemeriksaan treadmill setahun kemudian"),
+                        Forms\Components\Textarea::make('kesimpulan')
+                            ->default('Respon iskemik negatif')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Respon iskemik negatif') : null),
+                        Forms\Components\Textarea::make('saran')
+                            ->rows(4)
+                            ->default("Olahraga teratur\nDiet seimbang\nLakukan pemeriksaan treadmill satu tahun kemudian")
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state("Olahraga teratur\nDiet seimbang\nLakukan pemeriksaan treadmill satu tahun kemudian") : null),
                     ]),
 
                 Section::make('Cardiologist & Lampiran')

@@ -80,7 +80,9 @@ class RontgenCheckResource extends Resource
                             ->default($defaultTemuan)
                             ->rows(8),
                         Forms\Components\TextInput::make('kesan')
-                            ->label('Kesan'),
+                            ->label('Kesan')
+                            ->default('NORMAL CHEST')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('NORMAL CHEST') : null),
                     ]),
 
                 Section::make('Radiologist & Lampiran')

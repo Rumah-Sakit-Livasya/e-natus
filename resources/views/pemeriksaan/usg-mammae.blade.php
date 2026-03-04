@@ -24,14 +24,18 @@
         $kananBullets = $toBullets($record->mammae_kanan);
         $kiriBullets = $toBullets($record->mammae_kiri);
 
-        $images = collect([
+        $images = collect($record->gambar_hasil_usg_lampiran ?? [])
+            ->merge([
             $record->gambar_hasil_usg,
             $record->gambar_hasil_usg_2,
             $record->gambar_hasil_usg_3,
             $record->gambar_hasil_usg_4,
             $record->gambar_hasil_usg_5,
             $record->gambar_hasil_usg_6,
-        ])->filter()->values();
+            ])
+            ->filter()
+            ->unique()
+            ->values();
     @endphp
 
     <div class="container">

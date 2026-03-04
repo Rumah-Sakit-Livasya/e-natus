@@ -108,35 +108,15 @@ class UsgMammaeCheckResource extends Resource
                             ->content(fn(Forms\Get $get): string => $get('radiologist') ?: '-'),
                         Forms\Components\Hidden::make('radiologist'),
                         Forms\Components\Hidden::make('tanda_tangan'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg')
-                            ->label('Gambar Hasil USG 1')
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_lampiran')
+                            ->label('Lampiran Gambar Hasil USG')
+                            ->helperText('Minimal 3 foto. Bisa upload lebih banyak sesuai kebutuhan (mis. sampai 12 foto atau lebih).')
                             ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg-mammae')
-                            ->required(),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_2')
-                            ->label('Gambar Hasil USG 2 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg-mammae'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_3')
-                            ->label('Gambar Hasil USG 3 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg-mammae'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_4')
-                            ->label('Gambar Hasil USG 4 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg-mammae'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_5')
-                            ->label('Gambar Hasil USG 5 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg-mammae'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_6')
-                            ->label('Gambar Hasil USG 6 (Opsional)')
-                            ->image()
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->minFiles(3)
+                            ->required()
                             ->disk('public')
                             ->directory('hasil-usg-mammae')
                             ->columnSpanFull(),

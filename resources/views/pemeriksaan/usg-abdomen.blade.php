@@ -87,12 +87,16 @@
         <div class="container">
             @include('pemeriksaan.partials.usg-patient-header')
             @php
-                $images = collect([
+                $images = collect($record->gambar_hasil_usg_lampiran ?? [])
+                    ->merge([
                     $record->gambar_hasil_usg ?? null,
                     $record->gambar_hasil_usg_2 ?? null,
                     $record->gambar_hasil_usg_3 ?? null,
                     $record->gambar_hasil_usg_4 ?? null,
-                ])->filter()->values();
+                ])
+                    ->filter()
+                    ->unique()
+                    ->values();
             @endphp
 
             @if ($images->isNotEmpty())
