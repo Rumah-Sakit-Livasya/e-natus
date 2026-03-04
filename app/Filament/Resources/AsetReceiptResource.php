@@ -270,6 +270,6 @@ class AsetReceiptResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->can('view aset receipts');
+        return $user->can('view receipts');
     }
 }

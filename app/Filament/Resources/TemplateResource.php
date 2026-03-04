@@ -111,6 +111,6 @@ class TemplateResource extends Resource
         if ($user->isSuperAdmin()) {
             return true; // bypass semua permission cek
         }
-        return $user->can('view aset templates');
+        return $user->can('view templates');
     }
 }
