@@ -145,9 +145,74 @@
             ],
         ];
 
-        $renderRow = function ($label, $value, $rujukan, $satuan) {
-            $keterangan = str_contains((string) $value, '*') ? 'Perhatikan' : '';
-            return [$label, $value, $rujukan, $satuan, $keterangan];
+        $parseNumericTokens = function (?string $text): array {
+            if ($text === null) {
+                return [];
+            }
+
+            preg_match_all('/-?\d+(?:[.,]\d+)?/', str_replace(',', '.', $text), $matches);
+            return array_map('floatval', $matches[0] ?? []);
+        };
+
+        $isAbnormal = function ($value, $rujukan) use ($parseNumericTokens): bool {
+            if ($value === null || $value === '' || $rujukan === null || trim((string) $rujukan) === '') {
+                return false;
+            }
+
+            $valueRaw = trim((string) $value);
+            $rujukanRaw = trim((string) $rujukan);
+            $valueNormalized = mb_strtolower(str_replace(['.', ','], ['', '.'], $valueRaw));
+            $rujukanNormalized = mb_strtolower(str_replace(['.', ','], ['', '.'], $rujukanRaw));
+
+            if (preg_match('/^(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)$/', $rujukanNormalized, $rangeMatch)) {
+                $valueNumbers = $parseNumericTokens($valueRaw);
+                if ($valueNumbers === []) {
+                    return false;
+                }
+
+                $valueMin = min($valueNumbers);
+                $valueMax = max($valueNumbers);
+                $min = (float) $rangeMatch[1];
+                $max = (float) $rangeMatch[2];
+
+                return $valueMin < $min || $valueMax > $max;
+            }
+
+            if (preg_match('/^(<=|<|>=|>)\s*(-?\d+(?:\.\d+)?)$/', $rujukanNormalized, $operatorMatch)) {
+                $valueNumbers = $parseNumericTokens($valueRaw);
+                if ($valueNumbers === []) {
+                    return false;
+                }
+
+                $valueToCompare = in_array($operatorMatch[1], ['<', '<='], true) ? max($valueNumbers) : min($valueNumbers);
+                $limit = (float) $operatorMatch[2];
+
+                return match ($operatorMatch[1]) {
+                    '<' => !($valueToCompare < $limit),
+                    '<=' => !($valueToCompare <= $limit),
+                    '>' => !($valueToCompare > $limit),
+                    '>=' => !($valueToCompare >= $limit),
+                };
+            }
+
+            if (in_array($rujukanNormalized, ['negatif', 'non reaktif', 'normal', 'jernih', 'kuning'], true)) {
+                return !str_contains($valueNormalized, $rujukanNormalized);
+            }
+
+            return false;
+        };
+
+        $renderRow = function ($label, $value, $rujukan, $satuan) use ($isAbnormal) {
+            $abnormal = $isAbnormal($value, $rujukan);
+            $displayValue = (string) ($value ?? '');
+
+            if ($abnormal && !str_ends_with(trim($displayValue), '*')) {
+                $displayValue = trim($displayValue) . '*';
+            }
+
+            $keterangan = $abnormal ? 'Abnormal' : '';
+
+            return [$label, $displayValue, $rujukan, $satuan, $keterangan, $abnormal];
         };
     @endphp
 
@@ -204,13 +269,13 @@
                     </tr>
 
                     @foreach ($section['rows'] ?? [] as $row)
-                        @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                        @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
                         <tr>
                             <td>{{ $label }}</td>
-                            <td class="center">{{ $value }}</td>
+                            <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
                             <td class="center">{{ $rujukan }}</td>
                             <td class="center">{{ $satuan }}</td>
-                            <td>{{ $keterangan }}</td>
+                            <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                         </tr>
                     @endforeach
 
@@ -219,13 +284,13 @@
                             <td colspan="5">{{ $subsection['title'] }}</td>
                         </tr>
                         @foreach ($subsection['rows'] as $row)
-                            @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                            @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
                             <tr>
                                 <td>{{ $label }}</td>
-                                <td class="center">{{ $value }}</td>
+                                <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
-                                <td>{{ $keterangan }}</td>
+                                <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                             </tr>
                         @endforeach
                     @endforeach
@@ -239,7 +304,7 @@
         </div>
     </div>
 
-    <div class="page-break print-page">
+    <div class="print-page">
         <div class="container">
             <table class="main-table">
                 <thead>
@@ -258,13 +323,13 @@
                         </tr>
 
                         @foreach ($section['rows'] ?? [] as $row)
-                            @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                            @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
                             <tr>
                                 <td>{{ $label }}</td>
-                                <td class="center">{{ $value }}</td>
+                                <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
-                                <td>{{ $keterangan }}</td>
+                                <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                             </tr>
                         @endforeach
 
@@ -273,13 +338,13 @@
                                 <td colspan="5">{{ $subsection['title'] }}</td>
                             </tr>
                             @foreach ($subsection['rows'] as $row)
-                                @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                                @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
                                 <tr>
                                     <td>{{ $label }}</td>
-                                    <td class="center">{{ $value }}</td>
+                                    <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
                                     <td class="center">{{ $rujukan }}</td>
                                     <td class="center">{{ $satuan }}</td>
-                                    <td>{{ $keterangan }}</td>
+                                    <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                                 </tr>
                             @endforeach
                         @endforeach
@@ -296,7 +361,7 @@
                 Penanggung Jawab Laboratorium
                 <div class="signature-area">
                     @if ($record->tanda_tangan)
-                        <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" class="ttd-image"
+                        <img src="{{ \App\Support\StoragePublicUrl::fromPath($record->tanda_tangan) }}" class="ttd-image"
                             alt="TTD">
                     @endif
                 </div>

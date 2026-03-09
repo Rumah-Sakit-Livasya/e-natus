@@ -76,7 +76,7 @@
                 <div class="center">Radiologist</div>
                 <div class="signature-area center">
                     @if ($record->tanda_tangan)
-                        <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" class="ttd-image" alt="TTD">
+                        <img src="{{ \App\Support\StoragePublicUrl::fromPath($record->tanda_tangan) }}" class="ttd-image" alt="TTD">
                     @endif
                 </div>
                 <div class="doctor-name">{{ $record->radiologist }}</div>

@@ -124,8 +124,15 @@ class RontgenCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(RontgenCheck $record): string => route('rontgen.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('edit_result_revision')
+                    ->label('Edit Hasil (Revisi)')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->url(fn(RontgenCheck $record): string => static::getUrl('create', [
+                        'participant_id' => $record->participant_id,
+                        'revise_from' => $record->id,
+                    ])),
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ]);
     }
 

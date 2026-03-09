@@ -71,6 +71,7 @@
                         pointStyle: bonePointStyle,
                         pointRotation: bonePointRotation,
                         borderWidth: 2,
+                        borderDash: [8, 6],
                         pointRadius: 5,
                         pointHoverRadius: 6,
                         tension: 0,

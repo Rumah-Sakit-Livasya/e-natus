@@ -9,6 +9,11 @@
 </head>
 
 <body class="print-page">
+    @php
+        $signaturePath = $record->tanda_tangan ?: $record->dokter?->tanda_tangan;
+        $doctorName = $record->radiologist ?: $record->dokter?->name;
+    @endphp
+
     <div class="container">
         <div class="report-title">HASIL PEMERIKSAAN RONTGEN</div>
         <div class="report-subtitle">( RADIOLOGI )</div>
@@ -32,12 +37,12 @@
                 <td class="center w-35">
                     Radiologist
                     <div class="signature-area">
-                        @if ($record->tanda_tangan)
-                            <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" class="ttd-image"
+                        @if ($signaturePath)
+                            <img src="{{ \App\Support\StoragePublicUrl::fromPath($signaturePath) }}" class="ttd-image"
                                 alt="TTD">
                         @endif
                     </div>
-                    <div class="doctor-name">{{ $record->radiologist }}</div>
+                    <div class="doctor-name">{{ $doctorName }}</div>
                 </td>
             </tr>
         </table>

@@ -85,6 +85,11 @@ body {
     font-style: italic;
 }
 
+.abnormal-value {
+    color: #b00020;
+    font-weight: 700;
+}
+
 .pemeriksaan-col {
     width: 34%;
 }
@@ -134,6 +139,18 @@ body {
 
 .page-break {
     page-break-before: always;
+}
+
+.main-table thead {
+    display: table-header-group;
+}
+
+.main-table tr,
+.section-header,
+.sub-section-header,
+.note,
+.footer {
+    page-break-inside: avoid;
 }
 
 .page-2-layout {
