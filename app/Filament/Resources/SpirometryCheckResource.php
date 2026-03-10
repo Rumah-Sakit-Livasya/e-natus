@@ -28,7 +28,11 @@ class SpirometryCheckResource extends Resource
 
     protected static bool $shouldRegisterNavigation = false;
 
-    // Fungsi helper untuk kalkulasi agar tidak berulang
+    private static function formatDecimal(float $value): string
+    {
+        return number_format($value, 2, '.', '');
+    }
+
     private static function updateCalculations(Get $get, Set $set): void
     {
         $vc_nilai = (float) $get('vc_nilai');
@@ -38,12 +42,19 @@ class SpirometryCheckResource extends Resource
         $fev1_nilai = (float) $get('fev1_nilai');
         $fev1_prediksi = (float) $get('fev1_prediksi');
 
-        $set('vc_percent', $vc_prediksi > 0 ? ($vc_nilai / $vc_prediksi) * 100 : 0);
-        $set('fvc_percent', $fvc_prediksi > 0 ? ($fvc_nilai / $fvc_prediksi) * 100 : 0);
-        $set('fev1_percent', $fev1_prediksi > 0 ? ($fev1_nilai / $fev1_prediksi) * 100 : 0);
-        $set('fev1_fvc_nilai', $fvc_nilai > 0 ? ($fev1_nilai / $fvc_nilai) : 0);
-        $set('fev1_fvc_prediksi', $fvc_prediksi > 0 ? ($fev1_prediksi / $fvc_prediksi) : 1); // Prediksi/Prediksi = 1 (atau 100%)
-        $set('fev1_fvc_percent', $get('fev1_fvc_prediksi') > 0 ? ($get('fev1_fvc_nilai') / $get('fev1_fvc_prediksi')) * 100 : 0);
+        $vcPercent = $vc_prediksi > 0 ? ($vc_nilai / $vc_prediksi) * 100 : 0;
+        $fvcPercent = $fvc_prediksi > 0 ? ($fvc_nilai / $fvc_prediksi) * 100 : 0;
+        $fev1Percent = $fev1_prediksi > 0 ? ($fev1_nilai / $fev1_prediksi) * 100 : 0;
+        $fev1FvcNilai = $fvc_nilai > 0 ? ($fev1_nilai / $fvc_nilai) * 100 : 0;
+        $fev1FvcPrediksi = $fvc_prediksi > 0 ? ($fev1_prediksi / $fvc_prediksi) * 100 : 100;
+        $fev1FvcPercent = $fev1FvcPrediksi > 0 ? ($fev1FvcNilai / $fev1FvcPrediksi) * 100 : 0;
+
+        $set('vc_percent', self::formatDecimal($vcPercent));
+        $set('fvc_percent', self::formatDecimal($fvcPercent));
+        $set('fev1_percent', self::formatDecimal($fev1Percent));
+        $set('fev1_fvc_nilai', self::formatDecimal($fev1FvcNilai));
+        $set('fev1_fvc_prediksi', self::formatDecimal($fev1FvcPrediksi));
+        $set('fev1_fvc_percent', self::formatDecimal($fev1FvcPercent));
     }
 
     public static function form(Form $form): Form
@@ -107,8 +118,8 @@ class SpirometryCheckResource extends Resource
 
                         // FEV1/FVC
                         Forms\Components\Placeholder::make('fev1_fvc_label')->label('FEV1 / FVC (%)'),
-                        Forms\Components\TextInput::make('fev1_fvc_nilai')->label(false)->numeric()->readOnly(),
-                        Forms\Components\TextInput::make('fev1_fvc_prediksi')->label(false)->numeric()->readOnly(),
+                        Forms\Components\TextInput::make('fev1_fvc_nilai')->label(false)->numeric()->readOnly()->suffix('%'),
+                        Forms\Components\TextInput::make('fev1_fvc_prediksi')->label(false)->numeric()->readOnly()->suffix('%'),
                         Forms\Components\TextInput::make('fev1_fvc_percent')->label(false)->numeric()->readOnly()->suffix('%'),
                     ]),
 
