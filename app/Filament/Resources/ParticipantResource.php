@@ -165,10 +165,10 @@ class ParticipantResource extends Resource
                         ->label('Audiometri')
                         ->icon('heroicon-o-clipboard-document-list')
                         ->url(fn(Participant $record): string => AudiometryCheckResource::getUrl('create', ['participant_id' => $record->id])),
-                    Action::make('drug_test')
-                        ->label('Tes Narkoba')
-                        ->icon('heroicon-o-beaker')
-                        ->url(fn(Participant $record): string => DrugTestResource::getUrl('create', ['participant_id' => $record->id])),
+                    // Action::make('drug_test')
+                    //     ->label('Tes Narkoba')
+                    //     ->icon('heroicon-o-beaker')
+                    //     ->url(fn(Participant $record): string => DrugTestResource::getUrl('create', ['participant_id' => $record->id])),
                     Action::make('ekg')
                         ->label('EKG')
                         ->icon('heroicon-o-heart')
