@@ -81,7 +81,9 @@ class RontgenCheckResource extends Resource
                             ->default($defaultTemuan)
                             ->rows(8),
                         Forms\Components\TextInput::make('kesan')
-                            ->label('Kesan'),
+                            ->label('Kesan')
+                            ->default('NORMAL CHEST')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('NORMAL CHEST') : null),
                     ]),
 
                 Section::make('Radiologist & Lampiran')
@@ -123,6 +125,7 @@ class RontgenCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(RontgenCheck $record): string => route('rontgen.print', $record))
                     ->openUrlInNewTab(),
+<<<<<<< HEAD
                 Action::make('mcu_result')
                     ->label('MCU Result')
                     ->icon('heroicon-o-document-text')
@@ -138,8 +141,17 @@ class RontgenCheckResource extends Resource
 
                         return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
                     }),
+=======
+                Action::make('edit_result_revision')
+                    ->label('Edit Hasil (Revisi)')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->url(fn(RontgenCheck $record): string => static::getUrl('create', [
+                        'participant_id' => $record->participant_id,
+                        'revise_from' => $record->id,
+                    ])),
+>>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ]);
     }
 

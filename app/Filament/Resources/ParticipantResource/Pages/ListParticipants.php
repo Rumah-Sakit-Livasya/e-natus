@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\ParticipantResource\Pages;
 
 use App\Filament\Resources\ParticipantResource;
+use App\Exports\MedicalCheckTemplateExport;
 use App\Exports\ParticipantTemplateExport;
+use App\Imports\MedicalCheckImport;
 use App\Imports\ParticipantImport;
 use Filament\Actions;
 use Filament\Forms\Components\FileUpload;
@@ -109,6 +111,100 @@ class ListParticipants extends ListRecords
                         Notification::make()
                             ->title('Import Gagal')
                             ->body('Terjadi kesalahan saat import: ' . $e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+            Actions\Action::make('download_medical_check_template')
+                ->label('Template Hasil Pemeriksaan')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('info')
+                ->form([
+                    Select::make('project_request_id')
+                        ->label('Pilih Project')
+                        ->options(\App\Models\ProjectRequest::query()->orderByDesc('created_at')->pluck('name', 'id'))
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->helperText('Project terbaru muncul paling atas.'),
+                    Select::make('type')
+                        ->label('Pilih Pemeriksaan')
+                        ->options(MedicalCheckImport::typeOptions())
+                        ->required()
+                        ->searchable(),
+                ])
+                ->requiresConfirmation()
+                ->modalHeading('Download Template Hasil Pemeriksaan')
+                ->modalDescription('Alur: pilih project, pilih pemeriksaan, download template, isi hasil, lalu import kembali.')
+                ->modalSubmitActionLabel('Download Template')
+                ->action(function (array $data) {
+                    try {
+                        $projectId = (int) $data['project_request_id'];
+                        $type = (string) $data['type'];
+                        $filename = 'template_hasil_' . $type . '_project_' . $projectId . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+                        $filepath = storage_path('app/public/' . $filename);
+
+                        Excel::store(new MedicalCheckTemplateExport($projectId, $type), $filename, 'public');
+
+                        return response()->download($filepath)->deleteFileAfterSend(true);
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('Download Template Gagal')
+                            ->body('Terjadi kesalahan saat download template: ' . $e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+            Actions\Action::make('import_medical_check_result')
+                ->label('Import Hasil Pemeriksaan')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('warning')
+                ->form([
+                    Select::make('project_request_id')
+                        ->label('Pilih Project')
+                        ->options(\App\Models\ProjectRequest::query()->orderByDesc('created_at')->pluck('name', 'id'))
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->helperText('Wajib dipilih untuk memudahkan pencocokan participant.'),
+                    Select::make('type')
+                        ->label('Pilih Pemeriksaan')
+                        ->options(MedicalCheckImport::typeOptions())
+                        ->required()
+                        ->searchable(),
+                    FileUpload::make('file')
+                        ->label('File Excel Hasil Pemeriksaan')
+                        ->required()
+                        ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])
+                        ->helperText('Gunakan file hasil dari template yang sudah diisi.')
+                        ->maxSize(10240),
+                ])
+                ->action(function (array $data) {
+                    try {
+                        $filePath = Storage::disk('public')->path($data['file']);
+                        $projectId = (int) $data['project_request_id'];
+                        $type = (string) $data['type'];
+
+                        $importer = MedicalCheckImport::fromType($type, $projectId);
+                        Excel::import($importer, $filePath);
+
+                        Storage::disk('public')->delete($data['file']);
+
+                        Notification::make()
+                            ->title('Import Hasil Berhasil')
+                            ->body($importer->processedRows > 0
+                                ? "{$importer->getCheckLabel()} berhasil diproses: {$importer->processedRows} baris."
+                                : "Import {$importer->getCheckLabel()} selesai, tetapi tidak ada baris data yang diproses.")
+                            ->success()
+                            ->send();
+                    } catch (\Exception $e) {
+                        if (isset($data['file'])) {
+                            Storage::disk('public')->delete($data['file']);
+                        }
+
+                        Notification::make()
+                            ->title('Import Hasil Gagal')
+                            ->body('Terjadi kesalahan saat import hasil pemeriksaan: ' . $e->getMessage())
                             ->danger()
                             ->send();
                     }

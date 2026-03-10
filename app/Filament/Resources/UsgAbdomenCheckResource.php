@@ -13,6 +13,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Forms\Components\Section;
 use Filament\Tables\Actions\Action;
@@ -26,6 +27,29 @@ class UsgAbdomenCheckResource extends Resource
     protected static ?string $pluralModelLabel = 'Pemeriksaan USG Abdomen';
 
     protected static bool $shouldRegisterNavigation = false;
+
+    private static function isFemale(?string $gender): bool
+    {
+        return strcasecmp(trim((string) $gender), 'Perempuan') === 0;
+    }
+
+    private static function organPelvisDefault(?string $gender): string
+    {
+        if (self::isFemale($gender)) {
+            return 'Bentuk dan ukuran normal, tidak tampak massa/kista';
+        }
+
+        return 'Bentuk dan ukuran normal dengan volume estimasi < 30 ml3, tidak tampak massa/kalsifikasi';
+    }
+
+    private static function kesimpulanDefault(?string $gender): string
+    {
+        if (self::isFemale($gender)) {
+            return 'Hepar/Lien/Gallbladder/Pankreas/Ren kanan/Ren kiri/Vesica urinaria/Uterus tidak tampak kelainan';
+        }
+
+        return 'Hepar/Lien/Gallbladder/Pankreas/Ren kanan/Ren kiri/Vesica urinaria/Prostat tidak tampak kelainan';
+    }
 
     public static function form(Form $form): Form
     {
@@ -46,12 +70,17 @@ class UsgAbdomenCheckResource extends Resource
                                     $set('tgl_lahir', Carbon::parse($p->date_of_birth)->translatedFormat('j F Y'));
                                     $set('usia', Carbon::parse($p->date_of_birth)->age);
                                     $set('jenis_kelamin', $p->gender);
-                                    $set('instansi', $p->department); // Tambahkan ini
+                                    $set('instansi', $p->department);
+
+                                    $set('prostat', self::organPelvisDefault($p->gender));
+                                    $set('kesimpulan', self::kesimpulanDefault($p->gender));
                                 } else {
                                     $set('tgl_lahir', null);
                                     $set('usia', null);
                                     $set('jenis_kelamin', null);
                                     $set('instansi', null);
+                                    $set('prostat', null);
+                                    $set('kesimpulan', null);
                                 }
                             })
                             ->required()
@@ -69,32 +98,53 @@ class UsgAbdomenCheckResource extends Resource
                     ->columns(2)
                     ->schema([
                         Forms\Components\Textarea::make('hepar')->label('Hepar')->rows(3)
-                            ->default('Ukuran normal, intensitas echoparenkim normal, sudut tajam, tepi regular, VP/VH normal, IHBD/EHBD tak tampak dilatasi, tak tampak nodul/kista/massa'),
+                            ->default('Ukuran normal, intensitas echoparenkim normal, sudut tajam, tepi reguler, VP/VH normal, IHBD/EHBD tidak tampak dilatasi, tidak tampak nodul/kista/massa')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Ukuran normal, intensitas echoparenkim normal, sudut tajam, tepi reguler, VP/VH normal, IHBD/EHBD tidak tampak dilatasi, tidak tampak nodul/kista/massa') : null),
                         Forms\Components\Textarea::make('gallbladder')->label('Gallbladder')->rows(2)
-                            ->default('Ukuran normal, intensitas echoparenkim normal, tak tampak nodul / kista / massa / batu / sludge'),
+                            ->default('Ukuran normal, intensitas echoparenkim normal, tidak tampak nodul/kista/massa/batu/sludge')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Ukuran normal, intensitas echoparenkim normal, tidak tampak nodul/kista/massa/batu/sludge') : null),
                         Forms\Components\Textarea::make('lien')->label('Lien')->rows(2)
-                            ->default('Ukuran normal, intensitas echoparenkim normal, tak tampak nodul/kista/massa'),
+                            ->default('Ukuran normal, intensitas echoparenkim normal, tidak tampak nodul/kista/massa')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Ukuran normal, intensitas echoparenkim normal, tidak tampak nodul/kista/massa') : null),
                         Forms\Components\Textarea::make('pankreas')->label('Pankreas')->rows(2)
-                            ->default('Intensitas echoparenkim normal, tak tampak nodul/kista/massa/batu'),
+                            ->default('Intensitas echoparenkim normal, tidak tampak nodul/kista/massa/batu')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Intensitas echoparenkim normal, tidak tampak nodul/kista/massa/batu') : null),
                         Forms\Components\Textarea::make('ren_kanan')->label('Ren Kanan')->rows(2)
-                            ->default('Ukuran normal, intensitas echoparenkim normal, batas sinus korteks tegas, tak tampak ektasis PCS, tak tampak batu/kista/massa'),
+                            ->default('Ukuran normal, intensitas echoparenkim normal, batas sinus korteks tegas, tidak tampak ektasis PCS, tidak tampak batu/kista/massa')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Ukuran normal, intensitas echoparenkim normal, batas sinus korteks tegas, tidak tampak ektasis PCS, tidak tampak batu/kista/massa') : null),
                         Forms\Components\Textarea::make('ren_kiri')->label('Ren Kiri')->rows(2)
-                            ->default('Ukuran normal, intensitas echoparenkim normal, batas sinus korteks tegas, tak tampak ektasis PCS, tak tampak batu/kista/massa'),
+                            ->default('Ukuran normal, intensitas echoparenkim normal, batas sinus korteks tegas, tidak tampak ektasis PCS, tidak tampak batu/kista/massa')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Ukuran normal, intensitas echoparenkim normal, batas sinus korteks tegas, tidak tampak ektasis PCS, tidak tampak batu/kista/massa') : null),
                         Forms\Components\Textarea::make('vesica_urinaria')->label('Vesica Urinaria')->rows(2)
-                            ->default('Terisi cukup urine, tak tampak massa/kalsifikasi'),
-                        Forms\Components\Textarea::make('prostat')->label('Prostat')->rows(2)
-                            ->default('Bentuk dan ukuran normal dengan volume estimasi <30 ml³, tak tampak massa/kalsifikasi'),
+                            ->default('Terisi cukup urine, tidak tampak massa/kalsifikasi')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Terisi cukup urine, tidak tampak massa/kalsifikasi') : null),
+                        Forms\Components\Textarea::make('prostat')
+                            ->label(fn(Get $get): string => self::isFemale($get('jenis_kelamin')) ? 'Uterus' : 'Prostat')
+                            ->rows(2)
+                            ->helperText(fn(Get $get): string => self::isFemale($get('jenis_kelamin')) ? 'Untuk peserta perempuan.' : 'Untuk peserta laki-laki.')
+                            ->default('Bentuk dan ukuran normal dengan volume estimasi < 30 ml3, tidak tampak massa/kalsifikasi')
+                            ->afterStateHydrated(fn(Get $get, $component, $state) => blank($state) ? $component->state(self::organPelvisDefault($get('jenis_kelamin'))) : null),
                         Forms\Components\Textarea::make('catatan_tambahan_1')->label(false)->placeholder('Catatan tambahan baris 1')
-                            ->default('Tak tampak limfadenopati paraaorta')->columnSpanFull(),
+                            ->default('Tidak tampak limfadenopati paraaorta')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Tidak tampak limfadenopati paraaorta') : null)
+                            ->columnSpanFull(),
                         Forms\Components\Textarea::make('catatan_tambahan_2')->label(false)->placeholder('Catatan tambahan baris 2')
+<<<<<<< HEAD
                             ->default('Tak tampak echo cairan bebas pada cavum abdomen dan cavum toraks bilateral')->columnSpanFull(),
+=======
+                            ->default('Tidak tampak eko cairan bebas pada cavum abdomen dan cavum toraks bilateral')
+                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Tidak tampak eko cairan bebas pada cavum abdomen dan cavum toraks bilateral') : null)
+                            ->columnSpanFull(),
+>>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
                     ]),
 
                 Section::make('Kesimpulan & Radiologist')
                     ->columns(2)
                     ->schema([
                         Forms\Components\Textarea::make('kesimpulan')->label('Kesimpulan')
-                            ->default('Hepar / Lien / Gallbladder / Pankreas / Ren kanan / Ren kiri / Vesica urinaria / Prostat tak tampak kelainan')
+                            ->helperText(fn(Get $get): string => self::isFemale($get('jenis_kelamin')) ? 'Untuk peserta perempuan.' : 'Untuk peserta laki-laki.')
+                            ->default('Hepar/Lien/Gallbladder/Pankreas/Ren kanan/Ren kiri/Vesica urinaria/Prostat tidak tampak kelainan')
+                            ->afterStateHydrated(fn(Get $get, $component, $state) => blank($state) ? $component->state(self::kesimpulanDefault($get('jenis_kelamin'))) : null)
                             ->columnSpanFull(),
                         Forms\Components\Select::make('dokter_id')
                             ->label('Radiologist')
@@ -117,27 +167,18 @@ class UsgAbdomenCheckResource extends Resource
 
                 Section::make('Lampiran Gambar Hasil USG (Untuk Halaman 2)')
                     ->schema([
-                        Forms\Components\FileUpload::make('gambar_hasil_usg')
-                            ->label('Gambar Hasil USG 1')
+                        Forms\Components\FileUpload::make('gambar_hasil_usg_lampiran')
+                            ->label('Lampiran Gambar Hasil USG')
+                            ->helperText('Minimal 3 foto. Bisa upload lebih banyak sesuai kebutuhan (mis. sampai 12 foto atau lebih).')
                             ->image()
+                            ->multiple()
+                            ->reorderable()
+                            ->appendFiles()
+                            ->minFiles(3)
+                            ->required()
                             ->disk('public')
                             ->directory('hasil-usg')
-                            ->required(),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_2')
-                            ->label('Gambar Hasil USG 2 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_3')
-                            ->label('Gambar Hasil USG 3 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg'),
-                        Forms\Components\FileUpload::make('gambar_hasil_usg_4')
-                            ->label('Gambar Hasil USG 4 (Opsional)')
-                            ->image()
-                            ->disk('public')
-                            ->directory('hasil-usg'),
+                            ->columnSpanFull(),
                     ])
             ]);
     }

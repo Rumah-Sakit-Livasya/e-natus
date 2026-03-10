@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\AudiometryCheckResource;
+use App\Filament\Resources\RontgenCheckResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -12,7 +14,6 @@ use App\Models\EkgCheck;
 use App\Models\LabCheck;
 use App\Models\RontgenCheck;
 use App\Models\AudiometryCheck;
-use App\Models\DrugTest;
 use App\Models\SpirometryCheck;
 use App\Models\TreadmillCheck;
 use App\Models\UsgAbdomenCheck;
@@ -56,11 +57,6 @@ class HasilPemeriksaanWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('derajat_as')->label('Ambang Dengar Kiri (AS)'),
                 Tables\Columns\TextColumn::make('kesimpulan')->label('Kesan'),
             ],
-            'drug_test' => [
-                Tables\Columns\TextColumn::make('no_mcu')->label('No. MCU')->searchable(),
-                Tables\Columns\TextColumn::make('amphetamine')->label('Amphetamine'),
-                Tables\Columns\TextColumn::make('thc')->label('THC'),
-            ],
             'spirometry' => [
                 Tables\Columns\TextColumn::make('no_rm')->label('No. RM')->searchable(),
                 Tables\Columns\TextColumn::make('kesan')->label('Kesan'),
@@ -88,7 +84,6 @@ class HasilPemeriksaanWidget extends BaseWidget
                     'lab' => LabCheck::query(),
                     'rontgen' => RontgenCheck::query(),
                     'audiometry' => AudiometryCheck::query(),
-                    'drug_test' => DrugTest::query(),
                     'spirometry' => SpirometryCheck::query(),
                     'treadmill' => TreadmillCheck::query(),
                     'usg_abdomen' => UsgAbdomenCheck::query(),
@@ -118,7 +113,6 @@ class HasilPemeriksaanWidget extends BaseWidget
                             'lab' => 'lab.print',
                             'rontgen' => 'rontgen.print',
                             'audiometry' => 'audiometry.print',
-                            'drug_test' => 'drug-test.print',
                             'spirometry' => 'spirometri.print',
                             'treadmill' => 'treadmill.print',
                             'usg_abdomen' => 'usg.print',
@@ -128,6 +122,24 @@ class HasilPemeriksaanWidget extends BaseWidget
                         return route($routeMap[$pemeriksaanType], $record);
                     })
                     ->openUrlInNewTab(),
+                Tables\Actions\Action::make('edit_result_revision')
+                    ->label('Edit Hasil (Revisi)')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->visible(fn(): bool => in_array($pemeriksaanType, ['audiometry', 'rontgen'], true))
+                    ->url(function ($record) use ($pemeriksaanType): string {
+                        return match ($pemeriksaanType) {
+                            'audiometry' => AudiometryCheckResource::getUrl('create', [
+                                'participant_id' => $record->participant_id,
+                                'revise_from' => $record->id,
+                            ]),
+                            'rontgen' => RontgenCheckResource::getUrl('create', [
+                                'participant_id' => $record->participant_id,
+                                'revise_from' => $record->id,
+                            ]),
+                            default => '#',
+                        };
+                    }),
             ]);
     }
 

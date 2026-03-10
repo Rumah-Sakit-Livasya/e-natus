@@ -383,8 +383,16 @@ class AudiometryCheckResource extends Resource
                         return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
                     }),
 
+                Action::make('edit_result_revision')
+                    ->label('Edit Hasil (Revisi)')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->url(fn(AudiometryCheck $record): string => static::getUrl('create', [
+                        'participant_id' => $record->participant_id,
+                        'revise_from' => $record->id,
+                    ])),
+
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

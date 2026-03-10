@@ -225,7 +225,7 @@
             <div class="sign-box">
                 <div>Dokter Pemeriksa,</div>
                 @if ($record->tanda_tangan)
-                    <img class="sign-image" src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" alt="TTD Dokter">
+                    <img class="sign-image" src="{{ \App\Support\StoragePublicUrl::fromPath($record->tanda_tangan) }}" alt="TTD Dokter">
                 @else
                     <div class="sign-placeholder"></div>
                 @endif

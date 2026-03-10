@@ -73,7 +73,7 @@
                     Radiologist
                     <div class="signature-area">
                         @if ($record->tanda_tangan)
-                            <img src="{{ Illuminate\Support\Facades\Storage::url($record->tanda_tangan) }}" class="ttd-image"
+                            <img src="{{ \App\Support\StoragePublicUrl::fromPath($record->tanda_tangan) }}" class="ttd-image"
                                 alt="TTD">
                         @endif
                     </div>
@@ -87,12 +87,16 @@
         <div class="container">
             @include('pemeriksaan.partials.usg-patient-header')
             @php
-                $images = collect([
+                $images = collect($record->gambar_hasil_usg_lampiran ?? [])
+                    ->merge([
                     $record->gambar_hasil_usg ?? null,
                     $record->gambar_hasil_usg_2 ?? null,
                     $record->gambar_hasil_usg_3 ?? null,
                     $record->gambar_hasil_usg_4 ?? null,
-                ])->filter()->values();
+                ])
+                    ->filter()
+                    ->unique()
+                    ->values();
             @endphp
 
             @if ($images->isNotEmpty())

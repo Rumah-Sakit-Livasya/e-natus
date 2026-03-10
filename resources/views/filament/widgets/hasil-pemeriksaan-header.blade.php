@@ -9,7 +9,6 @@
             <option value="lab">Pemeriksaan Lab</option>
             <option value="rontgen">Rontgen</option>
             <option value="audiometry">Audiometri</option>
-            <option value="drug_test">Tes Narkoba</option>
             <option value="spirometry">Spirometri</option>
             <option value="treadmill">Treadmill</option>
             <option value="usg_abdomen">USG Abdomen</option>
