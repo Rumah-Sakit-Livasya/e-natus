@@ -129,13 +129,7 @@ class UsgAbdomenCheckResource extends Resource
                             ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Tidak tampak limfadenopati paraaorta') : null)
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('catatan_tambahan_2')->label(false)->placeholder('Catatan tambahan baris 2')
-<<<<<<< HEAD
                             ->default('Tak tampak echo cairan bebas pada cavum abdomen dan cavum toraks bilateral')->columnSpanFull(),
-=======
-                            ->default('Tidak tampak eko cairan bebas pada cavum abdomen dan cavum toraks bilateral')
-                            ->afterStateHydrated(fn($component, $state) => blank($state) ? $component->state('Tidak tampak eko cairan bebas pada cavum abdomen dan cavum toraks bilateral') : null)
-                            ->columnSpanFull(),
->>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
                     ]),
 
                 Section::make('Kesimpulan & Radiologist')

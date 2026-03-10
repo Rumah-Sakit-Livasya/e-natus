@@ -145,7 +145,6 @@
             ],
         ];
 
-<<<<<<< HEAD
         $renderRow = function ($label, $value, $rujukan, $satuan) {
             $keterangan = str_contains((string) $value, '*') ? 'Perhatikan' : '';
             $isAbnormal = false;
@@ -156,76 +155,6 @@
             }
             
             return [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal];
-=======
-        $parseNumericTokens = function (?string $text): array {
-            if ($text === null) {
-                return [];
-            }
-
-            preg_match_all('/-?\d+(?:[.,]\d+)?/', str_replace(',', '.', $text), $matches);
-            return array_map('floatval', $matches[0] ?? []);
-        };
-
-        $isAbnormal = function ($value, $rujukan) use ($parseNumericTokens): bool {
-            if ($value === null || $value === '' || $rujukan === null || trim((string) $rujukan) === '') {
-                return false;
-            }
-
-            $valueRaw = trim((string) $value);
-            $rujukanRaw = trim((string) $rujukan);
-            $valueNormalized = mb_strtolower(str_replace(['.', ','], ['', '.'], $valueRaw));
-            $rujukanNormalized = mb_strtolower(str_replace(['.', ','], ['', '.'], $rujukanRaw));
-
-            if (preg_match('/^(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)$/', $rujukanNormalized, $rangeMatch)) {
-                $valueNumbers = $parseNumericTokens($valueRaw);
-                if ($valueNumbers === []) {
-                    return false;
-                }
-
-                $valueMin = min($valueNumbers);
-                $valueMax = max($valueNumbers);
-                $min = (float) $rangeMatch[1];
-                $max = (float) $rangeMatch[2];
-
-                return $valueMin < $min || $valueMax > $max;
-            }
-
-            if (preg_match('/^(<=|<|>=|>)\s*(-?\d+(?:\.\d+)?)$/', $rujukanNormalized, $operatorMatch)) {
-                $valueNumbers = $parseNumericTokens($valueRaw);
-                if ($valueNumbers === []) {
-                    return false;
-                }
-
-                $valueToCompare = in_array($operatorMatch[1], ['<', '<='], true) ? max($valueNumbers) : min($valueNumbers);
-                $limit = (float) $operatorMatch[2];
-
-                return match ($operatorMatch[1]) {
-                    '<' => !($valueToCompare < $limit),
-                    '<=' => !($valueToCompare <= $limit),
-                    '>' => !($valueToCompare > $limit),
-                    '>=' => !($valueToCompare >= $limit),
-                };
-            }
-
-            if (in_array($rujukanNormalized, ['negatif', 'non reaktif', 'normal', 'jernih', 'kuning'], true)) {
-                return !str_contains($valueNormalized, $rujukanNormalized);
-            }
-
-            return false;
-        };
-
-        $renderRow = function ($label, $value, $rujukan, $satuan) use ($isAbnormal) {
-            $abnormal = $isAbnormal($value, $rujukan);
-            $displayValue = (string) ($value ?? '');
-
-            if ($abnormal && !str_ends_with(trim($displayValue), '*')) {
-                $displayValue = trim($displayValue) . '*';
-            }
-
-            $keterangan = $abnormal ? 'Abnormal' : '';
-
-            return [$label, $displayValue, $rujukan, $satuan, $keterangan, $abnormal];
->>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
         };
         
         function isValueAbnormal($value, $rujukan) {
@@ -317,19 +246,13 @@
                     </tr>
 
                     @foreach ($section['rows'] ?? [] as $row)
-<<<<<<< HEAD
                         @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                         <tr>
                             <td>{{ $label }}</td>
                             <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
                                 {{ $isAbnormal ? $value . '*' : $value }}
                             </td>
-=======
-                        @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
-                        <tr>
-                            <td>{{ $label }}</td>
-                            <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
->>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
+
                             <td class="center">{{ $rujukan }}</td>
                             <td class="center">{{ $satuan }}</td>
                             <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
@@ -341,19 +264,12 @@
                             <td colspan="5">{{ $subsection['title'] }}</td>
                         </tr>
                         @foreach ($subsection['rows'] as $row)
-<<<<<<< HEAD
                             @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                             <tr>
                                 <td>{{ $label }}</td>
                                 <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
                                     {{ $isAbnormal ? $value . '*' : $value }}
                                 </td>
-=======
-                            @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
-                            <tr>
-                                <td>{{ $label }}</td>
-                                <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
->>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
                                 <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
@@ -389,19 +305,12 @@
                         </tr>
 
                         @foreach ($section['rows'] ?? [] as $row)
-<<<<<<< HEAD
                             @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                             <tr>
                                 <td>{{ $label }}</td>
                                 <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
                                     {{ $isAbnormal ? $value . '*' : $value }}
                                 </td>
-=======
-                            @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
-                            <tr>
-                                <td>{{ $label }}</td>
-                                <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
->>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
                                 <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
@@ -413,19 +322,12 @@
                                 <td colspan="5">{{ $subsection['title'] }}</td>
                             </tr>
                             @foreach ($subsection['rows'] as $row)
-<<<<<<< HEAD
                                 @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                                 <tr>
                                     <td>{{ $label }}</td>
                                     <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
                                         {{ $isAbnormal ? $value . '*' : $value }}
                                     </td>
-=======
-                                @php [$label, $value, $rujukan, $satuan, $keterangan, $abnormal] = $renderRow(...$row); @endphp
-                                <tr>
-                                    <td>{{ $label }}</td>
-                                    <td class="center {{ $abnormal ? 'abnormal-value' : '' }}">{{ $value }}</td>
->>>>>>> cff07beb9c79936835762b93a3d8cb07736b72ec
                                     <td class="center">{{ $rujukan }}</td>
                                     <td class="center">{{ $satuan }}</td>
                                     <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
