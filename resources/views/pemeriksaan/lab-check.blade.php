@@ -196,48 +196,141 @@
     <style>
         .lab-check-print {
             font-size: 10px;
-            line-height: 1.02;
+            line-height: 1.15;
+            color: #111827;
         }
 
         .lab-check-print.print-page {
-            padding: 3mm;
+            padding: 3.5mm 4mm;
+        }
+
+        .lab-check-print .container {
+            max-width: 100%;
         }
 
         .lab-check-print .header-with-border {
-            margin-bottom: 4px;
+            margin-bottom: 5px;
+            border-width: 1px;
+        }
+
+        .lab-check-print .info-table {
+            table-layout: fixed;
         }
 
         .lab-check-print .info-table td,
         .lab-check-print .main-table td,
         .lab-check-print .main-table th {
-            padding: 1px 3px;
+            padding: 2px 4px;
+            border-color: #6b7280;
+        }
+
+        .lab-check-print .info-table td {
+            font-size: 9.7px;
+            line-height: 1.1;
+        }
+
+        .lab-check-print .main-table {
+            table-layout: fixed;
+        }
+
+        .lab-check-print .main-table th {
+            font-size: 9.5px;
+            letter-spacing: 0.2px;
+            background: #e5e7eb;
+            padding-top: 3px;
+            padding-bottom: 3px;
         }
 
         .lab-check-print .section-header td,
         .lab-check-print .sub-section-header td {
-            padding-top: 1px;
-            padding-bottom: 1px;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        .lab-check-print .section-header td {
+            background: #d1d5db;
+            font-size: 9.6px;
+            letter-spacing: 0.3px;
+        }
+
+        .lab-check-print .sub-section-header td {
+            background: #f3f4f6;
+            font-size: 9.3px;
+            color: #374151;
         }
 
         .lab-check-print .mt-10 {
-            margin-top: 3px;
+            margin-top: 4px;
         }
 
         .lab-check-print .note {
             font-size: 9px;
-            line-height: 1;
+            line-height: 1.15;
+            color: #374151;
         }
 
         .lab-check-print .footer {
             margin-top: 6px;
+            font-size: 9.6px;
         }
 
         .lab-check-print .signature-area {
-            height: 56px;
+            height: 48px;
         }
 
         .lab-check-print .ttd-image {
-            max-height: 62px;
+            max-height: 52px;
+        }
+
+        .lab-check-print .pemeriksaan-col {
+            width: 32%;
+        }
+
+        .lab-check-print .hasil-col {
+            width: 14%;
+        }
+
+        .lab-check-print .rujukan-col {
+            width: 20%;
+        }
+
+        .lab-check-print .satuan-col {
+            width: 12%;
+        }
+
+        .lab-check-print .keterangan-col {
+            width: 22%;
+        }
+
+        .lab-check-print .main-table td:nth-child(2),
+        .lab-check-print .main-table td:nth-child(3),
+        .lab-check-print .main-table td:nth-child(4),
+        .lab-check-print .main-table td:nth-child(5) {
+            vertical-align: middle;
+        }
+
+        @media print {
+            .lab-check-print {
+                font-size: 9.8px;
+            }
+
+            .lab-check-print.print-page {
+                padding: 3mm 3.5mm;
+            }
+
+            .lab-check-print .info-table td,
+            .lab-check-print .main-table td,
+            .lab-check-print .main-table th {
+                padding: 1.6px 3.5px;
+            }
+
+            .lab-check-print .signature-area {
+                height: 42px;
+            }
+
+            .lab-check-print .ttd-image {
+                max-height: 46px;
+            }
         }
     </style>
 
