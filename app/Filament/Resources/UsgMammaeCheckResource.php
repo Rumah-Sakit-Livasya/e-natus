@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UsgMammaeCheckResource\Pages;
 use App\Models\Dokter;
+use App\Models\McuResult;
 use App\Models\UsgMammaeCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -158,6 +159,21 @@ class UsgMammaeCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(UsgMammaeCheck $record): string => route('usg-mammae.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(UsgMammaeCheck $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (UsgMammaeCheck $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ]);

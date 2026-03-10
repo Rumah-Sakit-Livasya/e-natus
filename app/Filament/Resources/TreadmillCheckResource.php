@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TreadmillCheckResource\Pages;
 use App\Models\Dokter;
+use App\Models\McuResult;
 use App\Models\TreadmillCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -118,13 +119,14 @@ class TreadmillCheckResource extends Resource
                         Forms\Components\Hidden::make('tanda_tangan'),
                         Forms\Components\FileUpload::make('gambar_hasil_treadmill')
                             ->label('Upload Lampiran Hasil Treadmill (PDF)')
+                            ->helperText('Maksimal ukuran file: 10MB. Hanya file PDF yang diperbolehkan.')
                             ->acceptedFileTypes(['application/pdf'])
                             ->maxSize(10240)
                             ->openable()
                             ->downloadable()
                             ->disk('public')
                             ->directory('hasil-treadmill')
-                            ->required()
+                            ->required(fn ($record) => $record === null)
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -144,6 +146,21 @@ class TreadmillCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(TreadmillCheck $record): string => route('treadmill.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(TreadmillCheck $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (TreadmillCheck $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ]);

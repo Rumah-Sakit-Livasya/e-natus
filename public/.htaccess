@@ -4,6 +4,16 @@
     </IfModule>
 
     # ============================================
+    # PHP UPLOAD CONFIGURATION
+    # ============================================
+    
+    # Increase upload limits for PDF files (10MB)
+    php_value upload_max_filesize 12M
+    php_value post_max_size 12M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+
+    # ============================================
     # SECURITY HEADERS - Server Level
     # ============================================
 

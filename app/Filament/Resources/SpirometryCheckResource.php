@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SpirometryCheckResource\Pages;
 use App\Models\Dokter;
+use App\Models\McuResult;
 use App\Models\SpirometryCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -157,6 +158,21 @@ class SpirometryCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(SpirometryCheck $record): string => route('spirometri.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(SpirometryCheck $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (SpirometryCheck $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ]);

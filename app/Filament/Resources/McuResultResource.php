@@ -507,6 +507,76 @@ class McuResultResource extends Resource
                     ->color('gray')
                     ->button()
                     ->dropdown(true),
+                Tables\Actions\ActionGroup::make([
+                    self::makePemeriksaanEditAction(
+                        name: 'audiometri',
+                        label: 'Edit Audiometri',
+                        resourceClass: AudiometryCheckResource::class,
+                        modelClass: AudiometryCheck::class,
+                        icon: 'heroicon-o-clipboard-document-list',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'drug_test',
+                        label: 'Edit Tes Narkoba',
+                        resourceClass: DrugTestResource::class,
+                        modelClass: DrugTest::class,
+                        icon: 'heroicon-o-beaker',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'ekg',
+                        label: 'Edit EKG',
+                        resourceClass: EkgCheckResource::class,
+                        modelClass: EkgCheck::class,
+                        icon: 'heroicon-o-heart',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'lab',
+                        label: 'Edit Lab Lengkap',
+                        resourceClass: LabCheckResource::class,
+                        modelClass: LabCheck::class,
+                        icon: 'heroicon-o-clipboard-document-list',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'rontgen',
+                        label: 'Edit Rontgen',
+                        resourceClass: RontgenCheckResource::class,
+                        modelClass: RontgenCheck::class,
+                        icon: 'heroicon-o-viewfinder-circle',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'spirometri',
+                        label: 'Edit Spirometri',
+                        resourceClass: SpirometryCheckResource::class,
+                        modelClass: SpirometryCheck::class,
+                        icon: 'heroicon-o-scale',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'treadmill',
+                        label: 'Edit Treadmill',
+                        resourceClass: TreadmillCheckResource::class,
+                        modelClass: TreadmillCheck::class,
+                        icon: 'heroicon-o-presentation-chart-line',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'usg_abdomen',
+                        label: 'Edit USG Abdomen',
+                        resourceClass: UsgAbdomenCheckResource::class,
+                        modelClass: UsgAbdomenCheck::class,
+                        icon: 'heroicon-o-photo',
+                    ),
+                    self::makePemeriksaanEditAction(
+                        name: 'usg_mammae',
+                        label: 'Edit USG Mammae',
+                        resourceClass: UsgMammaeCheckResource::class,
+                        modelClass: UsgMammaeCheck::class,
+                        icon: 'heroicon-o-sparkles',
+                    ),
+                ])
+                    ->label('Edit Pemeriksaan')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->button()
+                    ->dropdown(true),
             ]);
     }
 
@@ -543,7 +613,13 @@ class McuResultResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return false;
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->can('view mcu result');
     }
 
     private static function makePemeriksaanAction(
@@ -566,6 +642,30 @@ class McuResultResource extends Resource
                     ->value('id');
 
                 return route($routeName, ['record' => $id]);
+            })
+            ->openUrlInNewTab();
+    }
+
+    private static function makePemeriksaanEditAction(
+        string $name,
+        string $label,
+        string $resourceClass,
+        string $modelClass,
+        string $icon
+    ): Tables\Actions\Action {
+        return Tables\Actions\Action::make("edit_pemeriksaan_{$name}")
+            ->label($label)
+            ->icon($icon)
+            ->visible(fn(McuResult $record): bool => $modelClass::query()
+                ->where('participant_id', $record->participant_id)
+                ->exists())
+            ->url(function (McuResult $record) use ($modelClass, $resourceClass): string {
+                $id = $modelClass::query()
+                    ->where('participant_id', $record->participant_id)
+                    ->latest('id')
+                    ->value('id');
+
+                return $resourceClass::getUrl('edit', ['record' => $id]);
             })
             ->openUrlInNewTab();
     }

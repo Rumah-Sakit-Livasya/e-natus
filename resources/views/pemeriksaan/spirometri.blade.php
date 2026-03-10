@@ -23,27 +23,27 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Best VC (ml)</td>
-                    <td>{{ $record->vc_nilai }}</td>
-                    <td>{{ $record->vc_prediksi }}</td>
+                    <td>Best VC (L)</td>
+                    <td>{{ $record->vc_nilai ? number_format($record->vc_nilai / 1000, 2) : '' }}</td>
+                    <td>{{ $record->vc_prediksi ? number_format($record->vc_prediksi / 1000, 2) : '' }}</td>
                     <td>{{ $record->vc_prediksi > 0 ? number_format(($record->vc_nilai / $record->vc_prediksi) * 100, 2) . ' %' : '' }}</td>
                 </tr>
                 <tr>
-                    <td>Best FVC (ml)</td>
-                    <td>{{ $record->fvc_nilai }}</td>
-                    <td>{{ $record->fvc_prediksi }}</td>
+                    <td>Best FVC (L)</td>
+                    <td>{{ $record->fvc_nilai ? number_format($record->fvc_nilai / 1000, 2) : '' }}</td>
+                    <td>{{ $record->fvc_prediksi ? number_format($record->fvc_prediksi / 1000, 2) : '' }}</td>
                     <td>{{ $record->fvc_prediksi > 0 ? number_format(($record->fvc_nilai / $record->fvc_prediksi) * 100, 2) . ' %' : '' }}</td>
                 </tr>
                 <tr>
-                    <td>Best FEV1 (ml)</td>
-                    <td>{{ $record->fev1_nilai }}</td>
-                    <td>{{ $record->fev1_prediksi }}</td>
+                    <td>Best FEV1 (L)</td>
+                    <td>{{ $record->fev1_nilai ? number_format($record->fev1_nilai / 1000, 2) : '' }}</td>
+                    <td>{{ $record->fev1_prediksi ? number_format($record->fev1_prediksi / 1000, 2) : '' }}</td>
                     <td>{{ $record->fev1_prediksi > 0 ? number_format(($record->fev1_nilai / $record->fev1_prediksi) * 100, 2) . ' %' : '' }}</td>
                 </tr>
                 <tr>
                     <td>FEV1 / FVC (%)</td>
-                    <td>{{ $record->fvc_nilai > 0 ? number_format($record->fev1_nilai / $record->fvc_nilai, 4) : '' }}</td>
-                    <td>{{ $record->fvc_prediksi > 0 ? number_format($record->fev1_prediksi / $record->fvc_prediksi, 4) : '' }}</td>
+                    <td>{{ $record->fvc_nilai > 0 ? number_format($record->fev1_nilai / $record->fvc_nilai, 2) : '' }}</td>
+                    <td>{{ $record->fvc_prediksi > 0 ? number_format($record->fev1_prediksi / $record->fvc_prediksi, 2) : '' }}</td>
                     <td>
                         @php
                             $nilaiRatio = $record->fvc_nilai > 0 ? $record->fev1_nilai / $record->fvc_nilai : 0;

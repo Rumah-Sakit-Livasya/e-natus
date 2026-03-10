@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UsgAbdomenCheckResource\Pages;
 use App\Models\Dokter;
+use App\Models\McuResult;
 use App\Models\UsgAbdomenCheck;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -86,7 +87,7 @@ class UsgAbdomenCheckResource extends Resource
                         Forms\Components\Textarea::make('catatan_tambahan_1')->label(false)->placeholder('Catatan tambahan baris 1')
                             ->default('Tak tampak limfadenopati paraaorta')->columnSpanFull(),
                         Forms\Components\Textarea::make('catatan_tambahan_2')->label(false)->placeholder('Catatan tambahan baris 2')
-                            ->default('Tak tampak echocairan bebas pada cavum abdomen dan cavum toraks bilateral')->columnSpanFull(),
+                            ->default('Tak tampak echo cairan bebas pada cavum abdomen dan cavum toraks bilateral')->columnSpanFull(),
                     ]),
 
                 Section::make('Kesimpulan & Radiologist')
@@ -155,6 +156,21 @@ class UsgAbdomenCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(UsgAbdomenCheck $record): string => route('usg.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(UsgAbdomenCheck $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (UsgAbdomenCheck $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ]);

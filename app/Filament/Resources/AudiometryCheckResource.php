@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AudiometryCheckResource\Pages;
 use App\Models\AudiometryCheck;
 use App\Models\Dokter;
+use App\Models\McuResult;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Forms;
@@ -366,6 +367,21 @@ class AudiometryCheckResource extends Resource
                     ->color('gray')
                     ->url(fn(AudiometryCheck $record): string => route('audiometry.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(AudiometryCheck $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (AudiometryCheck $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

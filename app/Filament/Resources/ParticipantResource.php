@@ -160,14 +160,6 @@ class ParticipantResource extends Resource
                 // ==========================================================
             ])
             ->actions([
-                // Action::make('print_summary')
-                //     ->label('Rekap Laporan')
-                //     ->icon('heroicon-o-document-chart-bar')
-                //     ->color('success')
-                //     ->button()
-                //     ->url(fn(Participant $record): string => route('participant.report.print', $record))
-                //     ->openUrlInNewTab(),
-
                 ActionGroup::make([
                     Action::make('audiometry')
                         ->label('Audiometri')

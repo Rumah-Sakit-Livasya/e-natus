@@ -147,8 +147,50 @@
 
         $renderRow = function ($label, $value, $rujukan, $satuan) {
             $keterangan = str_contains((string) $value, '*') ? 'Perhatikan' : '';
-            return [$label, $value, $rujukan, $satuan, $keterangan];
+            $isAbnormal = false;
+            
+            // Check if value is numeric and has reference range
+            if (is_numeric($value) && $rujukan && !in_array($rujukan, ['Negatif', 'Normal', 'Non Reaktif', 'Kuning', 'Jernih', ''])) {
+                $isAbnormal = isValueAbnormal($value, $rujukan);
+            }
+            
+            return [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal];
         };
+        
+        function isValueAbnormal($value, $rujukan) {
+            // Handle range formats like "13.5 - 17.5", "< 50.0", "> 100", "0 - 20"
+            if (strpos($rujukan, '-') !== false) {
+                // Range format: "min - max"
+                $parts = explode('-', $rujukan);
+                if (count($parts) == 2) {
+                    $min = trim($parts[0]);
+                    $max = trim($parts[1]);
+                    
+                    // Handle special cases like "< 5" or "> 100"
+                    if (strpos($min, '<') !== false) {
+                        $maxVal = trim(str_replace('<', '', $min));
+                        return $value >= $maxVal;
+                    }
+                    if (strpos($max, '>') !== false) {
+                        $minVal = trim(str_replace('>', '', $max));
+                        return $value <= $minVal;
+                    }
+                    
+                    // Normal range
+                    return $value < $min || $value > $max;
+                }
+            } elseif (strpos($rujukan, '<') !== false) {
+                // Upper limit: "< 50.0"
+                $maxVal = trim(str_replace('<', '', $rujukan));
+                return $value >= $maxVal;
+            } elseif (strpos($rujukan, '>') !== false) {
+                // Lower limit: "> 100"
+                $minVal = trim(str_replace('>', '', $rujukan));
+                return $value <= $minVal;
+            }
+            
+            return false;
+        }
     @endphp
 
     <div class="container">
@@ -204,10 +246,12 @@
                     </tr>
 
                     @foreach ($section['rows'] ?? [] as $row)
-                        @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                        @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                         <tr>
                             <td>{{ $label }}</td>
-                            <td class="center">{{ $value }}</td>
+                            <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
+                                {{ $isAbnormal ? $value . '*' : $value }}
+                            </td>
                             <td class="center">{{ $rujukan }}</td>
                             <td class="center">{{ $satuan }}</td>
                             <td>{{ $keterangan }}</td>
@@ -219,10 +263,12 @@
                             <td colspan="5">{{ $subsection['title'] }}</td>
                         </tr>
                         @foreach ($subsection['rows'] as $row)
-                            @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                            @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                             <tr>
                                 <td>{{ $label }}</td>
-                                <td class="center">{{ $value }}</td>
+                                <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
+                                    {{ $isAbnormal ? $value . '*' : $value }}
+                                </td>
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
                                 <td>{{ $keterangan }}</td>
@@ -258,10 +304,12 @@
                         </tr>
 
                         @foreach ($section['rows'] ?? [] as $row)
-                            @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                            @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                             <tr>
                                 <td>{{ $label }}</td>
-                                <td class="center">{{ $value }}</td>
+                                <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
+                                    {{ $isAbnormal ? $value . '*' : $value }}
+                                </td>
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
                                 <td>{{ $keterangan }}</td>
@@ -273,10 +321,12 @@
                                 <td colspan="5">{{ $subsection['title'] }}</td>
                             </tr>
                             @foreach ($subsection['rows'] as $row)
-                                @php [$label, $value, $rujukan, $satuan, $keterangan] = $renderRow(...$row); @endphp
+                                @php [$label, $value, $rujukan, $satuan, $keterangan, $isAbnormal] = $renderRow(...$row); @endphp
                                 <tr>
                                     <td>{{ $label }}</td>
-                                    <td class="center">{{ $value }}</td>
+                                    <td class="center{{ $isAbnormal ? ' abnormal-value' : '' }}">
+                                        {{ $isAbnormal ? $value . '*' : $value }}
+                                    </td>
                                     <td class="center">{{ $rujukan }}</td>
                                     <td class="center">{{ $satuan }}</td>
                                     <td>{{ $keterangan }}</td>

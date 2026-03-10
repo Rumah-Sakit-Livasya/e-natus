@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EkgCheckResource\Pages;
 use App\Models\Dokter;
 use App\Models\EkgCheck;
+use App\Models\McuResult;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Forms;
@@ -124,6 +125,21 @@ class EkgCheckResource extends Resource
                     ->icon('heroicon-o-printer')->color('gray')
                     ->url(fn(EkgCheck $record): string => route('ekg.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(EkgCheck $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (EkgCheck $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ]);

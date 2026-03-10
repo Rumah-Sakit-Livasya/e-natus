@@ -1,14 +1,14 @@
 body {
     font-family: "Courier New", Courier, monospace;
-    font-size: 12px;
-    line-height: 1.25;
+    font-size: 11px;
+    line-height: 1.1;
     margin: 0;
     color: #111;
     background: #fff;
 }
 
 .print-page {
-    padding: 10mm;
+    padding: 5mm;
 }
 
 .container {
@@ -57,7 +57,7 @@ body {
 .result-table th,
 .conclusion-table td {
     border: 1px solid #555;
-    padding: 4px 6px;
+    padding: 2px 4px;
     vertical-align: top;
 }
 
@@ -86,26 +86,26 @@ body {
 }
 
 .pemeriksaan-col {
-    width: 34%;
+    width: 30%;
 }
 
 .hasil-col,
 .rujukan-col,
 .satuan-col {
-    width: 14%;
+    width: 16%;
     text-align: center;
 }
 
 .keterangan-col {
-    width: 24%;
+    width: 22%;
 }
 
 .mt-10 {
-    margin-top: 10px;
+    margin-top: 5px;
 }
 
 .mt-20 {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .note {
@@ -113,12 +113,12 @@ body {
 }
 
 .footer {
-    margin-top: 16px;
+    margin-top: 10px;
     text-align: right;
 }
 
 .signature-area {
-    height: 90px;
+    height: 70px;
 }
 
 .ttd-image {
@@ -181,6 +181,11 @@ body {
 
 .underline {
     text-decoration: underline;
+}
+
+.abnormal-value {
+    color: red !important;
+    font-weight: bold;
 }
 
 .no-border {
@@ -253,7 +258,7 @@ body {
 
 @page {
     size: A4;
-    margin: 8mm;
+    margin: 5mm;
 }
 
 @media print {

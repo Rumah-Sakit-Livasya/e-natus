@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DrugTestResource\Pages;
 use App\Models\DrugTest;
+use App\Models\McuResult;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Forms;
@@ -137,6 +138,21 @@ class DrugTestResource extends Resource
                     ->color('gray')
                     ->url(fn(DrugTest $record): string => route('drug-test.print', $record))
                     ->openUrlInNewTab(),
+                Action::make('mcu_result')
+                    ->label('MCU Result')
+                    ->icon('heroicon-o-document-text')
+                    ->color('warning')
+                    ->visible(fn(DrugTest $record): bool => McuResult::query()
+                        ->where('participant_id', $record->participant_id)
+                        ->exists())
+                    ->url(function (DrugTest $record): string {
+                        $mcuResultId = McuResult::query()
+                            ->where('participant_id', $record->participant_id)
+                            ->latest('id')
+                            ->value('id');
+
+                        return McuResultResource::getUrl('edit', ['record' => $mcuResultId]);
+                    }),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
