@@ -185,10 +185,20 @@ class TreadmillCheckResource extends Resource
                         Forms\Components\FileUpload::make('gambar_hasil_treadmill')
                             ->label('Upload Lampiran Hasil Treadmill (PDF)')
                             ->helperText('Maksimal ukuran file: 10MB. Hanya file PDF yang diperbolehkan.')
-                            ->acceptedFileTypes(['application/pdf'])
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'application/x-pdf',
+                            ])
+                            ->rules([
+                                'file',
+                                'mimes:pdf',
+                                'max:10240',
+                            ])
                             ->maxSize(10240)
+                            ->previewable(false)
                             ->openable()
                             ->downloadable()
+                            ->preserveFilenames()
                             ->disk('public')
                             ->directory('hasil-treadmill')
                             ->required(fn ($record) => $record === null)
