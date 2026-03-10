@@ -8,7 +8,7 @@
     <script src="{{ asset('js/medical-check-print.js') }}" defer></script>
 </head>
 
-<body class="print-page">
+<body class="print-page lab-check-print">
     @php
         $pageOneSections = [
             [
@@ -192,6 +192,54 @@
             return false;
         }
     @endphp
+
+    <style>
+        .lab-check-print {
+            font-size: 10px;
+            line-height: 1.02;
+        }
+
+        .lab-check-print.print-page {
+            padding: 3mm;
+        }
+
+        .lab-check-print .header-with-border {
+            margin-bottom: 4px;
+        }
+
+        .lab-check-print .info-table td,
+        .lab-check-print .main-table td,
+        .lab-check-print .main-table th {
+            padding: 1px 3px;
+        }
+
+        .lab-check-print .section-header td,
+        .lab-check-print .sub-section-header td {
+            padding-top: 1px;
+            padding-bottom: 1px;
+        }
+
+        .lab-check-print .mt-10 {
+            margin-top: 3px;
+        }
+
+        .lab-check-print .note {
+            font-size: 9px;
+            line-height: 1;
+        }
+
+        .lab-check-print .footer {
+            margin-top: 6px;
+        }
+
+        .lab-check-print .signature-area {
+            height: 56px;
+        }
+
+        .lab-check-print .ttd-image {
+            max-height: 62px;
+        }
+    </style>
 
     <div class="container">
         <table class="info-table header-with-border">
