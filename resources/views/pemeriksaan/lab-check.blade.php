@@ -255,7 +255,7 @@
 
                             <td class="center">{{ $rujukan }}</td>
                             <td class="center">{{ $satuan }}</td>
-                            <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
+                            <td class="{{ $isAbnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                         </tr>
                     @endforeach
 
@@ -272,7 +272,7 @@
                                 </td>
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
-                                <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
+                                <td class="{{ $isAbnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                             </tr>
                         @endforeach
                     @endforeach
@@ -313,7 +313,7 @@
                                 </td>
                                 <td class="center">{{ $rujukan }}</td>
                                 <td class="center">{{ $satuan }}</td>
-                                <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
+                                <td class="{{ $isAbnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                             </tr>
                         @endforeach
 
@@ -330,7 +330,7 @@
                                     </td>
                                     <td class="center">{{ $rujukan }}</td>
                                     <td class="center">{{ $satuan }}</td>
-                                    <td class="{{ $abnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
+                                    <td class="{{ $isAbnormal ? 'abnormal-value' : '' }}">{{ $keterangan }}</td>
                                 </tr>
                             @endforeach
                         @endforeach
