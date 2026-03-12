@@ -7,24 +7,11 @@ use App\Filament\Resources\ParticipantResource;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Actions;
-use Filament\Forms\Form;
 use Filament\Resources\Pages\EditRecord;
 
 class EditTreadmillCheck extends EditRecord
 {
     protected static string $resource = TreadmillCheckResource::class;
-
-    public function form(Form $form): Form
-    {
-        return parent::form($form)->disabled();
-    }
-
-    protected function getFormActions(): array
-    {
-        return [
-            $this->getCancelFormAction(),
-        ];
-    }
 
     protected function mutateFormDataBeforeFill(array $data): array
     {

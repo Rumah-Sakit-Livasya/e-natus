@@ -9,24 +9,11 @@ use App\Models\McuResult;
 use App\Models\Participant;
 use Carbon\Carbon;
 use Filament\Actions;
-use Filament\Forms\Form;
 use Filament\Resources\Pages\EditRecord;
 
 class EditAudiometryCheck extends EditRecord
 {
     protected static string $resource = AudiometryCheckResource::class;
-
-    public function form(Form $form): Form
-    {
-        return parent::form($form)->disabled();
-    }
-
-    protected function getFormActions(): array
-    {
-        return [
-            $this->getCancelFormAction(),
-        ];
-    }
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
