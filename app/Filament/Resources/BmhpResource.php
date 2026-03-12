@@ -9,6 +9,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -67,7 +69,6 @@ class BmhpResource extends Resource
                         \App\Models\Bmhp::create([
                             'name' => '[DUMMY] ' . $newSatuan,
                             'satuan' => $newSatuan,
-                            'stok_awal' => 0,
                             'stok_sisa' => 0,
                             'min_stok' => 0,
                         ]);
@@ -81,30 +82,44 @@ class BmhpResource extends Resource
             Checkbox::make('has_multiple_pcs')
                 ->label('Satuan ini mengandung beberapa pcs')
                 ->reactive()
+                ->dehydrated(false)
+                ->afterStateHydrated(function (Checkbox $component, Get $get): void {
+                    $pcsPerUnit = (int) ($get('pcs_per_unit') ?? 0);
+                    $component->state($pcsPerUnit > 1);
+                })
+                ->afterStateUpdated(function (Set $set, bool $state): void {
+                    if (! $state) {
+                        $set('pcs_per_unit', null);
+                    }
+                })
                 ->helperText('Centang jika satu satuan mengandung lebih dari 1 pcs (misal: 1 box = 10 pcs)'),
             TextInput::make('pcs_per_unit')
                 ->numeric()
                 ->label('Isi per Satuan (pcs)')
                 ->minValue(1)
                 ->default(null)
-                ->visible(function (callable $get): bool {
+                ->visible(function (Get $get): bool {
                     return (bool) ($get('has_multiple_pcs') ?? false);
                 })
-                ->required(function (callable $get): bool {
+                ->required(function (Get $get): bool {
                     return (bool) ($get('has_multiple_pcs') ?? false);
                 })
+                ->dehydratedWhenHidden()
                 ->helperText('Jika satuan ini mengandung beberapa pcs, isi berapa pcs dalam satu satuan.'),
-            TextInput::make('stok_awal')->numeric()->label('Stok Awal')->default(0),
             TextInput::make('stok_sisa')
                 ->numeric()
-                ->label('Stok Sisa')
+                ->label('Stok Sisa (pcs)')
                 ->default(0)
+                ->helperText('Isi stok sisa dalam pcs. Contoh: jika sisa 2 pack dan 1 pack = 6 pcs, isi 12.')
                 ->disabledOn('edit'),
             TextInput::make('min_stok')
                 ->numeric()
-                ->label('Stok Minimum')
+                ->label(fn(Get $get): string => 'Stok Minimum' . ($get('satuan') ? ' (' . $get('satuan') . ')' : ''))
                 ->default(0)
-                ->helperText('Stok akan ditandai jika sisa stok sama atau di bawah angka ini.'),
+                ->helperText(function (Get $get): string {
+                    $satuan = (string) ($get('satuan') ?: 'satuan');
+                    return "Batas minimum dihitung per {$satuan}. Sistem menandai jika sisa <= nilai ini.";
+                }),
 
         ])->columns(2);
     }
@@ -116,8 +131,7 @@ class BmhpResource extends Resource
                 TextColumn::make('name')->label('Nama')->searchable(),
                 TextColumn::make('satuan')->label('Satuan'),
                 TextColumn::make('pcs_per_unit')->label('Isi (pcs)')->sortable(),
-                TextColumn::make('stok_awal')->label('Stok Awal')->sortable(),
-                TextColumn::make('stok_sisa')->label('Stok Sisa')->sortable()
+                TextColumn::make('stok_sisa')->label('Stok Sisa (pcs)')->sortable()
                     ->color(function ($state, Bmhp $record): string {
                         if ($state <= 0) {
                             return 'danger'; // Merah jika stok habis
@@ -193,7 +207,6 @@ class BmhpResource extends Resource
                                 Column::make('name')->heading('Nama BMHP'),
                                 Column::make('satuan')->heading('Satuan'),
                                 Column::make('pcs_per_unit')->heading('Isi per Kemasan (pcs)'),
-                                Column::make('stok_awal')->heading('Stok Awal'),
                                 Column::make('stok_sisa')->heading('Stok Sisa'),
                                 Column::make('min_stok')->heading('Stok Minimum'),
                             ])

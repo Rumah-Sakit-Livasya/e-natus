@@ -26,7 +26,6 @@ class BmhpTemplateExport implements FromView
                     'nama_bmhp' => $bmhp->name,
                     'satuan' => $satuan,
                     'pcs_per_unit' => $pcsPerUnit,
-                    'stok_awal' => (int) $bmhp->stok_awal,
                     'stok_sisa' => (int) $bmhp->stok_sisa,
                     'stok_minimum' => (int) $bmhp->min_stok,
                 ];
@@ -39,7 +38,6 @@ class BmhpTemplateExport implements FromView
                 'nama_bmhp' => 'Masker Bedah',
                 'satuan' => 'pcs',
                 'pcs_per_unit' => 1,
-                'stok_awal' => 100,
                 'stok_sisa' => 100,
                 'stok_minimum' => 10,
             ]];

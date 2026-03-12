@@ -5,7 +5,6 @@
             <th>nama_bmhp</th>
             <th>satuan</th>
             <th>pcs_per_unit</th>
-            <th>stok_awal</th>
             <th>stok_sisa</th>
             <th>stok_minimum</th>
         </tr>
@@ -17,7 +16,6 @@
             <td>{{ $row['nama_bmhp'] }}</td>
             <td>{{ $row['satuan'] }}</td>
             <td>{{ $row['pcs_per_unit'] ?? '' }}</td>
-            <td>{{ $row['stok_awal'] }}</td>
             <td>{{ $row['stok_sisa'] }}</td>
             <td>{{ $row['stok_minimum'] }}</td>
         </tr>
@@ -31,7 +29,6 @@
             <td></td>
             <td></td>
             <td></td>
-            <td></td>
         </tr>
         <tr>
             <td></td>
@@ -40,10 +37,8 @@
             <td></td>
             <td></td>
             <td></td>
-            <td></td>
         </tr>
         <tr>
-            <td></td>
             <td></td>
             <td></td>
             <td></td>

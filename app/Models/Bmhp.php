@@ -16,7 +16,6 @@ class Bmhp extends Model
         'name',
         'satuan',
         'pcs_per_unit',
-        'stok_awal',
         'stok_sisa',
         'min_stok',
     ];
