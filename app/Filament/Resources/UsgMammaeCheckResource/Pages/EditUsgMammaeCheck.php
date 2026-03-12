@@ -4,15 +4,39 @@ namespace App\Filament\Resources\UsgMammaeCheckResource\Pages;
 
 use App\Filament\Resources\UsgMammaeCheckResource;
 use App\Filament\Resources\ParticipantResource;
+use App\Models\Participant;
+use Carbon\Carbon;
 use Filament\Actions;
+use Filament\Forms\Form;
 use Filament\Resources\Pages\EditRecord;
 
 class EditUsgMammaeCheck extends EditRecord
 {
     protected static string $resource = UsgMammaeCheckResource::class;
 
+    public function form(Form $form): Form
+    {
+        return parent::form($form)->disabled();
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCancelFormAction(),
+        ];
+    }
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        $participant = Participant::find($data['participant_id'] ?? null);
+
+        if ($participant) {
+            $data['tgl_lahir'] = Carbon::parse($participant->date_of_birth)->translatedFormat('j F Y');
+            $data['usia'] = Carbon::parse($participant->date_of_birth)->age;
+            $data['jenis_kelamin'] = $participant->gender;
+            $data['instansi'] = $participant->department;
+        }
+
         if (! empty($data['gambar_hasil_usg_lampiran']) && is_array($data['gambar_hasil_usg_lampiran'])) {
             return $data;
         }
