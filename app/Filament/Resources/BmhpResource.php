@@ -16,6 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Columns\Column;
@@ -37,6 +38,17 @@ class BmhpResource extends Resource
 
 
     protected static ?int $navigationSort = 1;
+
+    private static function minStokPcs(Bmhp $record): int
+    {
+        $pcsPerUnit = (int) ($record->pcs_per_unit ?: 1);
+
+        if ($pcsPerUnit <= 0) {
+            $pcsPerUnit = 1;
+        }
+
+        return (int) $record->min_stok * $pcsPerUnit;
+    }
 
     public static function form(Form $form): Form
     {
@@ -136,7 +148,10 @@ class BmhpResource extends Resource
                         if ($state <= 0) {
                             return 'danger'; // Merah jika stok habis
                         }
-                        if ($record->min_stok > 0 && $state <= $record->min_stok) {
+
+                        $minStokPcs = self::minStokPcs($record);
+
+                        if ($record->min_stok > 0 && $state <= $minStokPcs) {
                             return 'warning'; // Kuning jika di bawah atau sama dengan stok min
                         }
                         return 'success'; // Hijau jika aman
@@ -149,7 +164,9 @@ class BmhpResource extends Resource
                             return 'HABIS';
                         }
 
-                        if ((int) $record->min_stok > 0 && (int) $record->stok_sisa <= (int) $record->min_stok) {
+                        $minStokPcs = self::minStokPcs($record);
+
+                        if ((int) $record->min_stok > 0 && (int) $record->stok_sisa <= $minStokPcs) {
                             return 'MENIPIS';
                         }
 
@@ -178,14 +195,19 @@ class BmhpResource extends Resource
                             return $query;
                         }
 
+                        $minStokPcsExpr = DB::raw('min_stok * COALESCE(NULLIF(pcs_per_unit, 0), 1)');
+
                         return match ($value) {
                             'habis' => $query->where('stok_sisa', '<=', 0),
-                            'menipis' => $query->where('stok_sisa', '>', 0)->where('min_stok', '>', 0)->whereColumn('stok_sisa', '<=', 'min_stok'),
+                            'menipis' => $query
+                                ->where('stok_sisa', '>', 0)
+                                ->where('min_stok', '>', 0)
+                                ->where('stok_sisa', '<=', $minStokPcsExpr),
                             default => $query->where(function (Builder $q) {
                                 $q->where('stok_sisa', '>', 0)
                                     ->where(function (Builder $q2) {
                                         $q2->where('min_stok', '<=', 0)
-                                            ->orWhereColumn('stok_sisa', '>', 'min_stok');
+                                            ->orWhere('stok_sisa', '>', DB::raw('min_stok * COALESCE(NULLIF(pcs_per_unit, 0), 1)'));
                                     });
                             }),
                         };
