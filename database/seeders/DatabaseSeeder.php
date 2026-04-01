@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
         $this->call(RegionSeeders::class);
         $this->call(CategorySeeders::class);
         $this->call(LanderSeeders::class);
+        $this->call(TemplateSeeders::class);
+        $this->call(AsetSeeders::class);
+        $this->call(VendorRentalSeeders::class);
+        $this->call(BmhpSeeders::class);
         $this->call(ClientSeeders::class);
         $this->call(AudiometryCheckSeeder::class);
     }

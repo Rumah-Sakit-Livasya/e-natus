@@ -18,6 +18,14 @@ class LanderSeeders extends Seeder
             ['name' => 'Natus', 'code' => 'NVM']
         ];
 
-        \App\Models\Lander::insert($landers);
+        foreach ($landers as $lander) {
+            \App\Models\Lander::withTrashed()->updateOrCreate(
+                ['code' => $lander['code']],
+                [
+                    'name' => $lander['name'],
+                    'deleted_at' => null,
+                ]
+            );
+        }
     }
 }

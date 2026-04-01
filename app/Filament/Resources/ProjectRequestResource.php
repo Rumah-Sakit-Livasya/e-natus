@@ -9,8 +9,10 @@ use App\Models\Aset;
 use App\Models\Client;
 use App\Models\Employee;
 use App\Models\ProjectRequest;
+use App\Models\User;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
@@ -30,6 +32,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -83,88 +86,481 @@ class ProjectRequestResource extends Resource
 
             TextInput::make('name')->label('Nama Proyek')->required(),
 
-            Select::make('employee_ids')
-                ->label('PIC')
-                ->searchable()
-                ->preload()
-                ->options(
-                    \App\Models\Employee::join('users', 'employees.user_id', '=', 'users.id')
-                        ->pluck('users.name', 'employees.id')
-                        ->toArray()
-                )
-                ->afterStateHydrated(function (Select $component, $state): void {
-                    // Backward compatibility: old records may store PIC as array/json.
-                    if (is_array($state)) {
-                        $component->state($state[0] ?? null);
-                    }
-                })
-                ->dehydrateStateUsing(fn($state) => is_array($state) ? ($state[0] ?? null) : $state)
-                ->required()
-                ->createOptionForm([
-                    TextInput::make('name')->label('Nama Pegawai')->required(),
-                ])
-                ->createOptionUsing(fn(array $data) => \App\Models\SDM::create([
-                    'name' => $data['name'],
-                ])->id),
+            Grid::make(2)
+                ->schema([
+                    Section::make('PIC')
+                        ->columnSpan(1)
+                        ->schema([
+                            Toggle::make('use_freelancer_pic')
+                                ->label('Gunakan Freelancer (PIC)')
+                                ->helperText('Jika aktif, PIC diisi manual (nama & nomor telepon).')
+                                ->live()
+                                ->dehydrated(false)
+                                ->afterStateHydrated(function (Toggle $component, $state, ?ProjectRequest $record): void {
+                                    if (! $record) {
+                                        return;
+                                    }
 
-            Select::make('sdm_ids')
-                ->label('Pegawai Ditugaskan')
-                ->helperText('Pilih satu atau lebih pegawai yang ditugaskan di project ini.')
-                ->multiple()
-                ->searchable()
-                ->preload()
-                ->live()
-                ->options(
-                    Employee::join('users', 'employees.user_id', '=', 'users.id')
-                        ->pluck('users.name', 'employees.id')
-                        ->toArray()
-                )
-                ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                    self::syncAssignedStaffFeeItems($get, $set, $state);
-                })
-                ->required(),
+                                    $external = $record->external_workers ?? [];
+                                    $hasPic = filled(data_get($external, 'pic.name')) || filled(data_get($external, 'pic.phone'));
+                                    $component->state($hasPic);
+                                })
+                                ->afterStateUpdated(function (Get $get, Set $set, $state): void {
+                                    if ($state) {
+                                        $set('employee_ids', []);
+                                        $external = $get('external_workers') ?? [];
+                                        $set('external_workers', $external);
+
+                                        self::syncFreelancerFeeItems($get, $set);
+
+                                        return;
+                                    }
+
+                                    $external = $get('external_workers') ?? [];
+                                    data_set($external, 'pic', []);
+                                    $set('external_workers', $external);
+
+                                    self::syncFreelancerFeeItems($get, $set);
+                                }),
+
+                            Section::make('PIC (Freelance)')
+                                ->visible(fn(Get $get): bool => (bool) $get('use_freelancer_pic'))
+                                ->columns(1)
+                                ->schema([
+                                    TextInput::make('external_workers.pic.name')
+                                        ->label('Nama')
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn(Get $get, Set $set) => self::syncFreelancerFeeItems($get, $set))
+                                        ->required(fn(Get $get): bool => (bool) $get('use_freelancer_pic')),
+                                    TextInput::make('external_workers.pic.phone')
+                                        ->label('Nomor Telepon')
+                                        ->tel()
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn(Get $get, Set $set) => self::syncFreelancerFeeItems($get, $set))
+                                        ->required(fn(Get $get): bool => (bool) $get('use_freelancer_pic')),
+                                ]),
+
+                            Select::make('employee_ids')
+                                ->label('PIC')
+                                ->searchable()
+                                ->visible(fn(Get $get): bool => ! (bool) $get('use_freelancer_pic'))
+                                ->options(fn() => Employee::query()
+                                    ->join('users', 'employees.user_id', '=', 'users.id')
+                                    ->orderBy('users.name')
+                                    ->limit(20)
+                                    ->pluck('users.name', 'employees.id')
+                                    ->toArray())
+                                ->getSearchResultsUsing(function (?string $search): array {
+                                    $search = trim((string) $search);
+
+                                    $query = Employee::query()
+                                        ->join('users', 'employees.user_id', '=', 'users.id')
+                                        ->orderBy('users.name');
+
+                                    if ($search !== '') {
+                                        $query->where('users.name', 'like', "%{$search}%");
+                                    }
+
+                                    return $query
+                                        ->limit($search === '' ? 20 : 50)
+                                        ->pluck('users.name', 'employees.id')
+                                        ->toArray();
+                                })
+                                ->getOptionLabelUsing(fn($value): ?string => $value ? Employee::query()
+                                    ->join('users', 'employees.user_id', '=', 'users.id')
+                                    ->where('employees.id', $value)
+                                    ->value('users.name') : null)
+                                ->afterStateHydrated(function (Select $component, $state): void {
+                                    // Backward compatibility: old records may store PIC as array/json.
+                                    if (is_array($state)) {
+                                        $component->state($state[0] ?? null);
+                                    }
+                                })
+                                ->dehydrateStateUsing(function ($state) {
+                                    if (is_array($state)) {
+                                        return array_values(array_filter($state, fn($id) => filled($id)));
+                                    }
+
+                                    return filled($state) ? [(int) $state] : [];
+                                })
+                                ->required(fn(Get $get): bool => ! (bool) $get('use_freelancer_pic'))
+                                ->createOptionForm([
+                                    TextInput::make('name')
+                                        ->label('Nama')
+                                        ->required(),
+                                    TextInput::make('email')
+                                        ->label('Email')
+                                        ->email()
+                                        ->helperText('Opsional. Jika kosong, email akan dibuat otomatis dari NIK.')
+                                        ->rule('nullable|unique:users,email'),
+                                    TextInput::make('nik')
+                                        ->label('NIK')
+                                        ->helperText('Opsional. Jika kosong, NIK akan dibuat otomatis.')
+                                        ->rule('nullable|unique:employees,nik'),
+                                    TextInput::make('position')
+                                        ->label('Posisi')
+                                        ->required(),
+                                    DatePicker::make('birth_date')
+                                        ->label('Tanggal Lahir')
+                                        ->nullable(),
+                                    TextInput::make('phone')
+                                        ->label('Nomor Telepon')
+                                        ->tel()
+                                        ->nullable(),
+                                    Textarea::make('address')
+                                        ->label('Alamat')
+                                        ->rows(2)
+                                        ->nullable(),
+                                ])
+                                ->createOptionUsing(function (array $data) {
+                                    return DB::transaction(function () use ($data) {
+                                        $nik = preg_replace('/\W+/', '', (string) ($data['nik'] ?? ''));
+                                        if (blank($nik)) {
+                                            do {
+                                                $nik = 'FREELANCE-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
+                                            } while (Employee::query()->where('nik', $nik)->exists());
+                                        }
+
+                                        $email = $data['email'] ?? null;
+                                        if (blank($email)) {
+                                            $email = "freelance+{$nik}@local.test";
+
+                                            if (User::query()->where('email', $email)->exists()) {
+                                                $email = "freelance+{$nik}+" . Str::lower(Str::random(6)) . "@local.test";
+                                            }
+                                        }
+
+                                        $user = User::create([
+                                            'name' => $data['name'],
+                                            'email' => $email,
+                                            'password' => Hash::make(Str::random(24)),
+                                        ]);
+
+                                        return Employee::create([
+                                            'user_id' => $user->id,
+                                            'nik' => $nik,
+                                            'position' => $data['position'],
+                                            'birth_date' => $data['birth_date'] ?? null,
+                                            'phone' => $data['phone'] ?? null,
+                                            'address' => $data['address'] ?? null,
+                                        ])->id;
+                                    });
+                                }),
+                        ]),
+
+                    Section::make('Pegawai Ditugaskan')
+                        ->columnSpan(1)
+                        ->schema([
+                            Toggle::make('use_freelancer_assigned_staff')
+                                ->label('Gunakan Freelancer (Pegawai Ditugaskan)')
+                                ->helperText('Jika aktif, pegawai ditugaskan diisi manual (nama & nomor telepon).')
+                                ->live()
+                                ->dehydrated(false)
+                                ->afterStateHydrated(function (Toggle $component, $state, ?ProjectRequest $record): void {
+                                    if (! $record) {
+                                        return;
+                                    }
+
+                                    $external = $record->external_workers ?? [];
+                                    $hasStaff = is_array(data_get($external, 'staff')) && count(array_filter((array) data_get($external, 'staff'))) > 0;
+                                    $component->state($hasStaff);
+                                })
+                                ->afterStateUpdated(function (Get $get, Set $set, $state): void {
+                                    if ($state) {
+                                        $set('sdm_ids', []);
+                                        self::syncAssignedStaffFeeItems($get, $set, []);
+                                        $external = $get('external_workers') ?? [];
+                                        $set('external_workers', $external);
+
+                                        self::syncFreelancerFeeItems($get, $set);
+
+                                        return;
+                                    }
+
+                                    $external = $get('external_workers') ?? [];
+                                    data_set($external, 'staff', []);
+                                    $set('external_workers', $external);
+
+                                    self::syncFreelancerFeeItems($get, $set);
+                                }),
+
+                            Select::make('sdm_ids')
+                                ->label('Pegawai Ditugaskan')
+                                ->helperText('Pilih satu atau lebih pegawai internal yang ditugaskan. Jika menggunakan freelancer, aktifkan switch freelancer khusus Pegawai Ditugaskan.')
+                                ->multiple()
+                                ->searchable()
+                                ->visible(fn(Get $get): bool => ! (bool) $get('use_freelancer_assigned_staff'))
+                                ->options(fn() => Employee::query()
+                                    ->join('users', 'employees.user_id', '=', 'users.id')
+                                    ->orderBy('users.name')
+                                    ->limit(20)
+                                    ->pluck('users.name', 'employees.id')
+                                    ->toArray())
+                                ->getSearchResultsUsing(function (?string $search): array {
+                                    $search = trim((string) $search);
+
+                                    $query = Employee::query()
+                                        ->join('users', 'employees.user_id', '=', 'users.id')
+                                        ->orderBy('users.name');
+
+                                    if ($search !== '') {
+                                        $query->where('users.name', 'like', "%{$search}%");
+                                    }
+
+                                    return $query
+                                        ->limit($search === '' ? 20 : 50)
+                                        ->pluck('users.name', 'employees.id')
+                                        ->toArray();
+                                })
+                                ->getOptionLabelsUsing(fn(array $values): array => empty($values) ? [] : Employee::query()
+                                    ->join('users', 'employees.user_id', '=', 'users.id')
+                                    ->whereIn('employees.id', $values)
+                                    ->pluck('users.name', 'employees.id')
+                                    ->toArray())
+                                ->createOptionForm([
+                                    TextInput::make('name')
+                                        ->label('Nama')
+                                        ->required(),
+                                    TextInput::make('email')
+                                        ->label('Email')
+                                        ->email()
+                                        ->helperText('Opsional. Jika kosong, email akan dibuat otomatis dari NIK.')
+                                        ->rule('nullable|unique:users,email'),
+                                    TextInput::make('nik')
+                                        ->label('NIK')
+                                        ->helperText('Opsional. Jika kosong, NIK akan dibuat otomatis.')
+                                        ->rule('nullable|unique:employees,nik'),
+                                    TextInput::make('position')
+                                        ->label('Posisi')
+                                        ->required(),
+                                    DatePicker::make('birth_date')
+                                        ->label('Tanggal Lahir')
+                                        ->nullable(),
+                                    TextInput::make('phone')
+                                        ->label('Nomor Telepon')
+                                        ->tel()
+                                        ->nullable(),
+                                    Textarea::make('address')
+                                        ->label('Alamat')
+                                        ->rows(2)
+                                        ->nullable(),
+                                ])
+                                ->createOptionUsing(function (array $data) {
+                                    return DB::transaction(function () use ($data) {
+                                        $nik = preg_replace('/\W+/', '', (string) ($data['nik'] ?? ''));
+                                        if (blank($nik)) {
+                                            do {
+                                                $nik = 'FREELANCE-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(6));
+                                            } while (Employee::query()->where('nik', $nik)->exists());
+                                        }
+
+                                        $email = $data['email'] ?? null;
+                                        if (blank($email)) {
+                                            $email = "freelance+{$nik}@local.test";
+
+                                            if (User::query()->where('email', $email)->exists()) {
+                                                $email = "freelance+{$nik}+" . Str::lower(Str::random(6)) . "@local.test";
+                                            }
+                                        }
+
+                                        $user = User::create([
+                                            'name' => $data['name'],
+                                            'email' => $email,
+                                            'password' => Hash::make(Str::random(24)),
+                                        ]);
+
+                                        return Employee::create([
+                                            'user_id' => $user->id,
+                                            'nik' => $nik,
+                                            'position' => $data['position'],
+                                            'birth_date' => $data['birth_date'] ?? null,
+                                            'phone' => $data['phone'] ?? null,
+                                            'address' => $data['address'] ?? null,
+                                        ])->id;
+                                    });
+                                })
+                                ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                    self::syncAssignedStaffFeeItems($get, $set, $state);
+                                })
+                                ->required(fn(Get $get): bool => ! (bool) $get('use_freelancer_assigned_staff')),
+
+                            Repeater::make('external_workers.staff')
+                                ->label('Pegawai Ditugaskan (Freelance)')
+                                ->visible(fn(Get $get): bool => (bool) $get('use_freelancer_assigned_staff'))
+                                ->required(fn(Get $get): bool => (bool) $get('use_freelancer_assigned_staff'))
+                                ->minItems(fn(Get $get): int => (bool) $get('use_freelancer_assigned_staff') ? 1 : 0)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(fn(Get $get, Set $set) => self::syncFreelancerFeeItems($get, $set))
+                                ->schema([
+                                    TextInput::make('name')
+                                        ->label('Nama')
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn(Get $get, Set $set) => self::syncFreelancerFeeItems($get, $set))
+                                        ->required(),
+                                    TextInput::make('phone')
+                                        ->label('Nomor Telepon')
+                                        ->tel()
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn(Get $get, Set $set) => self::syncFreelancerFeeItems($get, $set))
+                                        ->required(),
+                                ]),
+                        ]),
+                ]),
 
             TextInput::make('jumlah')->label('Jumlah Peserta')->numeric()->required(),
             TextInput::make('lokasi')->label('Lokasi')->required(),
             DatePicker::make('start_period')->label('Periode Mulai')->required(),
             DatePicker::make('end_period')->label('Periode Selesai')->required(),
 
+            Select::make('asset_lander_filter_id')
+                ->label('Lander')
+                ->searchable()
+                ->preload()
+                ->live()
+                ->dehydrated(false)
+                ->default('all')
+                ->helperText('Pilih lander untuk memfilter aset, atau pilih "Semua Lander" untuk menampilkan semua aset. Untuk mix aset lintas lander: pilih aset, ganti lander, lalu tambah aset lagi.')
+                ->options(fn() => ['all' => 'Semua Lander'] + \App\Models\Lander::query()
+                    ->orderBy('name')
+                    ->get()
+                    ->mapWithKeys(fn($lander) => [$lander->id => "{$lander->name} ({$lander->code})"])
+                    ->toArray())
+                ->afterStateHydrated(function (Select $component, $state, ?ProjectRequest $record): void {
+                    if (filled($state) || ! $record) {
+                        return;
+                    }
+
+                    $assetIds = $record->asset_ids ?? [];
+                    if (! is_array($assetIds) || empty($assetIds)) {
+                        return;
+                    }
+
+                    $firstAssetId = $assetIds[0] ?? null;
+                    if (! $firstAssetId) {
+                        return;
+                    }
+
+                    $landerId = Aset::query()->whereKey($firstAssetId)->value('lander_id');
+                    if ($landerId) {
+                        $component->state($landerId);
+                    }
+                }),
+
             Select::make('asset_ids')
                 ->label('Aset Terkait')
                 ->multiple()
                 ->searchable()
-                ->preload()
-                ->options(fn() => Aset::where('status', 'available')->get()->mapWithKeys(function ($asset) {
-                    $assetName = Str::upper((string) $asset->custom_name);
-                    $assetCode = self::normalizeAssetCode((string) $asset->code);
+                ->options(static function (Select $component): array {
+                    $state = $component->getContainer()->getRawState();
+                    $landerId = $state['asset_lander_filter_id'] ?? null;
 
-                    return [$asset->id => "{$assetName} - {$assetCode}"];
-                })->filter(fn($label) => ! is_null($label))->toArray())
+                    return Aset::query()
+                        ->where('status', 'available')
+                        ->when($landerId && $landerId !== 'all', fn($query) => $query->where('lander_id', $landerId))
+                        ->orderBy('custom_name')
+                        ->limit($component->getOptionsLimit())
+                        ->get()
+                        ->mapWithKeys(function (Aset $asset): array {
+                            $assetName = Str::upper((string) $asset->custom_name);
+                            $assetCode = ProjectRequestResource::normalizeAssetCode((string) $asset->code);
+
+                            return [$asset->id => "{$assetName} - {$assetCode}"];
+                        })
+                        ->toArray();
+                })
+                ->getSearchResultsUsing(static function (Select $component, ?string $search): array {
+                    $state = $component->getContainer()->getRawState();
+                    $landerId = $state['asset_lander_filter_id'] ?? null;
+
+                    return Aset::query()
+                        ->where('status', 'available')
+                        ->when($landerId && $landerId !== 'all', fn($query) => $query->where('lander_id', $landerId))
+                        ->when(filled($search), function ($query) use ($search) {
+                            $search = trim((string) $search);
+
+                            $query->where(function ($query) use ($search) {
+                                $query
+                                    ->where('custom_name', 'like', "%{$search}%")
+                                    ->orWhere('code', 'like', "%{$search}%");
+                            });
+                        })
+                        ->limit($component->getOptionsLimit())
+                        ->get()
+                        ->mapWithKeys(function (Aset $asset): array {
+                            $assetName = Str::upper((string) $asset->custom_name);
+                            $assetCode = ProjectRequestResource::normalizeAssetCode((string) $asset->code);
+
+                            return [$asset->id => "{$assetName} - {$assetCode}"];
+                        })
+                        ->toArray();
+                })
+                ->getOptionLabelsUsing(static function (Select $component, array $values): array {
+                    $values = array_values(array_filter($values, fn($value) => filled($value)));
+                    if (empty($values)) {
+                        return [];
+                    }
+
+                    return Aset::query()
+                        ->whereIn('id', $values)
+                        ->get()
+                        ->mapWithKeys(function (Aset $asset): array {
+                            $assetName = Str::upper((string) $asset->custom_name);
+                            $assetCode = ProjectRequestResource::normalizeAssetCode((string) $asset->code);
+
+                            return [$asset->id => "{$assetName} - {$assetCode}"];
+                        })
+                        ->toArray();
+                })
                 ->live()
                 ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                    $selectedAssets = Aset::whereIn('id', $state)->get();
+                    $selectedIds = is_array($state) ? $state : [];
+                    $selectedAssets = Aset::query()->whereIn('id', $selectedIds)->get();
+
+                    $desiredDescriptions = $selectedAssets
+                        ->map(function (Aset $asset): string {
+                            $assetName = Str::upper((string) $asset->custom_name);
+                            $assetCode = self::normalizeAssetCode((string) $asset->code);
+
+                            return "{$assetName} - {$assetCode}";
+                        })
+                        ->values()
+                        ->all();
+
                     $currentItems = $get('rabOperasionalItems') ?? [];
 
-                    // Keep existing items that are NOT from assets (optional, depending on requirement)
-                    // Or simply append new assets if they aren't already there.
+                    // Remove internal rental rows that are no longer selected.
+                    $currentItems = collect($currentItems)
+                        ->reject(function ($item) use ($desiredDescriptions) {
+                            if (! (bool) ($item['is_internal_rental'] ?? false)) {
+                                return false;
+                            }
 
+                            $description = (string) ($item['description'] ?? '');
+
+                            return ! in_array($description, $desiredDescriptions, true);
+                        })
+                        ->values()
+                        ->all();
+
+                    // Ensure rows exist for all selected assets.
                     foreach ($selectedAssets as $asset) {
                         $assetName = Str::upper((string) $asset->custom_name);
                         $assetCode = self::normalizeAssetCode((string) $asset->code);
-                        $description = "SEWA INTERNAL {$assetName} - {$assetCode}";
+                        $description = "{$assetName} - {$assetCode}";
 
-                        // Check if this asset is already in the list to avoid duplicates
                         $exists = collect($currentItems)->contains(function ($item) use ($description) {
-                            return isset($item['description']) && $item['description'] === $description;
+                            return (bool) ($item['is_internal_rental'] ?? false)
+                                && isset($item['description'])
+                                && $item['description'] === $description;
                         });
 
                         if (! $exists) {
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => 1,
-                                'harga_sewa' => number_format((float) ($asset->harga_sewa ?? 0), 0, '.', ','), // Use harga_sewa instead of tarif
+                                'harga_sewa' => number_format((float) ($asset->harga_sewa ?? 0), 0, '.', ','),
                                 'total' => number_format((float) ($asset->harga_sewa ?? 0), 0, '.', ','),
-                                'is_internal_rental' => true, // Flag to identify as internal rental
+                                'is_internal_rental' => true,
                             ];
                         }
                     }
@@ -191,18 +587,58 @@ class ProjectRequestResource extends Resource
                 ->multiple()
                 ->searchable()
                 ->preload()
-                ->options(\App\Models\VendorRental::pluck('name', 'id')->toArray())
+                ->options(fn() => \App\Models\VendorRental::query()->pluck('name', 'id')->toArray())
+                ->createOptionForm([
+                    TextInput::make('name')
+                        ->label('Nama Alat')
+                        ->required(),
+                    TextInput::make('price')
+                        ->label('Harga Sewa')
+                        ->numeric()
+                        ->required(),
+                    TextInput::make('unit')
+                        ->label('Satuan')
+                        ->nullable(),
+                ])
+                ->createOptionUsing(fn(array $data) => \App\Models\VendorRental::create([
+                    'name' => $data['name'],
+                    'price' => (float) ($data['price'] ?? 0),
+                    'qty' => 1,
+                    'unit' => $data['unit'] ?? null,
+                ])->id)
                 ->live()
                 ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                    $selectedRentals = \App\Models\VendorRental::whereIn('id', $state)->get();
+                    $selectedIds = is_array($state) ? $state : [];
+                    $selectedRentals = \App\Models\VendorRental::query()->whereIn('id', $selectedIds)->get();
+                    $desiredDescriptions = $selectedRentals
+                        ->map(fn($rental) => "SEWA {$rental->name} ({$rental->unit})")
+                        ->values()
+                        ->all();
+
                     $currentItems = $get('rabOperasionalItems') ?? [];
 
+                    // Remove vendor rental rows that are no longer selected.
+                    $currentItems = collect($currentItems)
+                        ->reject(function ($item) use ($desiredDescriptions) {
+                            if (! (bool) ($item['is_vendor_rental'] ?? false)) {
+                                return false;
+                            }
+
+                            $description = (string) ($item['description'] ?? '');
+
+                            return ! in_array($description, $desiredDescriptions, true);
+                        })
+                        ->values()
+                        ->all();
+
+                    // Ensure rows exist for all selected vendor rentals.
                     foreach ($selectedRentals as $rental) {
                         $description = "SEWA {$rental->name} ({$rental->unit})";
 
-                        // Check if this rental is already in the list
                         $exists = collect($currentItems)->contains(function ($item) use ($description) {
-                            return isset($item['description']) && $item['description'] === $description;
+                            return (bool) ($item['is_vendor_rental'] ?? false)
+                                && isset($item['description'])
+                                && $item['description'] === $description;
                         });
 
                         if (! $exists) {
@@ -404,7 +840,7 @@ class ProjectRequestResource extends Resource
                 ]),
 
             Section::make('Petugas Ditugaskan')
-                ->description('Input fee petugas internal dari "Pegawai Ditugaskan", dan bisa tambah manual untuk pegawai eksternal.')
+                ->description('Input fee petugas internal dari "Pegawai Ditugaskan". Jika memilih freelancer (PIC / Pegawai Ditugaskan), nama-namanya akan otomatis ditambahkan ke list fee di bawah (sebagai baris bertanda "(Freelance)").')
                 ->collapsible()
                 ->schema([
                     Repeater::make('rabFeeItems')
@@ -1288,6 +1724,80 @@ class ProjectRequestResource extends Resource
         });
 
         $set('rabFeeItems', $linkedItems->concat($manualItems)->values()->all());
+    }
+
+    protected static function syncFreelancerFeeItems(Get $get, Set $set): void
+    {
+        $existingItems = collect($get('rabFeeItems') ?? []);
+
+        $managedSuffixes = [
+            ' (PIC Freelance)',
+            ' (Freelance)',
+        ];
+
+        $isManaged = function (array $item) use ($managedSuffixes): bool {
+            $desc = (string) ($item['description'] ?? '');
+            foreach ($managedSuffixes as $suffix) {
+                if ($suffix !== '' && str_ends_with($desc, $suffix)) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        $nonManagedItems = $existingItems
+            ->filter(fn($item) => ! $isManaged((array) $item))
+            ->values();
+
+        $managedExisting = $existingItems
+            ->filter(fn($item) => $isManaged((array) $item))
+            ->keyBy(fn($item) => (string) ($item['description'] ?? ''));
+
+        $desiredDescriptions = collect();
+        $external = (array) ($get('external_workers') ?? []);
+
+        if ((bool) $get('use_freelancer_pic')) {
+            $picName = trim((string) data_get($external, 'pic.name'));
+            if ($picName !== '') {
+                $desiredDescriptions->push($picName . ' (PIC Freelance)');
+            }
+        }
+
+        if ((bool) $get('use_freelancer_assigned_staff')) {
+            $staff = data_get($external, 'staff');
+            if (is_array($staff)) {
+                foreach ($staff as $row) {
+                    $name = trim((string) data_get($row, 'name'));
+                    if ($name === '') {
+                        continue;
+                    }
+                    $desiredDescriptions->push($name . ' (Freelance)');
+                }
+            }
+        }
+
+        $desiredDescriptions = $desiredDescriptions
+            ->filter(fn($v) => $v !== '')
+            ->unique()
+            ->values();
+
+        $managedNext = $desiredDescriptions->map(function (string $desc) use ($managedExisting) {
+            $existing = (array) ($managedExisting->get($desc) ?? []);
+            $qty = max((int) ($existing['qty_aset'] ?? 1), 1);
+            $hargaRaw = $existing['harga_sewa'] ?? null;
+            $harga = self::cleanMoneyValue($hargaRaw);
+
+            return [
+                'assigned_employee_id' => null,
+                'description' => $desc,
+                'qty_aset' => $qty,
+                'harga_sewa' => $hargaRaw,
+                'total' => number_format($qty * $harga, 0, '.', ','),
+            ];
+        });
+
+        $set('rabFeeItems', $nonManagedItems->concat($managedNext)->values()->all());
     }
 
     protected static function cleanMoneyValue(?string $value): int|float
