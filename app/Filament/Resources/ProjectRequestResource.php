@@ -149,6 +149,7 @@ class ProjectRequestResource extends Resource
                                     ->orderBy('users.name')
                                     ->limit(20)
                                     ->pluck('users.name', 'employees.id')
+                                    ->map(fn($name, $id) => filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$id}")
                                     ->toArray())
                                 ->getSearchResultsUsing(function (?string $search): array {
                                     $search = trim((string) $search);
@@ -164,12 +165,13 @@ class ProjectRequestResource extends Resource
                                     return $query
                                         ->limit($search === '' ? 20 : 50)
                                         ->pluck('users.name', 'employees.id')
+                                        ->map(fn($name, $id) => filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$id}")
                                         ->toArray();
                                 })
-                                ->getOptionLabelUsing(fn($value): ?string => $value ? Employee::query()
+                                ->getOptionLabelUsing(fn($value): ?string => $value ? (Employee::query()
                                     ->join('users', 'employees.user_id', '=', 'users.id')
                                     ->where('employees.id', $value)
-                                    ->value('users.name') : null)
+                                    ->value('users.name') ?: "(Tanpa nama) - Employee #{$value}") : null)
                                 ->afterStateHydrated(function (Select $component, $state): void {
                                     // Backward compatibility: old records may store PIC as array/json.
                                     if (is_array($state)) {
@@ -295,6 +297,7 @@ class ProjectRequestResource extends Resource
                                     ->orderBy('users.name')
                                     ->limit(20)
                                     ->pluck('users.name', 'employees.id')
+                                    ->map(fn($name, $id) => filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$id}")
                                     ->toArray())
                                 ->getSearchResultsUsing(function (?string $search): array {
                                     $search = trim((string) $search);
@@ -310,12 +313,14 @@ class ProjectRequestResource extends Resource
                                     return $query
                                         ->limit($search === '' ? 20 : 50)
                                         ->pluck('users.name', 'employees.id')
+                                        ->map(fn($name, $id) => filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$id}")
                                         ->toArray();
                                 })
                                 ->getOptionLabelsUsing(fn(array $values): array => empty($values) ? [] : Employee::query()
                                     ->join('users', 'employees.user_id', '=', 'users.id')
                                     ->whereIn('employees.id', $values)
                                     ->pluck('users.name', 'employees.id')
+                                    ->map(fn($name, $id) => filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$id}")
                                     ->toArray())
                                 ->createOptionForm([
                                     TextInput::make('name')

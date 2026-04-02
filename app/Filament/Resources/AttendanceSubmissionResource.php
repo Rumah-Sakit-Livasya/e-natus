@@ -38,7 +38,9 @@ class AttendanceSubmissionResource extends Resource
                             ->where('start_period', '<=', now())
                             ->where('end_period', '>=', now())
                             ->where('status', '!=', 'pending')
-                            ->pluck('name', 'id');
+                            ->pluck('name', 'id')
+                            ->map(fn($name, $id) => filled($name) ? (string) $name : "(Tanpa nama) - Project #{$id}")
+                            ->toArray();
                     })
                     ->searchable()
                     ->required()
@@ -57,7 +59,15 @@ class AttendanceSubmissionResource extends Resource
                         if (!$projectId) return [];
 
                         $project = ProjectRequest::find($projectId);
-                        return $project?->assignedEmployees()->with('user')->get()->pluck('user.name', 'id') ?? [];
+                        $employees = $project?->assignedEmployees()->with('user')->get() ?? collect();
+
+                        return $employees
+                            ->mapWithKeys(function (Employee $employee): array {
+                                $name = $employee->user?->name;
+                                $label = filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$employee->id}";
+                                return [$employee->id => $label];
+                            })
+                            ->all();
                     })
                     ->searchable()
                     ->required(),

@@ -28,6 +28,36 @@ class ProjectBmhpRemainderResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    /**
+     * Filament Select options must be [value => label] where label is a non-null string.
+     */
+    protected static function getRabClosingOptions(): array
+    {
+        return RabClosing::query()
+            ->with('projectRequest')
+            ->orderByDesc('id')
+            ->get()
+            ->mapWithKeys(function (RabClosing $closing): array {
+                $name = $closing->projectRequest?->name;
+                $label = filled($name) ? (string) $name : "(Tanpa nama) - Closing #{$closing->id}";
+                return [$closing->id => $label];
+            })
+            ->all();
+    }
+
+    protected static function getBmhpOptions(): array
+    {
+        return Bmhp::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->mapWithKeys(function (Bmhp $bmhp): array {
+                $name = $bmhp->name;
+                $label = filled($name) ? (string) $name : "(Tanpa nama) - BMHP #{$bmhp->id}";
+                return [$bmhp->id => $label];
+            })
+            ->all();
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -37,7 +67,7 @@ class ProjectBmhpRemainderResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('rab_closing_id')
                             ->label('Pilih Proyek (Closing)')
-                            ->options(RabClosing::with('projectRequest')->get()->pluck('projectRequest.name', 'id'))
+                            ->options(fn() => self::getRabClosingOptions())
                             ->searchable()
                             ->required()
                             ->live()
@@ -61,7 +91,7 @@ class ProjectBmhpRemainderResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('bmhp_id')
                             ->label('Pilih BMHP (Master Data)')
-                            ->options(Bmhp::pluck('name', 'id'))
+                            ->options(fn() => self::getBmhpOptions())
                             ->searchable()
                             ->live()
                             ->native(false)
@@ -216,7 +246,7 @@ class ProjectBmhpRemainderResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('rab_closing_id')
                     ->label('Proyek')
-                    ->options(RabClosing::with('projectRequest')->get()->pluck('projectRequest.name', 'id')),
+                    ->options(fn() => self::getRabClosingOptions()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

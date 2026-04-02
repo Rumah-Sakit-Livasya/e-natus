@@ -48,7 +48,16 @@ class EmployeeAttendanceReport extends Page implements HasForms
         return [
             Select::make('employee_id')
                 ->label('Pilih Karyawan')
-                ->options(Employee::with('user')->get()->pluck('user.name', 'id'))
+                ->options(fn(): array => Employee::query()
+                    ->with('user')
+                    ->orderBy('id')
+                    ->get()
+                    ->mapWithKeys(function (Employee $employee): array {
+                        $name = $employee->user?->name;
+                        $label = filled($name) ? (string) $name : "(Tanpa nama) - Employee #{$employee->id}";
+                        return [$employee->id => $label];
+                    })
+                    ->all())
                 ->searchable()
                 ->required(),
             DatePicker::make('start_date')
