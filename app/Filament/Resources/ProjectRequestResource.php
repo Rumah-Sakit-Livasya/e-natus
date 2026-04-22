@@ -833,9 +833,8 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->disabled()
                                 ->dehydrated()
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-
-                                ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
+                                ->formatStateUsing(fn($state) => $state ? number_format((float) $state, 1, ',', '.') : '0,0')
+                                ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                                 ->required(),
                         ])
                         ->columns(4)
@@ -884,9 +883,8 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->disabled()
                                 ->dehydrated()
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-
-                                ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
+                                ->formatStateUsing(fn($state) => $state ? number_format((float) $state, 1, ',', '.') : '0,0')
+                                ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                                 ->required(),
                         ])
                         ->columns(4),
@@ -978,9 +976,8 @@ class ProjectRequestResource extends Resource
                         ->prefix('Rp')
                         ->disabled()
                         ->dehydrated()
-                        ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
-
-                        ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state)),
+                        ->formatStateUsing(fn($state) => $state ? number_format((float) $state, 0, ',', '.') : '0')
+                        ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state)),
 
                     TextInput::make('pcs_per_unit_snapshot')
                         ->label('Isi per Unit (Pcs)')
@@ -1823,7 +1820,10 @@ class ProjectRequestResource extends Resource
     {
         $qty = (float) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
-        $set('total', $qty * $harga);
+        $total = $qty * $harga;
+        // Set as formatted string — formatStateUsing handles display,
+        // cleanMoneyValue in dehydrateStateUsing handles DB save
+        $set('total', number_format($total, 1, ',', '.'));
     }
 
     protected static function updateBmhpRowTotal(Get $get, Set $set): void
@@ -1844,7 +1844,7 @@ class ProjectRequestResource extends Resource
         $set('jumlah_rencana', $totalPcs);
 
         // Subtotal calculation (qty * price)
-        $set('total', $qty * $harga);
+        $set('total', number_format($qty * $harga, 0, ',', '.'));
     }
 
     protected static function normalizeAssetCode(?string $code): string
