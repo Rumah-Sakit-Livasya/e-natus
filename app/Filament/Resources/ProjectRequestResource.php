@@ -767,7 +767,7 @@ class ProjectRequestResource extends Resource
                                 ->required()
                                 ->live(onBlur: true)
                                 ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
                                 ->disabled(fn(Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
@@ -784,7 +784,7 @@ class ProjectRequestResource extends Resource
                                             \Filament\Forms\Components\TextInput::make('requested_price')
                                                 ->label('Requested Price')
                                                 ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                                ->stripCharacters([',', '.'])
+
                                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                                 ->required()
                                                 ->prefix('Rp'),
@@ -834,7 +834,7 @@ class ProjectRequestResource extends Resource
                                 ->disabled()
                                 ->dehydrated()
                                 ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->required(),
                         ])
@@ -875,7 +875,7 @@ class ProjectRequestResource extends Resource
                                 ->required()
                                 ->live(onBlur: true)
                                 ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
@@ -885,7 +885,7 @@ class ProjectRequestResource extends Resource
                                 ->disabled()
                                 ->dehydrated()
                                 ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->required(),
                         ])
@@ -969,7 +969,7 @@ class ProjectRequestResource extends Resource
                         ->required()
                         ->live(onBlur: true)
                         ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                        ->stripCharacters([',', '.'])
+
                         ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
@@ -979,7 +979,7 @@ class ProjectRequestResource extends Resource
                         ->disabled()
                         ->dehydrated()
                         ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
-                        ->stripCharacters([',', '.'])
+
                         ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state)),
 
                     TextInput::make('pcs_per_unit_snapshot')
@@ -1006,7 +1006,7 @@ class ProjectRequestResource extends Resource
                 ->prefix('Rp')
                 ->required()
                 ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-                ->stripCharacters([',', '.'])
+
                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state)),
 
             // =================== PERUBAHAN DIMULAI DI SINI ===================

@@ -56,7 +56,7 @@ class RabClosingResource extends Resource
                             TextInput::make('price')->label('Harga')
                                 ->prefix('Rp')
                                 ->mask(Forms\Components\RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): float => self::cleanMoneyValue($state))
                                 ->required()
                                 ->columnSpan(1),
@@ -89,7 +89,7 @@ class RabClosingResource extends Resource
                             TextInput::make('price')->label('Harga')
                                 ->prefix('Rp')
                                 ->mask(Forms\Components\RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): float => self::cleanMoneyValue($state))
                                 ->required()
                                 ->columnSpan(1),
@@ -180,7 +180,7 @@ class RabClosingResource extends Resource
                                             ->label('Total Biaya Terpakai')
                                             ->prefix('Rp')
                                             ->mask(Forms\Components\RawJs::make('$money($input, \',\', \'.\', 0)'))
-                                            ->stripCharacters([',', '.'])
+
                                             ->dehydrateStateUsing(fn(?string $state): float => self::cleanMoneyValue($state))
                                             ->default(fn(Get $get): float => ((float)($get('jumlah_rencana') ?? 0)) * ((float)($get('harga_satuan') ?? 0)))
                                             ->columnSpan(1)
@@ -215,7 +215,7 @@ class RabClosingResource extends Resource
                     TextInput::make('nilai_invoice_closing')->label('Nilai Invoice')
                         ->prefix('Rp')
                         ->mask(Forms\Components\RawJs::make('$money($input, \',\', \'.\', 1)'))
-                        ->stripCharacters([',', '.'])
+
                         ->dehydrateStateUsing(fn(?string $state): float => self::cleanMoneyValue($state))
                         ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
                     TextInput::make('margin_closing')->label('Margin')
@@ -259,7 +259,7 @@ class RabClosingResource extends Resource
                         Section::make('Dana Operasional')->schema([
                             TextInput::make('dana_operasional_transfer')->prefix('Rp')->label('Dana di Transfer oleh Natus')
                                 ->mask(Forms\Components\RawJs::make('$money($input, \',\', \'.\', 1)'))
-                                ->stripCharacters([',', '.'])
+
                                 ->dehydrateStateUsing(fn(?string $state): float => self::cleanMoneyValue($state))
                                 ->live(onBlur: true)->afterStateUpdated(fn(Get $get, Set $set) => self::updateAllTotals($get, $set)),
                             TextInput::make('pengeluaran_operasional_closing')->prefix('Rp')->label('Pengeluaran Operasional Closed')
