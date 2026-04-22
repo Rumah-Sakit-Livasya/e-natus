@@ -965,9 +965,11 @@ class ProjectRequestResource extends Resource
                         ->label('Price')
                         ->prefix('Rp')
                         ->required()
-                        ->placeholder('Contoh: 25.000')
+                        ->placeholder('Contoh: 25000')
+                        ->formatStateUsing(fn($state) => filled($state) ? (int)(float)$state : '')
                         ->live(debounce: 500)
                         ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
+                        ->afterStateHydrated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set))
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
                     TextInput::make('total')
@@ -1840,8 +1842,8 @@ class ProjectRequestResource extends Resource
         }
         $set('jumlah_rencana', $totalPcs);
 
-        // Subtotal calculation (qty * price)
-        $set('total', number_format($qty * $harga, 0, ',', '.'));
+        // Subtotal calculation (qty * price) — set as raw number so formatStateUsing displays correctly
+        $set('total', $qty * $harga);
     }
 
     protected static function normalizeAssetCode(?string $code): string
