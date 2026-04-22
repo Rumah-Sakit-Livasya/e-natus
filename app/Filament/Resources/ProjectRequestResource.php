@@ -965,10 +965,10 @@ class ProjectRequestResource extends Resource
                         ->label('Price')
                         ->prefix('Rp')
                         ->required()
+                        ->numeric()
+                        ->formatStateUsing(fn($state) => $state ? (float) $state : '')
                         ->live(onBlur: true)
-                        ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-
-                        ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
+                        ->dehydrateStateUsing(fn($state) => (float) $state)
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
                     TextInput::make('total')
@@ -1829,7 +1829,7 @@ class ProjectRequestResource extends Resource
         $qty = (int) ($get('qty') ?? 0);
         $purchaseType = (string) ($get('purchase_type') ?? 'pcs');
         $pcsPerUnit = (int) ($get('pcs_per_unit_snapshot') ?? 0);
-        $harga = self::cleanMoneyValue($get('harga_satuan'));
+        $harga = (float) ($get('harga_satuan') ?? 0);
 
         // Calculate total pcs for database record (jumlah_rencana)
         $totalPcs = 0;
