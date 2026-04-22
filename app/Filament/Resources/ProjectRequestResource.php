@@ -766,6 +766,7 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->required()
                                 ->placeholder('Contoh: 250.000')
+                                ->formatStateUsing(fn($state) => filled($state) ? (int)(float)$state : '')
                                 ->live(debounce: 500)
                                 ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
@@ -872,6 +873,7 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->required()
                                 ->placeholder('Contoh: 250.000')
+                                ->formatStateUsing(fn($state) => filled($state) ? (int)(float)$state : '')
                                 ->live(debounce: 500)
                                 ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
