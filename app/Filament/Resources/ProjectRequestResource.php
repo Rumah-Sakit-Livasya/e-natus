@@ -758,7 +758,7 @@ class ProjectRequestResource extends Resource
                                 ->numeric()
                                 ->default(1)
                                 ->required()
-                                ->live(onBlur: true)
+                                ->live(debounce: 500)
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('harga_sewa')
@@ -767,7 +767,7 @@ class ProjectRequestResource extends Resource
                                 ->required()
                                 ->numeric()
                                 ->formatStateUsing(fn($state) => $state ? (float) $state : '')
-                                ->live(onBlur: true)
+                                ->live(debounce: 500)
                                 ->dehydrateStateUsing(fn($state) => (float) $state)
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
                                 ->disabled(fn(Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
@@ -865,7 +865,7 @@ class ProjectRequestResource extends Resource
                                 ->numeric()
                                 ->default(1)
                                 ->required()
-                                ->live(onBlur: true)
+                                ->live(debounce: 500)
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('harga_sewa')
@@ -874,7 +874,7 @@ class ProjectRequestResource extends Resource
                                 ->required()
                                 ->numeric()
                                 ->formatStateUsing(fn($state) => $state ? (float) $state : '')
-                                ->live(onBlur: true)
+                                ->live(debounce: 500)
                                 ->dehydrateStateUsing(fn($state) => (float) $state)
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
@@ -967,7 +967,7 @@ class ProjectRequestResource extends Resource
                         ->required()
                         ->numeric()
                         ->formatStateUsing(fn($state) => $state ? (float) $state : '')
-                        ->live(onBlur: true)
+                        ->live(debounce: 500)
                         ->dehydrateStateUsing(fn($state) => (float) $state)
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
