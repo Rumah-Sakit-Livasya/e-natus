@@ -765,10 +765,10 @@ class ProjectRequestResource extends Resource
                                 ->label('Price')
                                 ->prefix('Rp')
                                 ->required()
+                                ->numeric()
+                                ->formatStateUsing(fn($state) => $state ? (float) $state : '')
                                 ->live(onBlur: true)
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-
-                                ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
+                                ->dehydrateStateUsing(fn($state) => (float) $state)
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
                                 ->disabled(fn(Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
                                 ->dehydrated()
@@ -872,10 +872,10 @@ class ProjectRequestResource extends Resource
                                 ->label('Fee')
                                 ->prefix('Rp')
                                 ->required()
+                                ->numeric()
+                                ->formatStateUsing(fn($state) => $state ? (float) $state : '')
                                 ->live(onBlur: true)
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
-
-                                ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
+                                ->dehydrateStateUsing(fn($state) => (float) $state)
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('total')
@@ -1819,10 +1819,8 @@ class ProjectRequestResource extends Resource
     protected static function updateRowTotal(Get $get, Set $set): void
     {
         $qty = (float) ($get('qty_aset') ?? 0);
-        $harga = self::cleanMoneyValue($get('harga_sewa'));
+        $harga = (float) ($get('harga_sewa') ?? 0);
         $total = $qty * $harga;
-        // Set as formatted string — formatStateUsing handles display,
-        // cleanMoneyValue in dehydrateStateUsing handles DB save
         $set('total', number_format($total, 1, ',', '.'));
     }
 
