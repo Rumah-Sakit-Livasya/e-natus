@@ -765,10 +765,9 @@ class ProjectRequestResource extends Resource
                                 ->label('Price')
                                 ->prefix('Rp')
                                 ->required()
-                                ->numeric()
-                                ->formatStateUsing(fn($state) => $state ? (float) $state : '')
+                                ->placeholder('Contoh: 250.000')
                                 ->live(debounce: 500)
-                                ->dehydrateStateUsing(fn($state) => (float) $state)
+                                ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
                                 ->disabled(fn(Get $get) => (($get('is_vendor_rental') ?? false) || ($get('is_internal_rental') ?? false)) && ! auth()->user()->hasAnyRole(['super-admin', 'owner']))
                                 ->dehydrated()
@@ -872,10 +871,9 @@ class ProjectRequestResource extends Resource
                                 ->label('Fee')
                                 ->prefix('Rp')
                                 ->required()
-                                ->numeric()
-                                ->formatStateUsing(fn($state) => $state ? (float) $state : '')
+                                ->placeholder('Contoh: 250.000')
                                 ->live(debounce: 500)
-                                ->dehydrateStateUsing(fn($state) => (float) $state)
+                                ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
 
                             TextInput::make('total')
@@ -965,10 +963,9 @@ class ProjectRequestResource extends Resource
                         ->label('Price')
                         ->prefix('Rp')
                         ->required()
-                        ->numeric()
-                        ->formatStateUsing(fn($state) => $state ? (float) $state : '')
+                        ->placeholder('Contoh: 25.000')
                         ->live(debounce: 500)
-                        ->dehydrateStateUsing(fn($state) => (float) $state)
+                        ->dehydrateStateUsing(fn($state) => self::cleanMoneyValue($state))
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
 
                     TextInput::make('total')
@@ -1819,7 +1816,7 @@ class ProjectRequestResource extends Resource
     protected static function updateRowTotal(Get $get, Set $set): void
     {
         $qty = (float) ($get('qty_aset') ?? 0);
-        $harga = (float) ($get('harga_sewa') ?? 0);
+        $harga = self::cleanMoneyValue($get('harga_sewa'));
         $total = $qty * $harga;
         $set('total', number_format($total, 1, ',', '.'));
     }
@@ -1829,7 +1826,7 @@ class ProjectRequestResource extends Resource
         $qty = (int) ($get('qty') ?? 0);
         $purchaseType = (string) ($get('purchase_type') ?? 'pcs');
         $pcsPerUnit = (int) ($get('pcs_per_unit_snapshot') ?? 0);
-        $harga = (float) ($get('harga_satuan') ?? 0);
+        $harga = self::cleanMoneyValue($get('harga_satuan'));
 
         // Calculate total pcs for database record (jumlah_rencana)
         $totalPcs = 0;
