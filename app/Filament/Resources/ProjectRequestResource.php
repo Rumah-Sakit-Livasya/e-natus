@@ -563,8 +563,8 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => 1,
-                                'harga_sewa' => number_format((float) ($asset->harga_sewa ?? 0), 0, ',', '.'),
-                                'total' => number_format((float) ($asset->harga_sewa ?? 0), 0, ',', '.'),
+                                'harga_sewa' => number_format((float) ($asset->harga_sewa ?? 0), 1, ',', '.'),
+                                'total' => number_format((float) ($asset->harga_sewa ?? 0), 1, ',', '.'),
                                 'is_internal_rental' => true,
                             ];
                         }
@@ -650,8 +650,8 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => $rental->qty,
-                                'harga_sewa' => number_format((float) $rental->price, 0, ',', '.'),
-                                'total' => number_format((float) ($rental->qty * $rental->price), 0, ',', '.'),
+                                'harga_sewa' => number_format((float) $rental->price, 1, ',', '.'),
+                                'total' => number_format((float) ($rental->qty * $rental->price), 1, ',', '.'),
                                 'is_vendor_rental' => true,
                             ];
                         }
@@ -766,7 +766,7 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->required()
                                 ->live(onBlur: true)
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                                 ->stripCharacters([',', '.'])
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set))
@@ -783,7 +783,7 @@ class ProjectRequestResource extends Resource
                                         ->form([
                                             \Filament\Forms\Components\TextInput::make('requested_price')
                                                 ->label('Requested Price')
-                                                ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                                                 ->stripCharacters([',', '.'])
                                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                                 ->required()
@@ -833,7 +833,7 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->disabled()
                                 ->dehydrated()
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                                 ->stripCharacters([',', '.'])
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->required(),
@@ -874,7 +874,7 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->required()
                                 ->live(onBlur: true)
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                                 ->stripCharacters([',', '.'])
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->afterStateUpdated(fn(Get $get, Set $set) => self::updateRowTotal($get, $set)),
@@ -884,7 +884,7 @@ class ProjectRequestResource extends Resource
                                 ->prefix('Rp')
                                 ->disabled()
                                 ->dehydrated()
-                                ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                                 ->stripCharacters([',', '.'])
                                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                                 ->required(),
@@ -968,7 +968,7 @@ class ProjectRequestResource extends Resource
                         ->prefix('Rp')
                         ->required()
                         ->live(onBlur: true)
-                        ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                        ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                         ->stripCharacters([',', '.'])
                         ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state))
                         ->afterStateUpdated(fn(Get $get, Set $set) => self::updateBmhpRowTotal($get, $set)),
@@ -1005,7 +1005,7 @@ class ProjectRequestResource extends Resource
                 ->label('Nilai Invoice')
                 ->prefix('Rp')
                 ->required()
-                ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
+                ->mask(RawJs::make('$money($input, \',\', \'.\', 1)'))
                 ->stripCharacters([',', '.'])
                 ->dehydrateStateUsing(fn(?string $state): ?string => self::cleanMoneyValue($state)),
 
@@ -1719,8 +1719,8 @@ class ProjectRequestResource extends Resource
                 'assigned_employee_id' => $staffId,
                 'description' => $staffNames[$staffId] ?? "Pegawai #{$staffId}",
                 'qty_aset' => $qty,
-                'harga_sewa' => number_format($hargaRaw, 0, ',', '.'),
-                'total' => number_format($qty * $harga, 0, ',', '.'),
+                'harga_sewa' => number_format($hargaRaw, 1, ',', '.'),
+                'total' => number_format($qty * $harga, 1, ',', '.'),
             ];
         });
 
@@ -1793,8 +1793,8 @@ class ProjectRequestResource extends Resource
                 'assigned_employee_id' => null,
                 'description' => $desc,
                 'qty_aset' => $qty,
-                'harga_sewa' => number_format($hargaRaw, 0, ',', '.'),
-                'total' => number_format($qty * $harga, 0, ',', '.'),
+                'harga_sewa' => number_format($hargaRaw, 1, ',', '.'),
+                'total' => number_format($qty * $harga, 1, ',', '.'),
             ];
         });
 
@@ -1807,18 +1807,19 @@ class ProjectRequestResource extends Resource
             return 0;
         }
 
-        // Hilangkan akhiran ,00 atau .00 jika ada agar tidak dianggap ribuan/jutaan
-        $value = preg_replace('/[,.]00$/', '', $value);
+        // Remove thousands separator (.)
+        $value = str_replace('.', '', $value);
+        // Replace decimal separator (,) with (.)
+        $value = str_replace(',', '.', $value);
 
-        // Hapus semua karakter non-digit
-        return (float) preg_replace('/[^\d]/', '', $value);
+        return (float) $value;
     }
 
     protected static function updateRowTotal(Get $get, Set $set): void
     {
         $qty = (int) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
-        $set('total', number_format($qty * $harga, 0, ',', '.'));
+        $set('total', number_format($qty * $harga, 1, ',', '.'));
     }
 
     protected static function updateBmhpRowTotal(Get $get, Set $set): void
