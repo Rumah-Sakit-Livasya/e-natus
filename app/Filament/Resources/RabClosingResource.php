@@ -319,14 +319,18 @@ class RabClosingResource extends Resource
             ->disabled(fn(?RabClosing $record) => $record?->status === 'final');
     }
 
-    private static function cleanMoneyValue(?string $value): float
+    private static function cleanMoneyValue(mixed $value): float
     {
         if ($value === null || $value === '') {
             return 0;
         }
 
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
         // Remove thousands separator (.)
-        $value = str_replace('.', '', $value);
+        $value = str_replace('.', '', (string) $value);
         // Replace decimal separator (,) with (.)
         $value = str_replace(',', '.', $value);
 

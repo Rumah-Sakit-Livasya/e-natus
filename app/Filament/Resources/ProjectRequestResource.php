@@ -563,8 +563,8 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => 1,
-                                'harga_sewa' => number_format((float) ($asset->harga_sewa ?? 0), 1, ',', '.'),
-                                'total' => number_format((float) ($asset->harga_sewa ?? 0), 1, ',', '.'),
+                                'harga_sewa' => (float) ($asset->harga_sewa ?? 0),
+                                'total' => (float) ($asset->harga_sewa ?? 0),
                                 'is_internal_rental' => true,
                             ];
                         }
@@ -650,8 +650,8 @@ class ProjectRequestResource extends Resource
                             $currentItems[] = [
                                 'description' => $description,
                                 'qty_aset' => $rental->qty,
-                                'harga_sewa' => number_format((float) $rental->price, 1, ',', '.'),
-                                'total' => number_format((float) ($rental->qty * $rental->price), 1, ',', '.'),
+                                'harga_sewa' => (float) $rental->price,
+                                'total' => (float) ($rental->qty * $rental->price),
                                 'is_vendor_rental' => true,
                             ];
                         }
@@ -1719,8 +1719,8 @@ class ProjectRequestResource extends Resource
                 'assigned_employee_id' => $staffId,
                 'description' => $staffNames[$staffId] ?? "Pegawai #{$staffId}",
                 'qty_aset' => $qty,
-                'harga_sewa' => number_format($hargaRaw, 1, ',', '.'),
-                'total' => number_format($qty * $harga, 1, ',', '.'),
+                'harga_sewa' => $harga,
+                'total' => $qty * $harga,
             ];
         });
 
@@ -1793,22 +1793,26 @@ class ProjectRequestResource extends Resource
                 'assigned_employee_id' => null,
                 'description' => $desc,
                 'qty_aset' => $qty,
-                'harga_sewa' => number_format($hargaRaw, 1, ',', '.'),
-                'total' => number_format($qty * $harga, 1, ',', '.'),
+                'harga_sewa' => $harga,
+                'total' => $qty * $harga,
             ];
         });
 
         $set('rabFeeItems', $nonManagedItems->concat($managedNext)->values()->all());
     }
 
-    protected static function cleanMoneyValue(?string $value): int|float
+    protected static function cleanMoneyValue(mixed $value): int|float
     {
         if ($value === null || $value === '') {
             return 0;
         }
 
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
         // Remove thousands separator (.)
-        $value = str_replace('.', '', $value);
+        $value = str_replace('.', '', (string) $value);
         // Replace decimal separator (,) with (.)
         $value = str_replace(',', '.', $value);
 
@@ -1817,9 +1821,9 @@ class ProjectRequestResource extends Resource
 
     protected static function updateRowTotal(Get $get, Set $set): void
     {
-        $qty = (int) ($get('qty_aset') ?? 0);
+        $qty = (float) ($get('qty_aset') ?? 0);
         $harga = self::cleanMoneyValue($get('harga_sewa'));
-        $set('total', number_format($qty * $harga, 1, ',', '.'));
+        $set('total', $qty * $harga);
     }
 
     protected static function updateBmhpRowTotal(Get $get, Set $set): void
@@ -1840,7 +1844,7 @@ class ProjectRequestResource extends Resource
         $set('jumlah_rencana', $totalPcs);
 
         // Subtotal calculation (qty * price)
-        $set('total', number_format($qty * $harga, 0, ',', '.'));
+        $set('total', $qty * $harga);
     }
 
     protected static function normalizeAssetCode(?string $code): string
