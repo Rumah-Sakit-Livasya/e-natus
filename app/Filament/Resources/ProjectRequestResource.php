@@ -429,27 +429,7 @@ class ProjectRequestResource extends Resource
                     ->orderBy('name')
                     ->get()
                     ->mapWithKeys(fn($lander) => [$lander->id => "{$lander->name} ({$lander->code})"])
-                    ->toArray())
-                ->afterStateHydrated(function (Select $component, $state, ?ProjectRequest $record): void {
-                    if (filled($state) || ! $record) {
-                        return;
-                    }
-
-                    $assetIds = $record->asset_ids ?? [];
-                    if (! is_array($assetIds) || empty($assetIds)) {
-                        return;
-                    }
-
-                    $firstAssetId = $assetIds[0] ?? null;
-                    if (! $firstAssetId) {
-                        return;
-                    }
-
-                    $landerId = Aset::query()->whereKey($firstAssetId)->value('lander_id');
-                    if ($landerId) {
-                        $component->state($landerId);
-                    }
-                }),
+                    ->toArray()),
 
             Select::make('asset_ids')
                 ->label('Aset Terkait')
